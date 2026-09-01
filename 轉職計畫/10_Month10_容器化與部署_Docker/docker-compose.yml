@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL 資料庫服務
+  db:
+    image: postgres:16-alpine
+    container_name: b2b_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: b2b_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - b2b_network
+
+  # 2. FastAPI 後端服務
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: b2b_fastapi_service
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres123@db:5432/b2b_db
+    ports:
+      - "8000:8000"
+    networks:
+      - b2b_network
+
+  # 3. 資料庫 GUI 管理介面 (Adminer - 輕量好用)
+  adminer:
+    image: adminer:latest
+    container_name: b2b_adminer_gui
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - b2b_network
+
+volumes:
+  postgres_data:
+
+networks:
+  b2b_network:
+    driver: bridge

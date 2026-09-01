@@ -1,0 +1,624 @@
+# 🗓️ 12 個月 IT 轉職 To-do List
+
+## Month 1｜SQL 基礎
+
+**目標：能看懂、查詢、篩選資料庫。**
+
+* [ ] 安裝 PostgreSQL / 建立練習環境
+* [ ] 學 `SELECT`
+* [ ] 學 `WHERE`
+* [ ] 學 `ORDER BY`
+* [ ] 學 `LIMIT`
+* [ ] 學 `DISTINCT`
+* [ ] 學 `COUNT / SUM / AVG / MAX / MIN`
+* [ ] 學 `GROUP BY`
+* [ ] 學 `HAVING`
+* [ ] 學 `CASE WHEN`
+* [ ] 理解 NULL
+* [ ] 學 `INNER JOIN`
+* [ ] 學 `LEFT JOIN`
+* [ ] 每週至少做 20～30 題 SQL 練習
+* [ ] 建立自己的 SQL 筆記
+* [ ] 用 AI 幫你解釋看不懂的 SQL，但自己重新打一遍
+* [ ] 用公司實際遇到的資料問題當練習題（注意公司機密，不要直接上傳）
+
+**月底成果：**
+
+* [ ] 能獨立寫基本 SQL
+* [ ] 能用 SQL 解決 10 個以上商業資料問題
+
+---
+
+# Month 2｜SQL 進階
+
+**目標：從「查資料」進步到「分析資料」。**
+
+* [ ] Subquery
+* [ ] CTE
+* [ ] `ROW_NUMBER()`
+* [ ] `RANK()`
+* [ ] `DENSE_RANK()`
+* [ ] `LAG()`
+* [ ] `LEAD()`
+* [ ] 日期處理
+* [ ] 字串處理
+* [ ] 多表 JOIN
+* [ ] Window Function
+* [ ] 基礎 Query Optimization
+* [ ] Index 基本概念
+* [ ] 每週做 20～30 題 SQL
+* [ ] 開始整理常用 SQL 模板
+* [ ] 做一個「銷售資料分析」小專案
+
+**月底成果：**
+
+* [ ] 可以自己分析一份 10,000+ 筆資料
+* [ ] 完成第一個 SQL Project
+* [ ] 上傳 GitHub
+
+---
+
+# Month 3｜Database
+
+**目標：不只會 SQL，而是理解資料庫怎麼設計。**
+
+* [ ] Primary Key
+* [ ] Foreign Key
+* [ ] Unique Key
+* [ ] Index
+* [ ] Relationship
+* [ ] One-to-One
+* [ ] One-to-Many
+* [ ] Many-to-Many
+* [ ] Normalization
+* [ ] Transaction
+* [ ] ACID
+* [ ] Constraint
+* [ ] View
+* [ ] PostgreSQL 基礎操作
+* [ ] 學會建立 Database
+* [ ] 學會建立 Table
+* [ ] 學會 INSERT / UPDATE / DELETE
+* [ ] 練習資料庫備份與還原
+
+### 🎯 小專案
+
+建立：
+
+```text
+Customers
+Products
+Orders
+Order_Items
+Salespeople
+```
+
+並畫出 ER Diagram。
+
+**月底成果：**
+
+* [ ] 自己設計一個完整的 B2B Database
+* [ ] 完成 ER Diagram
+* [ ] 可以解釋為什麼這樣設計
+
+---
+
+# Month 4｜Python 基礎
+
+**目標：開始具備「寫程式解決問題」的能力。**
+
+* [ ] 安裝 Python
+* [ ] VS Code
+* [ ] Variables
+* [ ] String
+* [ ] Integer / Float / Boolean
+* [ ] List
+* [ ] Dictionary
+* [ ] Tuple
+* [ ] Set
+* [ ] If / Else
+* [ ] For
+* [ ] While
+* [ ] Function
+* [ ] Exception
+* [ ] File I/O
+* [ ] Module
+* [ ] Package
+* [ ] Virtual Environment
+* [ ] pip
+* [ ] 基本 Debug
+
+### 每週至少做：
+
+* [ ] 3～5 個小程式
+* [ ] 不直接複製 AI 產生的答案
+* [ ] 遇到 bug 自己先 Debug 15～30 分鐘
+
+### 小作品
+
+* [ ] Excel 檔案整理工具
+* [ ] 重複資料檢查工具
+* [ ] 檔案批次重新命名工具
+
+**月底成果：**
+
+* [ ] 可以自己寫 100～300 行的小程式
+
+---
+
+# Month 5｜Python × SQL
+
+**這個月非常重要。**
+
+**目標：把 Python 和你前面學的 Database 接起來。**
+
+* [ ] Python 連 PostgreSQL
+* [ ] SQLAlchemy
+* [ ] 執行 SQL
+* [ ] 讀取資料
+* [ ] 寫入資料
+* [ ] Update / Delete
+* [ ] Transaction
+* [ ] Python Exception Handling
+* [ ] Logging 基礎
+* [ ] Environment Variables
+
+### 做一個自動化流程：
+
+```text
+Excel
+ ↓
+Python
+ ↓
+資料清理
+ ↓
+PostgreSQL
+ ↓
+SQL
+ ↓
+報表
+```
+
+* [ ] Excel → Database
+* [ ] 自動檢查重複資料
+* [ ] 自動檢查錯誤資料
+* [ ] 自動產生統計結果
+
+**月底成果：**
+
+* [ ] 完成一個「資料自動化」Project
+* [ ] GitHub Repository
+* [ ] README
+* [ ] 操作說明
+
+---
+
+# Month 6｜Pandas + API
+
+**目標：開始處理真實世界的資料。**
+
+### Pandas
+
+* [ ] DataFrame
+* [ ] Series
+* [ ] read_csv
+* [ ] read_excel
+* [ ] filtering
+* [ ] sorting
+* [ ] groupby
+* [ ] merge
+* [ ] concat
+* [ ] missing values
+* [ ] duplicate
+* [ ] data type
+* [ ] datetime
+
+### API
+
+* [ ] HTTP 基礎
+* [ ] GET
+* [ ] POST
+* [ ] JSON
+* [ ] REST API
+* [ ] Python Requests
+* [ ] API Authentication 基礎
+
+### Project
+
+做一個：
+
+**「外部 API → Python → Database → 分析」**
+
+* [ ] 找公開 API
+* [ ] 抓資料
+* [ ] 清理
+* [ ] 存入 PostgreSQL
+* [ ] SQL 分析
+* [ ] 做成簡單報表
+
+**月底成果：**
+
+* [ ] 第二個完整 Project
+
+---
+
+# Month 7｜Git + Linux
+
+**目標：開始像工程師一樣工作。**
+
+### Git
+
+* [ ] git init
+* [ ] git clone
+* [ ] git add
+* [ ] git commit
+* [ ] git push
+* [ ] git pull
+* [ ] branch
+* [ ] merge
+* [ ] `.gitignore`
+* [ ] GitHub
+
+### Linux
+
+* [ ] `cd`
+* [ ] `ls`
+* [ ] `pwd`
+* [ ] `mkdir`
+* [ ] `cp`
+* [ ] `mv`
+* [ ] `rm`
+* [ ] `cat`
+* [ ] `grep`
+* [ ] `chmod`
+* [ ] `ssh`
+* [ ] process
+* [ ] environment variable
+* [ ] log
+
+### 建立習慣
+
+* [ ] 所有 Project 放 GitHub
+* [ ] 每個 Project 寫 README
+* [ ] 每個功能用 Git commit
+* [ ] 不再把程式碼只放在電腦裡
+
+**月底成果：**
+
+* [ ] GitHub 有 2～3 個完整作品
+* [ ] 能正常使用 Git
+
+---
+
+# Month 8｜作品集 Project 🚀
+
+這個月不要一直學新東西。
+
+**把前 7 個月的東西整合起來。**
+
+## 做你的主力作品
+
+### B2B Customer Data System
+
+架構：
+
+```text
+              Customer
+                 │
+        ┌────────┴────────┐
+        ↓                 ↓
+      Orders          Salesperson
+        │
+        ↓
+    Products
+```
+
+功能：
+
+* [ ] Customer Database
+* [ ] Product Database
+* [ ] Order Database
+* [ ] Customer Search
+* [ ] Sales Analysis
+* [ ] Monthly Revenue
+* [ ] Top Customers
+* [ ] Salesperson Performance
+* [ ] Duplicate Detection
+* [ ] Data Cleaning
+* [ ] SQL Analysis
+* [ ] Python Automation
+
+### GitHub
+
+* [ ] README
+* [ ] Architecture Diagram
+* [ ] ER Diagram
+* [ ] SQL
+* [ ] Python
+* [ ] Sample Data
+* [ ] Demo Screenshot
+* [ ] Project Explanation
+
+**月底成果：**
+
+> **一個可以拿給面試官看的完整 Project。**
+
+---
+
+# Month 9｜Backend / FastAPI
+
+如果前面做到這裡，你會開始發現：
+
+> 「我好像可以往 Backend 走。」
+
+這個月開始試。
+
+* [ ] HTTP
+* [ ] Client / Server
+* [ ] API
+* [ ] REST
+* [ ] FastAPI
+* [ ] GET
+* [ ] POST
+* [ ] PUT
+* [ ] DELETE
+* [ ] CRUD
+* [ ] Request
+* [ ] Response
+* [ ] JSON
+* [ ] Status Code
+* [ ] API Documentation
+* [ ] Database Integration
+
+### 把 Month 8 的作品 API 化
+
+```text
+User
+ ↓
+FastAPI
+ ↓
+PostgreSQL
+ ↓
+Data
+```
+
+例如：
+
+```text
+GET /customers
+GET /customers/{id}
+GET /orders
+GET /sales
+POST /customers
+```
+
+**月底成果：**
+
+* [ ] B2B Project 有 API
+* [ ] 能用 Postman / Swagger 測試 API
+
+---
+
+# Month 10｜Docker + Deployment
+
+**目標：讓別人真的能使用你的 Project。**
+
+### Docker
+
+* [ ] Image
+* [ ] Container
+* [ ] Dockerfile
+* [ ] Docker Compose
+* [ ] Port
+* [ ] Volume
+* [ ] Environment Variable
+* [ ] Container Networking
+
+### Deployment
+
+選一個 Cloud 平台即可。
+
+* [ ] 把 API 部署上去
+* [ ] Database 部署
+* [ ] Environment Variables
+* [ ] Logs
+* [ ] Basic monitoring
+
+**月底成果：**
+
+> **你的 Project 有一個可以實際操作的 Demo。**
+
+這個非常值得放履歷。
+
+---
+
+# Month 11｜AI × IT
+
+現在才開始碰 AI。
+
+因為你已經有：
+
+> Python + SQL + Database + API
+
+所以這時候學 AI 會非常合理。
+
+* [ ] LLM API
+* [ ] Prompt
+* [ ] Structured Output
+* [ ] Function Calling / Tool Use
+* [ ] Embedding
+* [ ] RAG
+* [ ] Vector Database
+* [ ] AI Agent 基礎
+
+### 升級你的 B2B Project
+
+做：
+
+## AI Business Data Assistant
+
+例如使用者輸入：
+
+> 「今年哪 10 個客戶買最多？」
+
+系統：
+
+```text
+User
+ ↓
+LLM
+ ↓
+SQL / Tool
+ ↓
+PostgreSQL
+ ↓
+結果
+ ↓
+LLM
+ ↓
+自然語言回答
+```
+
+再進一步：
+
+> 「幫我找出最近 3 個月沒有下單、但過去消費超過 50 萬的客戶。」
+
+這種作品會比單純做一個 Chatbot 更能展現你的能力。
+
+**月底成果：**
+
+* [ ] 完成 AI + Database Project
+* [ ] GitHub 更新
+* [ ] Demo
+
+---
+
+# Month 12｜轉職準備 🎯
+
+這個月的重點是：
+
+> **停止無限學習，開始賣你的能力。**
+
+### 履歷
+
+* [ ] 製作一頁英文履歷
+* [ ] 製作中文履歷
+* [ ] 整理現在工作的經驗
+* [ ] 把資料庫經驗寫進履歷
+* [ ] 把自動化經驗寫進履歷
+* [ ] 放 GitHub
+* [ ] 放 Project Demo
+* [ ] 整理 LinkedIn / 求職平台
+
+### 面試
+
+* [ ] SQL 面試題
+* [ ] Python 基礎題
+* [ ] Database
+* [ ] API
+* [ ] Git
+* [ ] Docker 基礎
+* [ ] Project 專題介紹
+* [ ] 「為什麼非本科轉 IT？」
+* [ ] 「為什麼想離開現在工作？」
+* [ ] 「你的 Project 解決什麼問題？」
+
+### 開始投
+
+第一批可以投：
+
+* [ ] Data Analyst
+* [ ] BI
+* [ ] Junior Data Engineer
+* [ ] IT Engineer
+* [ ] Automation Engineer
+* [ ] Junior Backend Engineer
+
+不要等到「全部準備好」才投。
+
+**月底目標：**
+
+> [ ] 開始穩定投遞
+> [ ] 每週至少檢討一次面試/投遞結果
+> [ ] 根據 JD 補技能，而不是漫無目的地學
+
+---
+
+
+而 GitHub 至少有：
+
+**Project 1**
+
+> SQL Business Analysis
+
+**Project 2**
+
+> Python Data Automation
+
+**Project 3**
+
+> B2B Customer Data System
+
+**Project 4**
+
+> AI + Database Assistant
+
+這樣你的履歷就不是：
+
+> 「我沒有本科學歷，但我對 IT 很有興趣。」
+
+而是：
+
+> **「我有 B2B 工作經驗，實際接觸企業資料，熟悉 SQL / Database，能用 Python 做資料處理與自動化，能建立 API、部署服務，並且有 AI + Database 的完整專案。」**
+
+這兩種履歷的說服力差很多。
+
+---
+
+## 📌 最後給你一張「年度 Checklist」
+
+你可以直接複製到 Notion / Excel：
+
+```text
+□ Month 1 — SQL 基礎
+□ Month 2 — SQL 進階
+□ Month 3 — Database
+□ Month 4 — Python
+□ Month 5 — Python + SQL
+□ Month 6 — Pandas + API
+□ Month 7 — Git + Linux
+□ Month 8 — B2B Data Project
+□ Month 9 — FastAPI / Backend
+□ Month 10 — Docker + Cloud
+□ Month 11 — AI + Database
+□ Month 12 — 履歷 + 面試 + 投遞
+
+□ GitHub 建立
+□ SQL Project
+□ Python Project
+□ B2B Database Project
+□ FastAPI Project
+□ Docker
+□ Cloud Demo
+□ AI Project
+□ 中文履歷
+□ 英文履歷
+□ 開始投遞
+```
+
+### 有一件事我特別建議你做
+
+**從現在開始，把你在公司「整理資料庫」遇到的問題記錄下來。**
+
+不要記公司機密，而是記「問題類型」：
+
+> 資料重複 → 怎麼處理
+> 欄位格式不一致 → 怎麼處理
+> Excel 很難維護 → 怎麼改善
+> 每週人工報表 → 能不能自動化
+> 查資料很慢 → 為什麼
+> 不同部門資料對不起來 → 資料結構問題在哪
+
+因為一年後，這些東西很可能會變成你**最有價值的轉職素材**。
+
+**你的優勢不是「27 歲重新學 IT」，而是「27 歲開始把自己現在的 B2B 工作變成 IT 經驗」。**
