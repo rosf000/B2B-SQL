@@ -13,7 +13,7 @@
 - [ ] 掌握交易控制語句：`BEGIN`, `COMMIT`, `ROLLBACK`, `SAVEPOINT`
 - [ ] 掌握 View 檢視表與 Materialized View 物化檢視表的使用時機
 - [ ] 掌握 PostgreSQL 備份 (`pg_dump`) 與還原 (`pg_restore` / `psql`) 指令
-- [ ] 完成 **Project 2：B2B 企業級關聯資料庫設計與 ER 圖**
+- [ ] 完成 **B2B 企業級關聯資料庫設計與 ER 圖實作 (Milestone)**
 
 ---
 
@@ -25,5 +25,5 @@
    - B-Tree 索引結構、死鎖 (Deadlock)、隔離級別 (Isolation Levels)、金流/庫存扣減交易範例。
 3. [03_PostgreSQL_DDL_DML與管理實務.md](./03_PostgreSQL_DDL_DML與管理實務.md)
    - `ALTER TABLE`, `CHECK Constraint`, `CASCADE` 串聯刪除/更新、備份還原實務。
-4. [Project_02_B2B關聯式資料庫設計/](./Project_02_B2B關聯式資料庫設計/README.md)
+4. [Milestone_B2B關聯式資料庫設計/](./Milestone_B2B關聯式資料庫設計/README.md)
    - 包含 Customers, Products, Orders, Order_Items, Salespeople, Invoices 的完整 Mermaid ER 圖與生產級 DDL 腳本。

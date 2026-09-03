@@ -24,5 +24,5 @@
    - DataFrame 必背操作、向量化運算 (Vectorization) 與效能最佳化。
 2. [02_REST_API原理與Python_Requests.md](./02_REST_API原理與Python_Requests.md)
    - HTTP 核心概念、Requests 實戰、處理分頁 (Pagination) 與 Rate Limit 限制。
-3. [Project_04_外部API資料擷取與分析存儲/](./Project_04_外部API資料擷取與分析存儲/README.md)
+3. [Case_外部API資料擷取與分析存儲/](./Case_外部API資料擷取與分析存儲/README.md)
    - 端到端 API 資料擷取、清洗轉換並寫入 PostgreSQL 的可執行專案代碼。

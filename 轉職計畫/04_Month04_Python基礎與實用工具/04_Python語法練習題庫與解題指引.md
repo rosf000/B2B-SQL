@@ -75,24 +75,155 @@ for k, v in dict_b.items():
 print(merged)
 ```
 
-### Q7. 實作安全除法裝飾器 (Decorator)，當除以 0 或輸入非數值時返回 None 並記錄警告。
+### Q7. 實作安全毛利率計算函式 `safe_calculate_margin(revenue, cost)`，當營收為 0 或輸入非數值時返回 None，並使用 `try-except` 優雅攔截例外。
 ```python
-def safe_calc(func):
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except ZeroDivisionError:
-            print("[Warning] 除數為 0，已安全攔截")
-            return None
-        except Exception as e:
-            print(f"[Error] 計算異常: {e}")
-            return None
-    return wrapper
+from typing import Optional
 
-@safe_calc
-def calculate_margin(revenue, cost):
-    return (revenue - cost) / revenue
+def safe_calculate_margin(revenue: float, cost: float) -> Optional[float]:
+    """計算毛利率 (revenue - cost) / revenue，具備防禦性除零與型態檢查。"""
+    try:
+        rev = float(revenue)
+        c = float(cost)
+        if rev <= 0:
+            print(f"[Warning] 營收必須大於 0 (傳入值: {revenue})")
+            return None
+        return round((rev - c) / rev, 4)
+    except (ZeroDivisionError, ValueError, TypeError) as e:
+        print(f"[Error] 計算異常攔截: {e}")
+        return None
 
-print(calculate_margin(100, 80)) # 0.2
-print(calculate_margin(0, 0))    # None (捕捉除以0)
+print(safe_calculate_margin(100000, 75000)) # 0.25
+print(safe_calculate_margin(0, 50000))       # None (捕捉除以0或負數)
+print(safe_calculate_margin("invalid", 20))  # None (捕捉型態轉換錯誤)
+```
+
+### Q8. 集合運算 (Set Operations)：比對 1 月與 2 月客戶名冊，找出「兩月皆有下單的留存客戶」與「2 月流失的客戶」。
+```python
+jan_clients = {"Apex Semi", "BlueSky", "CyberCore", "Delta Log", "Echo Energy"}
+feb_clients = {"Apex Semi", "CyberCore", "Future AI", "Grand Precision"}
+
+# 1. 兩月皆活躍客戶 (交集 Intersection)
+retained_clients = jan_clients & feb_clients
+print("留存客戶:", retained_clients) # {'Apex Semi', 'CyberCore'}
+
+# 2. 1月有但2月未下單客戶 (差集 Difference)
+churned_clients = jan_clients - feb_clients
+print("流失客戶:", churned_clients) # {'BlueSky', 'Delta Log', 'Echo Energy'}
+```
+
+### Q9. 資料清洗實務：擷取混雜文字中的台灣統一編號純數字，若不足 8 位則標記無效。
+```python
+import re
+
+def clean_tax_id(raw_tax_id: str) -> str:
+    # 移除非數字的所有符號
+    digits = re.sub(r"\D", "", str(raw_tax_id))
+    return digits if len(digits) == 8 else "INVALID"
+
+test_cases = ["統編: 2849-1023 (現役)", " 54329871 ", "TaxID: 12984", "None"]
+cleaned = [clean_tax_id(tc) for tc in test_cases]
+print(cleaned) # ['28491023', '54329871', 'INVALID', 'INVALID']
+```
+
+### Q10. 巢狀字典防呆安全取值 (Safe Deep Get)。
+```python
+from typing import Any, List
+
+def deep_get(data: dict, keys: List[str], default: Any = None) -> Any:
+    """依照層級鍵依序安全取值，任一層為 None 或不存在時回傳 default，不拋出 KeyError。"""
+    current = data
+    for k in keys:
+        if isinstance(current, dict):
+            current = current.get(k)
+        else:
+            return default
+    return current if current is not None else default
+
+sample_customer = {
+    "company": "Apex Semi Tech",
+    "contact": {
+        "primary": {"name": "David", "email": "david@apex.com"}
+    }
+}
+
+print(deep_get(sample_customer, ["contact", "primary", "email"])) # david@apex.com
+print(deep_get(sample_customer, ["contact", "billing", "phone"], "未填寫")) # 未填寫
+```
+
+### Q11. 清單推導式 (List Comprehension)：批次格式化訂單號碼序列。
+```python
+# 產生 ORD-2024-001 至 ORD-2024-010 的流水號序列
+order_numbers = [f"ORD-2024-{i:03d}" for i in range(1, 11)]
+print(order_numbers[:5]) # ['ORD-2024-001', 'ORD-2024-002', 'ORD-2024-003', 'ORD-2024-004', 'ORD-2024-005']
+```
+
+### Q12. 模擬 SQL CASE WHEN：依訂單金額自動標註客戶等級。
+```python
+orders = [
+    {"order_id": 1, "amount": 450000},
+    {"order_id": 2, "amount": 180000},
+    {"order_id": 3, "amount": 60000}
+]
+
+def get_tier(amount: float) -> str:
+    if amount >= 300000:
+        return "Tier 1 (Enterprise)"
+    elif amount >= 100000:
+        return "Tier 2 (Mid-Market)"
+    return "Tier 3 (SMB)"
+
+for o in orders:
+    o["order_tier"] = get_tier(o["amount"])
+
+print(orders)
+```
+
+### Q13. 檔案路徑與副檔名過濾（使用 `os.path`）。
+```python
+import os
+
+files = ["sales_2024_01.csv", "summary.xlsx", "report.pdf", "customers_clean.csv", "backup.zip"]
+
+# 篩選所有 CSV 檔案並提取不含副檔名的主檔名
+csv_basenames = [os.path.splitext(f)[0] for f in files if f.endswith(".csv")]
+print(csv_basenames) # ['sales_2024_01', 'customers_clean']
+```
+
+### Q14. 純 Python 計算數列的中位數 (Median)（不依賴 numpy / pandas）。
+```python
+def calculate_median(values: list) -> float:
+    if not values:
+        raise ValueError("數列不可為空")
+    sorted_v = sorted(values)
+    n = len(sorted_v)
+    mid = n // 2
+    if n % 2 == 1:
+        return float(sorted_v[mid])
+    else:
+        return (sorted_v[mid - 1] + sorted_v[mid]) / 2.0
+
+print(calculate_median([10, 20, 30, 40, 50]))      # 30.0 (奇數長度)
+print(calculate_median([10, 20, 30, 40, 50, 60]))  # 35.0 (偶數長度取平均)
+```
+
+### Q15. 字典分組聚合 (Group By In Python)：依業務員 ID 加總業績與計數。
+```python
+raw_orders = [
+    {"salesperson_id": 1, "amount": 360000},
+    {"salesperson_id": 2, "amount": 155000},
+    {"salesperson_id": 1, "amount": 450000},
+    {"salesperson_id": 3, "amount": 240000},
+    {"salesperson_id": 2, "amount": 80000}
+]
+
+summary = {}
+for ord in raw_orders:
+    sp_id = ord["salesperson_id"]
+    if sp_id not in summary:
+        summary[sp_id] = {"count": 0, "total_revenue": 0}
+    summary[sp_id]["count"] += 1
+    summary[sp_id]["total_revenue"] += ord["amount"]
+
+print(summary)
+# {1: {'count': 2, 'total_revenue': 810000}, 2: {'count': 2, 'total_revenue': 235000}, 3: {'count': 1, 'total_revenue': 240000}}
 ```

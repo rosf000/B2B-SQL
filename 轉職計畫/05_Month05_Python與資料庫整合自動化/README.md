@@ -22,5 +22,5 @@
    - 連線設定、參數綁定、ORM 映射與批次寫入效能對比。
 2. [02_ETL自動化管線與日誌系統設計.md](./02_ETL自動化管線與日誌系統設計.md)
    - 資料清洗過濾器、重複鍵防呆處理 (UPSERT)、日誌輸出與錯誤告警。
-3. [Project_03_Excel至PostgreSQL自動化ETL管線/](./Project_03_Excel至PostgreSQL自動化ETL管線/README.md)
+3. [Project_02_Excel至PostgreSQL自動化ETL管線/](./Project_02_Excel至PostgreSQL自動化ETL管線/README.md)
    - 第二個開源作品：包含完整的 Python ETL 程式碼、設定檔、模擬 Excel 生成腳本與 GitHub README。
