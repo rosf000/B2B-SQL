@@ -1,624 +1,587 @@
-# 🗓️ 12 個月 IT 轉職 To-do List
+# 🗓️ 12 個月 IT 轉職 To-do List（AI-Native 版）
 
-## Month 1｜SQL 基礎
+> 學習方式從「背技術」改為「設計方案 + AI 協作 + 驗證結果」
 
-**目標：能看懂、查詢、篩選資料庫。**
+---
+
+## Month 1｜SQL 基礎 + Git 起手
+
+**目標：能查詢資料，並從第一天開始累積 GitHub 學習軌跡。**
+
+> ⚠️ Git 不是 M7 才學的東西。從第一條 SQL 開始，就應該 git commit。
+
+### Git / GitHub（第一週完成）
+
+* [ ] 建立 GitHub 帳號
+* [ ] 建立 B2B-SQL Repository
+* [ ] 安裝 Git，設定 user.name / user.email
+* [ ] 學 `git init` / `git add` / `git commit` / `git push`
+* [ ] 寫第一個 README.md
+* [ ] **從現在起，每天至少一次 commit**
+
+### SQL 基礎
 
 * [ ] 安裝 PostgreSQL / 建立練習環境
-* [ ] 學 `SELECT`
-* [ ] 學 `WHERE`
-* [ ] 學 `ORDER BY`
-* [ ] 學 `LIMIT`
-* [ ] 學 `DISTINCT`
-* [ ] 學 `COUNT / SUM / AVG / MAX / MIN`
-* [ ] 學 `GROUP BY`
-* [ ] 學 `HAVING`
-* [ ] 學 `CASE WHEN`
+* [ ] `SELECT`、`WHERE`、`ORDER BY`、`LIMIT`、`DISTINCT`
+* [ ] `COUNT / SUM / AVG / MAX / MIN`
+* [ ] `GROUP BY`、`HAVING`
+* [ ] `CASE WHEN`
 * [ ] 理解 NULL
-* [ ] 學 `INNER JOIN`
-* [ ] 學 `LEFT JOIN`
+* [ ] `INNER JOIN`、`LEFT JOIN`
 * [ ] 每週至少做 20～30 題 SQL 練習
-* [ ] 建立自己的 SQL 筆記
-* [ ] 用 AI 幫你解釋看不懂的 SQL，但自己重新打一遍
-* [ ] 用公司實際遇到的資料問題當練習題（注意公司機密，不要直接上傳）
+* [ ] 建立自己的 SQL 筆記（放 GitHub）
+
+### AI 協作方式（從這個月就建立）
+
+```
+你先寫 SQL → AI 比較差異 → 理解為什麼 → 改進
+不是：把題目給 AI → 複製答案
+```
+
+* [ ] 用 AI 解釋看不懂的 SQL，但自己重新打一遍
+* [ ] 每週用 AI Review 自己寫的 SQL，記錄改進點
 
 **月底成果：**
 
 * [ ] 能獨立寫基本 SQL
-* [ ] 能用 SQL 解決 10 個以上商業資料問題
+* [ ] 能用 SQL 解決 10 個以上商業情境題
+* [ ] GitHub 有第一週的 commit 歷史
 
 ---
 
-# Month 2｜SQL 進階
+## Month 2｜SQL 進階分析
 
 **目標：從「查資料」進步到「分析資料」。**
 
 * [ ] Subquery
-* [ ] CTE
-* [ ] `ROW_NUMBER()`
-* [ ] `RANK()`
-* [ ] `DENSE_RANK()`
-* [ ] `LAG()`
-* [ ] `LEAD()`
-* [ ] 日期處理
-* [ ] 字串處理
+* [ ] CTE（WITH）
+* [ ] `ROW_NUMBER()` / `RANK()` / `DENSE_RANK()`
+* [ ] `LAG()` / `LEAD()`
+* [ ] Window Function 全面理解
+* [ ] 日期處理（DATE_TRUNC、EXTRACT）
+* [ ] 字串處理（CONCAT、TRIM、SPLIT_PART）
 * [ ] 多表 JOIN
-* [ ] Window Function
 * [ ] 基礎 Query Optimization
 * [ ] Index 基本概念
 * [ ] 每週做 20～30 題 SQL
-* [ ] 開始整理常用 SQL 模板
-* [ ] 做一個「銷售資料分析」小專案
+
+### Project 1：銷售資料多維度分析
+
+* [ ] 準備 10,000+ 筆模擬銷售資料
+* [ ] 月營收趨勢分析（Window Function）
+* [ ] 客戶 RFM 分群（CTE + GROUP BY）
+* [ ] Cohort 留存分析
+* [ ] 銷售人員績效排名（RANK）
+* [ ] GitHub 開源：README + SQL 腳本 + 結果截圖
 
 **月底成果：**
 
-* [ ] 可以自己分析一份 10,000+ 筆資料
-* [ ] 完成第一個 SQL Project
-* [ ] 上傳 GitHub
+* [ ] 能自己分析一份 10,000+ 筆資料
+* [ ] Project 1 上傳 GitHub，README 完整
 
 ---
 
-# Month 3｜Database
+## Month 3｜資料庫設計與建模
 
-**目標：不只會 SQL，而是理解資料庫怎麼設計。**
+**目標：不只會 SQL，而是理解資料庫怎麼設計，並能驗證 AI 生成的 Schema。**
 
-* [ ] Primary Key
-* [ ] Foreign Key
-* [ ] Unique Key
-* [ ] Index
-* [ ] Relationship
-* [ ] One-to-One
-* [ ] One-to-Many
-* [ ] Many-to-Many
-* [ ] Normalization
-* [ ] Transaction
-* [ ] ACID
-* [ ] Constraint
-* [ ] View
-* [ ] PostgreSQL 基礎操作
-* [ ] 學會建立 Database
-* [ ] 學會建立 Table
-* [ ] 學會 INSERT / UPDATE / DELETE
+* [ ] Primary Key / Foreign Key / Unique Key
+* [ ] 一對一 / 一對多 / 多對多
+* [ ] Normalization（1NF / 2NF / 3NF）
+* [ ] Index 原理與適用時機
+* [ ] Transaction / ACID
+* [ ] Constraint / View
+* [ ] PostgreSQL DDL / DML 實作
 * [ ] 練習資料庫備份與還原
 
-### 🎯 小專案
+### 新增：AI Schema Review 練習
 
-建立：
-
-```text
-Customers
-Products
-Orders
-Order_Items
-Salespeople
+```
+AI 生成 B2B Schema
+    ↓
+你來找問題：
+  - customer_id 是否唯一？
+  - deleted 資料怎麼處理？
+  - 同公司多帳號怎麼辦？
+  - 哪個欄位該加 Index？
 ```
 
-並畫出 ER Diagram。
+* [ ] 讓 AI 生成一個 B2B 資料庫設計
+* [ ] 自己找出至少 5 個可以改善的地方
+* [ ] 記錄「為什麼這樣設計比較好」
+
+### 小專案：B2B 資料庫設計
+
+建立以下資料表並畫出 ER Diagram：
+
+```
+Customers / Companies / Contacts
+Products / Categories
+Orders / Order_Items
+Salespeople / Activities
+```
 
 **月底成果：**
 
-* [ ] 自己設計一個完整的 B2B Database
-* [ ] 完成 ER Diagram
-* [ ] 可以解釋為什麼這樣設計
+* [ ] 自己設計完整 B2B Database
+* [ ] ER Diagram 完成（可用 dbdiagram.io）
+* [ ] 能解釋為什麼這樣設計
 
 ---
 
-# Month 4｜Python 基礎
+## Month 4｜Python 基礎（目標導向）
 
-**目標：開始具備「寫程式解決問題」的能力。**
+**目標：具備「用 Python 解決 B2B 工作問題」的能力，不是背語法全集。**
 
-* [ ] 安裝 Python
-* [ ] VS Code
-* [ ] Variables
-* [ ] String
-* [ ] Integer / Float / Boolean
-* [ ] List
-* [ ] Dictionary
-* [ ] Tuple
-* [ ] Set
-* [ ] If / Else
-* [ ] For
-* [ ] While
-* [ ] Function
-* [ ] Exception
-* [ ] File I/O
-* [ ] Module
-* [ ] Package
-* [ ] Virtual Environment
-* [ ] pip
-* [ ] 基本 Debug
+> 你的 Python 定位：解決 B2B 資料問題的工具，不是 Python Programmer
 
-### 每週至少做：
+### 核心語法
 
-* [ ] 3～5 個小程式
-* [ ] 不直接複製 AI 產生的答案
-* [ ] 遇到 bug 自己先 Debug 15～30 分鐘
+* [ ] Variables、String、Integer / Float / Boolean
+* [ ] List、Dictionary（最重要）
+* [ ] If / Else、For、While
+* [ ] Function（含參數與回傳值）
+* [ ] Exception（try / except / finally）
+* [ ] File I/O（讀寫 txt / csv）
+* [ ] JSON（loads / dumps）
+* [ ] datetime（日期處理）
+* [ ] requests（呼叫 API）
+* [ ] Virtual Environment / pip
 
-### 小作品
+### 三款 B2B 實用工具
 
-* [ ] Excel 檔案整理工具
-* [ ] 重複資料檢查工具
-* [ ] 檔案批次重新命名工具
+* [ ] Excel 整理工具（openpyxl / pandas 初探）
+* [ ] 重複資料檢查工具（找出 email / 公司名 重複）
+* [ ] 批次檔案重新命名工具
+
+### AI 協作方式
+
+```
+你設計：Input / Output / 邏輯流程
+AI：Generate Code
+你：Review + Test + Debug + 理解每一行
+```
 
 **月底成果：**
 
-* [ ] 可以自己寫 100～300 行的小程式
+* [ ] 能自己寫 100～300 行的小程式
+* [ ] 三款工具上傳 GitHub
 
 ---
 
-# Month 5｜Python × SQL
+## Month 5｜Python × ETL × Database
 
 **這個月非常重要。**
 
-**目標：把 Python 和你前面學的 Database 接起來。**
+**目標：把 Python 和 Database 接起來，做出有工程品質的自動化管線。**
 
-* [ ] Python 連 PostgreSQL
-* [ ] SQLAlchemy
-* [ ] 執行 SQL
-* [ ] 讀取資料
-* [ ] 寫入資料
-* [ ] Update / Delete
-* [ ] Transaction
-* [ ] Python Exception Handling
-* [ ] Logging 基礎
-* [ ] Environment Variables
+* [ ] Python 連 PostgreSQL（psycopg2 / SQLAlchemy）
+* [ ] 執行 SQL / 讀取資料 / 寫入資料
+* [ ] Update / Delete / Transaction
+* [ ] Exception Handling（資料庫層級）
+* [ ] **Logging 基礎**（不能只有 print）
+* [ ] **Environment Variables**（.env 不能 commit 到 Git）
+* [ ] **Config 設定檔分離**
+* [ ] **Retry 機制**（失敗自動重試）
 
-### 做一個自動化流程：
+### Project 2：自動化 ETL Pipeline
 
-```text
-Excel
- ↓
-Python
- ↓
-資料清理
- ↓
-PostgreSQL
- ↓
-SQL
- ↓
-報表
 ```
-
-* [ ] Excel → Database
-* [ ] 自動檢查重複資料
-* [ ] 自動檢查錯誤資料
-* [ ] 自動產生統計結果
-
-**月底成果：**
-
-* [ ] 完成一個「資料自動化」Project
-* [ ] GitHub Repository
-* [ ] README
-* [ ] 操作說明
-
----
-
-# Month 6｜Pandas + API
-
-**目標：開始處理真實世界的資料。**
-
-### Pandas
-
-* [ ] DataFrame
-* [ ] Series
-* [ ] read_csv
-* [ ] read_excel
-* [ ] filtering
-* [ ] sorting
-* [ ] groupby
-* [ ] merge
-* [ ] concat
-* [ ] missing values
-* [ ] duplicate
-* [ ] data type
-* [ ] datetime
-
-### API
-
-* [ ] HTTP 基礎
-* [ ] GET
-* [ ] POST
-* [ ] JSON
-* [ ] REST API
-* [ ] Python Requests
-* [ ] API Authentication 基礎
-
-### Project
-
-做一個：
-
-**「外部 API → Python → Database → 分析」**
-
-* [ ] 找公開 API
-* [ ] 抓資料
-* [ ] 清理
-* [ ] 存入 PostgreSQL
-* [ ] SQL 分析
-* [ ] 做成簡單報表
-
-**月底成果：**
-
-* [ ] 第二個完整 Project
-
----
-
-# Month 7｜Git + Linux
-
-**目標：開始像工程師一樣工作。**
-
-### Git
-
-* [ ] git init
-* [ ] git clone
-* [ ] git add
-* [ ] git commit
-* [ ] git push
-* [ ] git pull
-* [ ] branch
-* [ ] merge
-* [ ] `.gitignore`
-* [ ] GitHub
-
-### Linux
-
-* [ ] `cd`
-* [ ] `ls`
-* [ ] `pwd`
-* [ ] `mkdir`
-* [ ] `cp`
-* [ ] `mv`
-* [ ] `rm`
-* [ ] `cat`
-* [ ] `grep`
-* [ ] `chmod`
-* [ ] `ssh`
-* [ ] process
-* [ ] environment variable
-* [ ] log
-
-### 建立習慣
-
-* [ ] 所有 Project 放 GitHub
-* [ ] 每個 Project 寫 README
-* [ ] 每個功能用 Git commit
-* [ ] 不再把程式碼只放在電腦裡
-
-**月底成果：**
-
-* [ ] GitHub 有 2～3 個完整作品
-* [ ] 能正常使用 Git
-
----
-
-# Month 8｜作品集 Project 🚀
-
-這個月不要一直學新東西。
-
-**把前 7 個月的東西整合起來。**
-
-## 做你的主力作品
-
-### B2B Customer Data System
-
-架構：
-
-```text
-              Customer
-                 │
-        ┌────────┴────────┐
-        ↓                 ↓
-      Orders          Salesperson
-        │
-        ↓
-    Products
+etl_project/
+├── src/
+│   ├── extract.py      # 讀 Excel / API
+│   ├── transform.py    # 清洗 / 驗證
+│   └── load.py         # 寫入 PostgreSQL
+├── config/
+│   └── config.py       # 設定集中管理
+├── logs/               # 自動產生 log 檔
+├── tests/              # 至少一個測試
+└── README.md
 ```
 
 功能：
 
-* [ ] Customer Database
-* [ ] Product Database
-* [ ] Order Database
-* [ ] Customer Search
-* [ ] Sales Analysis
-* [ ] Monthly Revenue
-* [ ] Top Customers
-* [ ] Salesperson Performance
-* [ ] Duplicate Detection
-* [ ] Data Cleaning
-* [ ] SQL Analysis
-* [ ] Python Automation
-
-### GitHub
-
-* [ ] README
-* [ ] Architecture Diagram
-* [ ] ER Diagram
-* [ ] SQL
-* [ ] Python
-* [ ] Sample Data
-* [ ] Demo Screenshot
-* [ ] Project Explanation
+* [ ] Excel → 資料清理 → 驗證 → PostgreSQL
+* [ ] 自動檢查重複資料
+* [ ] 自動檢查錯誤資料（email 格式、缺值）
+* [ ] 日誌記錄每次執行結果
+* [ ] 錯誤時自動 rollback
 
 **月底成果：**
 
-> **一個可以拿給面試官看的完整 Project。**
+* [ ] Project 2 上傳 GitHub
+* [ ] README 有架構說明 + 執行方法
+* [ ] 不是單一 .py 檔，而是有目錄結構
 
 ---
 
-# Month 9｜Backend / FastAPI
+## Month 6｜Pandas + API 資料處理
 
-如果前面做到這裡，你會開始發現：
+**目標：處理真實世界的資料，建立 AI Code Review 日常習慣。**
 
-> 「我好像可以往 Backend 走。」
+### Pandas（聚焦常用的，不研究冷門功能）
 
-這個月開始試。
+* [ ] DataFrame / Series
+* [ ] `read_csv` / `read_excel`
+* [ ] `merge` / `groupby` / `pivot_table`
+* [ ] `fillna` / `dropna`
+* [ ] `astype` / `apply`（少用 apply，優先 vectorization）
+* [ ] datetime 處理
+* [ ] 資料型態轉換
 
-* [ ] HTTP
-* [ ] Client / Server
-* [ ] API
-* [ ] REST
-* [ ] FastAPI
-* [ ] GET
-* [ ] POST
-* [ ] PUT
-* [ ] DELETE
-* [ ] CRUD
-* [ ] Request
-* [ ] Response
-* [ ] JSON
-* [ ] Status Code
-* [ ] API Documentation
-* [ ] Database Integration
+### API 資料處理
 
-### 把 Month 8 的作品 API 化
+* [ ] HTTP 基礎（GET / POST / JSON）
+* [ ] REST API 概念
+* [ ] Python `requests` 實作
+* [ ] API Authentication 基礎（Header / Token）
+* [ ] 處理 Pagination
 
-```text
-User
- ↓
-FastAPI
- ↓
-PostgreSQL
- ↓
-Data
+### Project：API → 清洗 → 資料庫 → 分析
+
+* [ ] 找公開 API（政府資料、匯率、商品資料等）
+* [ ] 抓資料 → Pandas 清洗 → 存入 PostgreSQL → SQL 分析
+
+### AI Code Review 習慣建立
+
 ```
-
-例如：
-
-```text
-GET /customers
-GET /customers/{id}
-GET /orders
-GET /sales
-POST /customers
+每週一次：
+把自己寫的 Python 貼給 AI
+讓 AI 指出：
+  - 效能問題
+  - 可讀性問題
+  - 潛在 Bug
+  - 更 Pythonic 的寫法
+然後理解並修改
 ```
 
 **月底成果：**
 
-* [ ] B2B Project 有 API
-* [ ] 能用 Postman / Swagger 測試 API
+* [ ] API 資料管線完整
+* [ ] Pandas 能做基本資料清洗與分析
 
 ---
 
-# Month 10｜Docker + Deployment
+## Month 7｜Linux + Docker + AI Coding Workflow
 
-**目標：讓別人真的能使用你的 Project。**
+**目標：建立工程師基礎素養，並正式建立 AI Coding 工作流程。**
 
-### Docker
+### Linux 基礎
 
-* [ ] Image
-* [ ] Container
-* [ ] Dockerfile
-* [ ] Docker Compose
-* [ ] Port
-* [ ] Volume
+* [ ] `cd` / `ls` / `pwd` / `mkdir` / `cp` / `mv` / `rm`
+* [ ] `cat` / `grep` / `chmod` / `ssh`
+* [ ] Process 管理（`ps` / `kill`）
 * [ ] Environment Variable
-* [ ] Container Networking
+* [ ] Log 查看（`tail -f`）
 
-### Deployment
+### Docker（提前到這個月）
 
-選一個 Cloud 平台即可。
+* [ ] Image / Container 概念
+* [ ] `Dockerfile` 撰寫
+* [ ] `docker-compose.yml`
+* [ ] Port / Volume / Environment Variable
+* [ ] 實作：`docker-compose up` 啟動 PostgreSQL + PgAdmin
 
-* [ ] 把 API 部署上去
-* [ ] Database 部署
-* [ ] Environment Variables
-* [ ] Logs
-* [ ] Basic monitoring
+### Git 工作流深化
 
-**月底成果：**
+* [ ] Branch / Merge / Pull Request 流程
+* [ ] `.gitignore` 正確設定（.env 不能進去）
+* [ ] Commit message 規範（feat / fix / docs / refactor）
 
-> **你的 Project 有一個可以實際操作的 Demo。**
+### AI Coding 工作流建立
 
-這個非常值得放履歷。
+```
+標準流程：
 
----
-
-# Month 11｜AI × IT
-
-現在才開始碰 AI。
-
-因為你已經有：
-
-> Python + SQL + Database + API
-
-所以這時候學 AI 會非常合理。
-
-* [ ] LLM API
-* [ ] Prompt
-* [ ] Structured Output
-* [ ] Function Calling / Tool Use
-* [ ] Embedding
-* [ ] RAG
-* [ ] Vector Database
-* [ ] AI Agent 基礎
-
-### 升級你的 B2B Project
-
-做：
-
-## AI Business Data Assistant
-
-例如使用者輸入：
-
-> 「今年哪 10 個客戶買最多？」
-
-系統：
-
-```text
-User
- ↓
-LLM
- ↓
-SQL / Tool
- ↓
-PostgreSQL
- ↓
-結果
- ↓
-LLM
- ↓
-自然語言回答
+需求 / 問題定義（你）
+    ↓
+設計方案（你）
+    ↓
+AI Generate Code（AI）
+    ↓
+Review + Test（你）
+    ↓
+Debug / 改進（你 + AI）
+    ↓
+Deploy / Commit（你）
 ```
 
-再進一步：
-
-> 「幫我找出最近 3 個月沒有下單、但過去消費超過 50 萬的客戶。」
-
-這種作品會比單純做一個 Chatbot 更能展現你的能力。
+* [ ] 用這個流程完成一個小功能，記錄整個過程
 
 **月底成果：**
 
-* [ ] 完成 AI + Database Project
-* [ ] GitHub 更新
-* [ ] Demo
+* [ ] Linux 基本指令熟悉
+* [ ] Docker Compose 啟動 PostgreSQL 成功
+* [ ] AI Coding 工作流定型，開始每個任務都用這個流程
 
 ---
 
-# Month 12｜轉職準備 🎯
+## Month 8｜🔥 旗艦作品：AI-Augmented B2B Data Platform
 
-這個月的重點是：
+**這個月不要學新東西。把前 7 個月整合成一個可以拿去面試的作品。**
 
-> **停止無限學習，開始賣你的能力。**
+> **M8 完成後，開始投履歷。不要等到 M12。**
 
-### 履歷
+### 架構
 
-* [ ] 製作一頁英文履歷
-* [ ] 製作中文履歷
-* [ ] 整理現在工作的經驗
-* [ ] 把資料庫經驗寫進履歷
-* [ ] 把自動化經驗寫進履歷
-* [ ] 放 GitHub
-* [ ] 放 Project Demo
-* [ ] 整理 LinkedIn / 求職平台
+```
+使用者
+  │
+  ▼
+FastAPI（基礎）
+  │
+  ▼
+AI Agent
+  │
+  ┌──────────┴──────────┐
+  ▼                     ▼
+PostgreSQL           ETL Pipeline
+  │                     │
+  └──────────┬──────────┘
+             ▼
+        Data Validation
+             │
+             ▼
+        Business Analysis
+```
 
-### 面試
+### 核心功能
 
-* [ ] SQL 面試題
-* [ ] Python 基礎題
-* [ ] Database
-* [ ] API
-* [ ] Git
-* [ ] Docker 基礎
-* [ ] Project 專題介紹
-* [ ] 「為什麼非本科轉 IT？」
-* [ ] 「為什麼想離開現在工作？」
-* [ ] 「你的 Project 解決什麼問題？」
+**Database（M3 基礎）**
 
-### 開始投
+* [ ] B2B 完整資料庫：Customers / Companies / Contacts / Orders / Products / Salespeople
+* [ ] 資料品質規則（Unique / Constraint / Check）
 
-第一批可以投：
+**Data Quality Engine（M5 ETL 基礎）**
+
+* [ ] Duplicate Detection（公司名、email 重複偵測）
+* [ ] Missing Data 處理
+* [ ] Invalid Email / Phone 格式驗證
+* [ ] Company Name 標準化
+
+**Business Analytics（M2 SQL 基礎）**
+
+* [ ] Top Customers 排名
+* [ ] Customer Growth 趨勢
+* [ ] Inactive Customers 偵測（N 個月未下單）
+* [ ] Sales Performance（業務績效）
+* [ ] Customer Lifetime Value
+
+**Automation（M5 + M6 基礎）**
+
+* [ ] 定時資料匯入
+* [ ] 資料清洗自動執行
+* [ ] 報表自動產生
+
+**AI Agent（升級 M11 的 Text-to-SQL）**
+
+* [ ] 使用者輸入自然語言問題
+* [ ] AI 生成 SQL
+* [ ] 自動驗證 SQL（避免 Injection / Wrong Schema）
+* [ ] 查詢 PostgreSQL
+* [ ] AI 輸出自然語言報告
+
+### GitHub 文件
+
+* [ ] README（架構說明 + Demo 說明）
+* [ ] Architecture Diagram（系統架構圖）
+* [ ] ER Diagram
+* [ ] Demo Screenshot / Demo Video
+* [ ] 執行說明（怎麼用 docker-compose 啟動）
+
+**月底成果：**
+
+* [ ] 一個可以拿給面試官看的完整旗艦作品
+* [ ] **開始投履歷（Data Analyst / Junior Data Engineer / Automation Engineer）**
+
+---
+
+## Month 9｜FastAPI API 化
+
+**目標：把旗艦作品加上 API 層，讓它更像生產環境的系統。**
+
+* [ ] HTTP / Client / Server 概念
+* [ ] FastAPI 基礎
+* [ ] GET / POST / PUT / DELETE / CRUD
+* [ ] Pydantic 資料驗證
+* [ ] Swagger UI 整合
+* [ ] Database 整合（SQLAlchemy）
+* [ ] 基礎 Auth（API Key / JWT 擇一）
+* [ ] Error Handling（回傳正確的 HTTP Status Code）
+
+### 把 Month 8 旗艦作品 API 化
+
+```
+GET  /customers
+GET  /customers/{id}
+GET  /orders
+GET  /sales/performance
+POST /customers
+POST /etl/run
+POST /ai/query    # 自然語言 → SQL → 結果
+```
+
+**月底成果：**
+
+* [ ] 旗艦作品有完整 API
+* [ ] Swagger UI 可以測試所有 Endpoint
+* [ ] Postman Collection 完成
+
+---
+
+## Month 10｜Docker 部署 + 雲端
+
+**目標：讓別人真的能使用你的旗艦作品。**
+
+### Docker 深化
+
+* [ ] Image / Container / Layer 概念
+* [ ] Dockerfile 優化（multi-stage build）
+* [ ] `docker-compose.yml` 完整版
+
+```yaml
+# 目標架構
+docker-compose
+├── api         (FastAPI)
+├── postgres    (PostgreSQL)
+├── pgadmin     (資料庫管理介面)
+└── worker      (ETL / 背景任務)
+```
+
+### 雲端部署
+
+選一個平台即可：
+
+* [ ] Render / Railway（免費，適合展示）
+* [ ] 或 GCP / AWS / Azure（進階）
+
+部署目標：
+
+* [ ] 有一個可以公開存取的 URL
+* [ ] 在 GitHub README 放 Demo URL 或 Demo Video
+
+**月底成果：**
+
+* [ ] 旗艦作品可以 `docker-compose up` 一鍵啟動
+* [ ] 有部署到雲端的 Demo URL
+
+---
+
+## Month 11｜Airflow 資料管線 + AI Agent 深化
+
+**目標：擇一深入。以 Data Engineer 路線為主選 Airflow；如偏 AI 應用選 AI Agent。**
+
+### 選項 A：Airflow（Data Engineer 路線，推薦）
+
+* [ ] Airflow 架構概念（DAG / Task / Operator）
+* [ ] 安裝與啟動（Docker 版本）
+* [ ] 撰寫第一個 DAG（定時 ETL）
+* [ ] Sensor / BashOperator / PythonOperator
+* [ ] 依賴管理（Task 順序）
+* [ ] 失敗告警（Email / Slack）
+* [ ] 把 M5 的 ETL Pipeline 改成 Airflow DAG
+
+### 選項 B：AI Agent 系統（AI 應用路線）
+
+```
+Agent 1: SQL Generator    → 根據問題生成 SQL
+Agent 2: SQL Validator    → 驗證 SQL 安全性與正確性
+Agent 3: Data Analyst     → 解讀查詢結果
+Agent 4: Report Generator → 生成自然語言報告
+```
+
+* [ ] LLM API（OpenAI / Gemini）
+* [ ] Function Calling / Tool Use
+* [ ] Agent 編排框架（LangChain / CrewAI 擇一）
+* [ ] 把 M8 的 AI Query 升級成多角色 Agent
+
+### 月份分配建議
+
+```
+70% → 選定方向深入（Airflow 或 AI Agent）
+20% → Project 4 完成與文件
+10% → 旗艦作品的 Testing / 修善
+```
+
+**月底成果：**
+
+* [ ] Project 4 完成，GitHub 更新
+* [ ] Demo 錄製
+
+---
+
+## Month 12｜求職衝刺
+
+**目標：停止無限學習，開始根據市場回饋迭代。**
+
+> 這個月的前提：你從 M8 就開始投了，所以這個月已經有面試經驗可以回饋。
+
+### 根據面試回饋補強
+
+* [ ] 記錄每次面試問了什麼
+* [ ] 分析自己的弱點
+* [ ] 補強最常被問到的技術點
+
+### 履歷精修
+
+* [ ] 一頁英文履歷（針對目標 JD 客製化）
+* [ ] 中文履歷
+* [ ] GitHub Profile README
+* [ ] LinkedIn / 求職平台更新
+
+### 面試準備
+
+* [ ] SQL 面試 50 題
+* [ ] Python 基礎題（資料處理相關）
+* [ ] Database 設計題
+* [ ] ETL / 資料管線問題
+* [ ] Docker / Git 操作題
+* [ ] 專案介紹（STAR 法則：情境 → 任務 → 行動 → 結果）
+* [ ] 「你為什麼轉職 IT？」→ 用 B2B 經驗回答，不要說「我對程式有興趣」
+
+### 目標職缺
 
 * [ ] Data Analyst
-* [ ] BI
 * [ ] Junior Data Engineer
-* [ ] IT Engineer
-* [ ] Automation Engineer
-* [ ] Junior Backend Engineer
+* [ ] Data Automation Engineer
+* [ ] BI / Reporting Engineer
+* [ ] IT Automation Engineer
 
-不要等到「全部準備好」才投。
-
-**月底目標：**
-
-> [ ] 開始穩定投遞
-> [ ] 每週至少檢討一次面試/投遞結果
-> [ ] 根據 JD 補技能，而不是漫無目的地學
+**不要等到全部準備好才投。邊投邊改，根據市場回饋決定補什麼。**
 
 ---
 
+## 📌 年度 GitHub Checklist
 
-而 GitHub 至少有：
-
-**Project 1**
-
-> SQL Business Analysis
-
-**Project 2**
-
-> Python Data Automation
-
-**Project 3**
-
-> B2B Customer Data System
-
-**Project 4**
-
-> AI + Database Assistant
-
-這樣你的履歷就不是：
-
-> 「我沒有本科學歷，但我對 IT 很有興趣。」
-
-而是：
-
-> **「我有 B2B 工作經驗，實際接觸企業資料，熟悉 SQL / Database，能用 Python 做資料處理與自動化，能建立 API、部署服務，並且有 AI + Database 的完整專案。」**
-
-這兩種履歷的說服力差很多。
-
----
-
-## 📌 最後給你一張「年度 Checklist」
-
-你可以直接複製到 Notion / Excel：
-
-```text
-□ Month 1 — SQL 基礎
-□ Month 2 — SQL 進階
-□ Month 3 — Database
-□ Month 4 — Python
-□ Month 5 — Python + SQL
-□ Month 6 — Pandas + API
-□ Month 7 — Git + Linux
-□ Month 8 — B2B Data Project
-□ Month 9 — FastAPI / Backend
-□ Month 10 — Docker + Cloud
-□ Month 11 — AI + Database
-□ Month 12 — 履歷 + 面試 + 投遞
-
-□ GitHub 建立
-□ SQL Project
-□ Python Project
-□ B2B Database Project
-□ FastAPI Project
-□ Docker
-□ Cloud Demo
-□ AI Project
+```
+□ GitHub 建立（M1 第一週）
+□ SQL Project 1（M2）
+□ ETL Pipeline Project 2（M5）
+□ AI-Augmented B2B Data Platform Project 3（M8）← 旗艦
+□ Airflow / AI Agent Project 4（M11）
+□ GitHub Profile README
+□ 每個 Project 有完整 README + 架構圖
+□ 開始投遞（M8）
 □ 中文履歷
 □ 英文履歷
-□ 開始投遞
 ```
 
-### 有一件事我特別建議你做
+---
 
-**從現在開始，把你在公司「整理資料庫」遇到的問題記錄下來。**
+## 💡 從現在開始就要做的一件事
+
+**把你在工作中遇到的資料問題記錄下來。**
 
 不要記公司機密，而是記「問題類型」：
 
-> 資料重複 → 怎麼處理
-> 欄位格式不一致 → 怎麼處理
-> Excel 很難維護 → 怎麼改善
-> 每週人工報表 → 能不能自動化
-> 查資料很慢 → 為什麼
-> 不同部門資料對不起來 → 資料結構問題在哪
+> 資料重複 → 怎麼處理？
+> 欄位格式不一致 → 怎麼改善？
+> Excel 難維護 → 能不能資料庫化？
+> 每週人工報表 → 能不能自動化？
+> 查資料很慢 → 索引問題？架構問題？
+> 不同部門資料對不起來 → 資料結構哪裡有問題？
 
-因為一年後，這些東西很可能會變成你**最有價值的轉職素材**。
+**這些東西一年後會變成你最有說服力的轉職素材。**
 
-**你的優勢不是「27 歲重新學 IT」，而是「27 歲開始把自己現在的 B2B 工作變成 IT 經驗」。**
+> 你的優勢不是「27 歲重新學 IT」，
+> 而是「27 歲開始把 B2B 工作經驗，轉化為可以展示的技術能力」。
