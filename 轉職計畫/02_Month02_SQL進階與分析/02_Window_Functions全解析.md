@@ -1,113 +1,823 @@
 # 02 Window Functions 視窗函數全解析
 
-> **Window Functions 是資料分析師與後端工程師 SQL 能力的分水嶺。**
-> 核心特點：**「計算聚合統計指標，但保留每一列 (Row) 的明細，不將資料摺疊壓縮。」**
+> **寫在前面：視窗函數是資料分析師最強的武器**
+> 在日常業務分析中，有三類問題幾乎天天會遇到：
+> 1. **排名**：「上個月誰是業績第一？各區業績前三名是誰？」
+> 2. **同比 / 環比**：「相比上個月，這個月業績成長了幾趴？」
+> 3. **累積**：「截至今天，本季的累積業績達標了嗎？」
+>
+> 這三類問題都能用視窗函數優雅解決——不需要複雜的自關聯，不需要子查詢，一行函數搞定。
+>
+> 📌 請搭配 DBeaver 連線到 B2B 資料庫，邊讀邊跑。
 
 ---
 
-## 一、視窗函數語法骨架
+## 🗺️ 視窗函數家族地圖
 
-```sql
-FUNCTION(...) OVER (
-    [PARTITION BY 依據哪些欄位分組]
-    [ORDER BY 在組內依據哪些欄位排序]
-    [ROWS/RANGE BETWEEN ... 視窗滑動範圍]
-)
+```
+視窗函數（Window Functions）
+  │
+  ├── 排名函數
+  │   ├── ROW_NUMBER()     — 連續唯一序號
+  │   ├── RANK()           — 允許跳號的排名
+  │   ├── DENSE_RANK()     — 不跳號的排名
+  │   └── NTILE(n)         — 分組切割（四分位、百分位）
+  │
+  ├── 位移函數
+  │   ├── LAG(col, n)      — 往前取第 n 列的值（環比分析）
+  │   └── LEAD(col, n)     — 往後取第 n 列的值（預測/比較）
+  │
+  ├── 首尾值函數
+  │   ├── FIRST_VALUE(col) — 視窗內的第一個值
+  │   └── LAST_VALUE(col)  — 視窗內的最後一個值
+  │
+  └── 彙總型視窗函數
+      ├── SUM() OVER ()    — 累積加總 / 分組加總
+      ├── AVG() OVER ()    — 滑動平均
+      ├── COUNT() OVER ()  — 分組計數
+      └── MAX/MIN() OVER() — 分組最大最小值
 ```
 
 ---
 
-## 二、三大核心應用場景
+## 一、視窗函數基礎語法
 
-### 1. 排名與分組切片：`ROW_NUMBER()` vs `RANK()` vs `DENSE_RANK()` vs `NTILE()`
-
-假設各業務員業績分數為：`[100, 90, 90, 80]`
-
-| 函數名稱 | 計算結果 | 特點說明 |
-| :--- | :--- | :--- |
-| `ROW_NUMBER()` | 1, 2, 3, 4 | 嚴格連續唯一編號，即使數值相同也硬排先後 |
-| `RANK()` | 1, 2, 2, 4 | 同分並列，但會「跳號」佔位 |
-| `DENSE_RANK()` | 1, 2, 2, 3 | 同分並列，但「不跳號」緊密排列 |
-| **`NTILE(n)`** | 1, 1, 2, 2 (若 n=2) | **等分切片分桶**：將資料依排序切成 n 個相等組別（1 到 n 分） |
-
-> 💡 **商業實戰必備：何時使用 `NTILE(n)`？**  
-> 當我們不需要絕對名次，而是需要將客群進行**「等級分群」**（例如：RFM 模型的 1~5 等分評分、高/中/低潛力客群）時使用。  
-> 例如：`NTILE(5) OVER (ORDER BY total_spent ASC)` 會將客戶消費總額由小到大等分成 5 個梯隊，分別打上 1 到 5 分（第 1 分為最底層，第 5 分為頂級 VIP）。在後續 **Project 1** 的 RFM 客戶分群分析中會大量運用！
+所有視窗函數都遵循相同的語法骨架：
 
 ```sql
--- 商業題目：找出每個地區 (region) 業績前 2 名的業務員
-WITH regional_ranked_sales AS (
-    SELECT 
-        s.region,
-        s.name,
-        COALESCE(SUM(o.total_amount), 0) AS total_revenue,
-        DENSE_RANK() OVER (
-            PARTITION BY s.region 
-            ORDER BY COALESCE(SUM(o.total_amount), 0) DESC
-        ) AS rank_in_region
+函數名稱() OVER (
+    PARTITION BY 分組欄位    -- 可選：類似 GROUP BY，但不會折疊列數
+    ORDER BY 排序欄位        -- 可選：視窗內的資料排序
+    ROWS/RANGE BETWEEN ...  -- 可選：定義視窗框架範圍
+)
+```
+
+**和 GROUP BY 的關鍵差異**：
+
+| 特性 | GROUP BY | OVER (視窗函數) |
+|------|----------|----------------|
+| 資料列數 | **折疊**：5 列 → 1 列 | **保留**：5 列還是 5 列 |
+| 用途 | 聚合計算 | 計算後保留明細 |
+| 可否同時看明細和彙總 | 否 | **是** |
+
+---
+
+## 二、排名函數
+
+### 2.1 ROW_NUMBER、RANK、DENSE_RANK 三者比較
+
+這三個函數最容易混淆，用一個例子徹底釐清：
+
+```sql
+-- 情境：業務員本月業績排名（假設有同分情況）
+SELECT
+    s.name                       AS 業務姓名,
+    SUM(o.total_amount)          AS 月業績,
+
+    -- 每人都有唯一序號，同分也不會有相同號碼（跳號）
+    ROW_NUMBER() OVER (ORDER BY SUM(o.total_amount) DESC)  AS row_number,
+
+    -- 同分者得相同名次，但下一名「跳號」
+    -- 例：第 1 名有兩人，下一個是第 3 名（不是第 2 名）
+    RANK()       OVER (ORDER BY SUM(o.total_amount) DESC)  AS rank,
+
+    -- 同分者得相同名次，下一名「不跳號」
+    -- 例：第 1 名有兩人，下一個是第 2 名
+    DENSE_RANK() OVER (ORDER BY SUM(o.total_amount) DESC)  AS dense_rank
+
+FROM salespeople s
+JOIN orders o ON s.salesperson_id = o.salesperson_id
+WHERE o.status = 'COMPLETED'
+  AND DATE_TRUNC('month', o.order_date) = DATE_TRUNC('month', CURRENT_DATE)
+GROUP BY s.salesperson_id, s.name
+ORDER BY 月業績 DESC;
+```
+
+**預期輸出示意**：
+
+| 業務姓名 | 月業績 | ROW_NUMBER | RANK | DENSE_RANK |
+|---------|--------|-----------|------|-----------|
+| 王小明 | 1,200,000 | 1 | 1 | 1 |
+| 李大華 | 1,200,000 | 2 | **1** | **1** |
+| 張美玲 | 980,000 | 3 | **3** | **2** |
+| 陳建國 | 750,000 | 4 | 4 | 3 |
+
+> 💡 **選哪個？**
+> - **ROW_NUMBER**：用於分頁、取 Top N 不想要同分並列（如：每人只能得一個獎）
+> - **RANK**：體育競賽式排名，同分並列、有缺號
+> - **DENSE_RANK**：客戶分級、RFM 分層，同分並列、無缺號
+
+---
+
+### 2.2 用 ROW_NUMBER 取每組 Top N
+
+最常見的應用：每個地區（PARTITION BY）取業績前 3 名（ROW_NUMBER <= 3）
+
+```sql
+WITH ranked_sales AS (
+    SELECT
+        s.name                                                   AS 業務姓名,
+        s.region                                                 AS 地區,
+        SUM(o.total_amount)                                      AS 總業績,
+        ROW_NUMBER() OVER (
+            PARTITION BY s.region          -- 按地區分組
+            ORDER BY SUM(o.total_amount) DESC  -- 每組內按業績倒序
+        )                                                        AS 區內排名
     FROM salespeople s
-    LEFT JOIN orders o ON s.salesperson_id = o.salesperson_id AND o.status = 'COMPLETED'
+    LEFT JOIN orders o
+        ON s.salesperson_id = o.salesperson_id
+        AND o.status = 'COMPLETED'
     GROUP BY s.salesperson_id, s.name, s.region
 )
-SELECT * 
-FROM regional_ranked_sales
-WHERE rank_in_region <= 2;
+SELECT
+    地區,
+    業務姓名,
+    總業績,
+    區內排名
+FROM ranked_sales
+WHERE 區內排名 <= 3    -- 只保留每區前三名
+ORDER BY 地區, 區內排名;
 ```
 
 ---
 
-### 2. 趨勢與環比計算：`LAG()` 與 `LEAD()`
+### 2.3 NTILE — 客戶消費分層
 
-`LAG(column, offset)`：取前 N 筆紀錄的數值（常用於計算「月增率 MoM」、「與上一筆下單差距」）。
-`LEAD(column, offset)`：取後 N 筆紀錄的數值。
+`NTILE(n)` 將資料均分為 n 個桶（bucket），常用於：
+- 四分位分析（NTILE(4)）
+- 客戶分級（黃金/白銀/銅牌/一般）
+- RFM 評分前置計算
 
 ```sql
--- 商業題目：計算每個月的營收，以及相比上個月的月增長率 (MoM %)
-WITH monthly_sales AS (
-    SELECT 
-        DATE_TRUNC('month', order_date)::DATE AS sales_month,
-        SUM(total_amount) AS current_month_revenue
+WITH customer_total AS (
+    SELECT
+        c.customer_id,
+        c.company_name,
+        c.industry,
+        COALESCE(SUM(o.total_amount), 0) AS total_spent
+    FROM customers c
+    LEFT JOIN orders o
+        ON c.customer_id = o.customer_id
+        AND o.status = 'COMPLETED'
+    WHERE c.status = 'ACTIVE'
+    GROUP BY c.customer_id, c.company_name, c.industry
+)
+SELECT
+    company_name,
+    industry,
+    total_spent,
+    -- 切為 4 個分位（1=最低消費, 4=最高消費）
+    NTILE(4) OVER (ORDER BY total_spent ASC)    AS spending_quartile,
+    CASE NTILE(4) OVER (ORDER BY total_spent ASC)
+        WHEN 4 THEN '🏆 黃金客戶 (Top 25%)'
+        WHEN 3 THEN '💎 白銀客戶 (25-50%)'
+        WHEN 2 THEN '🥉 銅牌客戶 (50-75%)'
+        WHEN 1 THEN '📋 一般客戶 (Bottom 25%)'
+    END                                         AS 客戶等級
+FROM customer_total
+ORDER BY total_spent DESC;
+```
+
+---
+
+## 三、位移函數：LAG / LEAD
+
+### 3.1 LAG — 環比分析（與上一期比較）
+
+`LAG(column, n, default)` 取**前 n 列**的值，最常用於計算環比成長率。
+
+```sql
+WITH monthly_revenue AS (
+    SELECT
+        DATE_TRUNC('month', order_date)::date  AS month,
+        SUM(total_amount)                       AS revenue
     FROM orders
     WHERE status = 'COMPLETED'
-    GROUP BY DATE_TRUNC('month', order_date)::DATE
+    GROUP BY DATE_TRUNC('month', order_date)
 )
-SELECT 
-    sales_month,
-    current_month_revenue,
-    LAG(current_month_revenue, 1) OVER (ORDER BY sales_month) AS prev_month_revenue,
-    ROUND(
-        (current_month_revenue - LAG(current_month_revenue, 1) OVER (ORDER BY sales_month)) 
-        / NULLIF(LAG(current_month_revenue, 1) OVER (ORDER BY sales_month), 0) * 100, 
-        2
-    ) AS mom_growth_rate_pct
-FROM monthly_sales
-ORDER BY sales_month;
+SELECT
+    month                                           AS 月份,
+    revenue                                         AS 當月業績,
+    -- LAG 取上個月的業績（若無上一月，預設為 NULL）
+    LAG(revenue, 1) OVER (ORDER BY month)           AS 上月業績,
+    -- 環比成長率
+    CASE
+        WHEN LAG(revenue, 1) OVER (ORDER BY month) IS NULL THEN NULL
+        ELSE ROUND(
+            (revenue - LAG(revenue, 1) OVER (ORDER BY month))
+            / LAG(revenue, 1) OVER (ORDER BY month) * 100,
+            1
+        )
+    END                                             AS 環比成長率_百分比
+FROM monthly_revenue
+ORDER BY month;
 ```
 
 ---
 
-### 3. 累積營收與滾動平均 (Running Total & Moving Average)
+### 3.2 LAG 搭配 PARTITION BY — 各業務環比
 
 ```sql
--- 商業題目：計算全年度每天的訂單金額，並統計「年度累計營收 (YTD)」與「近 7 日移動平均」
-SELECT 
-    order_date,
-    SUM(total_amount) AS daily_revenue,
-    -- 累積加總 (Running Total)
-    SUM(SUM(total_amount)) OVER (
-        ORDER BY order_date 
-        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    ) AS cumulative_revenue_ytd,
-    -- 近 7 日滾動平均 (7-Day Moving Average)
+WITH sp_monthly AS (
+    SELECT
+        s.salesperson_id,
+        s.name                                  AS 業務姓名,
+        s.region                                AS 地區,
+        DATE_TRUNC('month', o.order_date)::date AS month,
+        SUM(o.total_amount)                     AS revenue
+    FROM salespeople s
+    JOIN orders o ON s.salesperson_id = o.salesperson_id
+    WHERE o.status = 'COMPLETED'
+    GROUP BY s.salesperson_id, s.name, s.region, DATE_TRUNC('month', o.order_date)
+)
+SELECT
+    業務姓名,
+    地區,
+    month                                                         AS 月份,
+    revenue                                                       AS 當月業績,
+    LAG(revenue) OVER (
+        PARTITION BY salesperson_id    -- 每位業務獨立計算，不混到別人
+        ORDER BY month
+    )                                                             AS 上月業績,
     ROUND(
-        AVG(SUM(total_amount)) OVER (
-            ORDER BY order_date 
-            ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-        ), 
-        2
-    ) AS rolling_7day_avg
-FROM orders
-WHERE status = 'COMPLETED'
-GROUP BY order_date
-ORDER BY order_date;
+        (revenue - LAG(revenue) OVER (PARTITION BY salesperson_id ORDER BY month))
+        / NULLIF(LAG(revenue) OVER (PARTITION BY salesperson_id ORDER BY month), 0)
+        * 100,
+        1
+    )                                                             AS 環比成長率
+FROM sp_monthly
+ORDER BY 業務姓名, month;
 ```
+
+> 💡 **NULLIF 的妙用**：`NULLIF(值, 0)` 當值為 0 時回傳 NULL，避免除以零的錯誤。
+
+---
+
+### 3.3 LEAD — 往後預覽
+
+`LEAD(column, n)` 取**後 n 列**的值，常用於：
+- 計算「距離下次購買的天數」
+- 預覽下一個事件
+
+```sql
+-- 情境：計算每位客戶每次購買後，距離下次購買的間隔天數
+SELECT
+    c.company_name               AS 客戶名稱,
+    o.order_date                 AS 本次購買日,
+    o.total_amount               AS 本次金額,
+    LEAD(o.order_date) OVER (
+        PARTITION BY o.customer_id
+        ORDER BY o.order_date
+    )                            AS 下次購買日,
+    (
+        LEAD(o.order_date) OVER (
+            PARTITION BY o.customer_id
+            ORDER BY o.order_date
+        ) - o.order_date
+    )                            AS 距下次購買天數
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+WHERE o.status = 'COMPLETED'
+ORDER BY c.company_name, o.order_date;
+```
+
+---
+
+## 四、首尾值函數：FIRST_VALUE / LAST_VALUE
+
+### 4.1 FIRST_VALUE — 比較首期基準
+
+**情境**：計算每月業績相對於「該年 1 月」的成長幅度（年初基準比較）
+
+```sql
+WITH monthly_revenue AS (
+    SELECT
+        EXTRACT(YEAR FROM order_date)::int   AS year,
+        EXTRACT(MONTH FROM order_date)::int  AS month,
+        SUM(total_amount)                    AS revenue
+    FROM orders
+    WHERE status = 'COMPLETED'
+    GROUP BY EXTRACT(YEAR FROM order_date), EXTRACT(MONTH FROM order_date)
+)
+SELECT
+    year                    AS 年份,
+    month                   AS 月份,
+    revenue                 AS 當月業績,
+    FIRST_VALUE(revenue) OVER (
+        PARTITION BY year
+        ORDER BY month
+    )                       AS 一月基準業績,
+    ROUND(
+        (revenue - FIRST_VALUE(revenue) OVER (PARTITION BY year ORDER BY month))
+        / FIRST_VALUE(revenue) OVER (PARTITION BY year ORDER BY month) * 100,
+        1
+    )                       AS 相對一月成長率_百分比
+FROM monthly_revenue
+ORDER BY year, month;
+```
+
+---
+
+### 4.2 LAST_VALUE 的陷阱
+
+`LAST_VALUE` 有個必須注意的預設行為：**預設視窗框架只到當前列**，不是整個分組的最後一列！
+
+```sql
+-- ❌ 錯誤寫法：LAST_VALUE 只到當前列為止，結果和當前值相同
+SELECT
+    month,
+    revenue,
+    LAST_VALUE(revenue) OVER (ORDER BY month) AS 錯誤的最後值
+FROM monthly_revenue;
+
+-- ✅ 正確寫法：明確指定視窗框架到分組結束
+SELECT
+    month,
+    revenue,
+    LAST_VALUE(revenue) OVER (
+        ORDER BY month
+        ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+    ) AS 正確的最後值
+FROM monthly_revenue;
+```
+
+> ⚠️ **視窗框架（Frame）** 是 Window Function 中最容易踩坑的部分，下一節詳細解說。
+
+---
+
+## 五、彙總型視窗函數與視窗框架
+
+### 5.1 累積加總（Running Total）
+
+```sql
+-- 情境：計算全年業績的累積加總，即時掌握年度目標達成進度
+WITH monthly_revenue AS (
+    SELECT
+        DATE_TRUNC('month', order_date)::date AS month,
+        SUM(total_amount)                      AS revenue
+    FROM orders
+    WHERE status = 'COMPLETED'
+      AND EXTRACT(YEAR FROM order_date) = 2024
+    GROUP BY DATE_TRUNC('month', order_date)
+)
+SELECT
+    month,
+    revenue                               AS 當月業績,
+    SUM(revenue) OVER (
+        ORDER BY month
+        ROWS BETWEEN UNBOUNDED PRECEDING   -- 從第一列
+        AND CURRENT ROW                    -- 到當前列
+    )                                     AS 累積業績,
+    -- 假設年度目標為 5,000萬
+    ROUND(
+        SUM(revenue) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+        / 50000000 * 100, 1
+    )                                     AS 年度目標達成率
+FROM monthly_revenue
+ORDER BY month;
+```
+
+---
+
+### 5.2 滑動平均（Moving Average）
+
+消除月份的季節性波動，看出業績的長期趨勢：
+
+```sql
+WITH monthly_revenue AS (
+    SELECT
+        DATE_TRUNC('month', order_date)::date AS month,
+        SUM(total_amount)                      AS revenue
+    FROM orders
+    WHERE status = 'COMPLETED'
+    GROUP BY DATE_TRUNC('month', order_date)
+)
+SELECT
+    month,
+    revenue                                              AS 當月業績,
+    -- 3 個月滑動平均（當月 + 前 2 個月）
+    ROUND(
+        AVG(revenue) OVER (
+            ORDER BY month
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ),
+        0
+    )                                                    AS 三個月滑動均值,
+    -- 6 個月滑動平均
+    ROUND(
+        AVG(revenue) OVER (
+            ORDER BY month
+            ROWS BETWEEN 5 PRECEDING AND CURRENT ROW
+        ),
+        0
+    )                                                    AS 六個月滑動均值
+FROM monthly_revenue
+ORDER BY month;
+```
+
+---
+
+### 5.3 視窗框架語法速查
+
+```sql
+ROWS BETWEEN ... AND ...
+-- 常用框架組合：
+
+UNBOUNDED PRECEDING AND CURRENT ROW     -- 從頭到當前列（累積用）
+UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING  -- 整個分組（用於 FIRST/LAST VALUE）
+1 PRECEDING AND 1 FOLLOWING             -- 當前列的前後各 1 列（3列滑動）
+2 PRECEDING AND CURRENT ROW             -- 前 2 列到當前列（3列累積均值）
+CURRENT ROW AND UNBOUNDED FOLLOWING     -- 當前列到最後（逆向累積）
+```
+
+---
+
+### 5.4 分組佔比計算
+
+**情境**：計算每位業務的業績佔所在地區的百分比
+
+```sql
+WITH sp_sales AS (
+    SELECT
+        s.salesperson_id,
+        s.name                               AS 業務姓名,
+        s.region                             AS 地區,
+        COALESCE(SUM(o.total_amount), 0)     AS 個人業績
+    FROM salespeople s
+    LEFT JOIN orders o
+        ON s.salesperson_id = o.salesperson_id
+        AND o.status = 'COMPLETED'
+    GROUP BY s.salesperson_id, s.name, s.region
+)
+SELECT
+    地區,
+    業務姓名,
+    個人業績,
+    -- 地區總業績（PARTITION BY region，OVER 整個分組）
+    SUM(個人業績) OVER (PARTITION BY 地區)    AS 地區總業績,
+    -- 個人佔地區的百分比
+    ROUND(
+        個人業績 * 100.0
+        / NULLIF(SUM(個人業績) OVER (PARTITION BY 地區), 0),
+        1
+    )                                         AS 地區佔比_百分比,
+    -- 在地區內的排名
+    RANK() OVER (PARTITION BY 地區 ORDER BY 個人業績 DESC) AS 地區排名
+FROM sp_sales
+ORDER BY 地區, 地區排名;
+```
+
+---
+
+## 六、同比分析（Year-over-Year）
+
+同比 = 跟去年同期比，是財務報表中最常見的分析維度。
+
+```sql
+WITH monthly_by_year AS (
+    SELECT
+        EXTRACT(YEAR FROM order_date)::int    AS year,
+        EXTRACT(MONTH FROM order_date)::int   AS month,
+        SUM(total_amount)                     AS revenue
+    FROM orders
+    WHERE status = 'COMPLETED'
+    GROUP BY EXTRACT(YEAR FROM order_date), EXTRACT(MONTH FROM order_date)
+)
+SELECT
+    m1.year                                          AS 年份,
+    m1.month                                         AS 月份,
+    m1.revenue                                       AS 本年業績,
+    m2.revenue                                       AS 去年同期業績,
+    ROUND(
+        (m1.revenue - COALESCE(m2.revenue, 0))
+        / NULLIF(m2.revenue, 0) * 100, 1
+    )                                                AS 同比成長率_百分比,
+    CASE
+        WHEN m2.revenue IS NULL       THEN '📊 去年無資料'
+        WHEN m1.revenue > m2.revenue  THEN '📈 成長'
+        WHEN m1.revenue < m2.revenue  THEN '📉 衰退'
+        ELSE                               '➡️  持平'
+    END                                              AS 同比趨勢
+FROM monthly_by_year m1
+LEFT JOIN monthly_by_year m2
+    ON m1.month = m2.month                     -- 同月份
+    AND m1.year = m2.year + 1                  -- 本年 vs 去年
+ORDER BY m1.year, m1.month;
+```
+
+---
+
+## 七、商業情境練習題（8 題）
+
+---
+
+### 題目 1：業務員月業績排名（含並列處理）
+
+**需求**：產出每個月的業務員業績排名，同分時並列，不跳號。顯示：月份、業務姓名、月業績、月排名。
+
+```sql
+-- 解答
+WITH monthly_sp AS (
+    SELECT
+        DATE_TRUNC('month', o.order_date)::date AS month,
+        s.name                                  AS 業務姓名,
+        SUM(o.total_amount)                     AS 月業績
+    FROM salespeople s
+    JOIN orders o ON s.salesperson_id = o.salesperson_id
+    WHERE o.status = 'COMPLETED'
+    GROUP BY DATE_TRUNC('month', o.order_date), s.salesperson_id, s.name
+)
+SELECT
+    month,
+    業務姓名,
+    月業績,
+    DENSE_RANK() OVER (PARTITION BY month ORDER BY 月業績 DESC) AS 月排名
+FROM monthly_sp
+ORDER BY month, 月排名;
+```
+
+---
+
+### 題目 2：找出業績連續下滑 2 個月以上的業務員
+
+**需求**：找出「連續 2 個月業績下滑」的業務員，提供主管早期預警。
+
+```sql
+-- 解答
+WITH monthly_sp AS (
+    SELECT
+        s.salesperson_id,
+        s.name,
+        DATE_TRUNC('month', o.order_date)::date AS month,
+        SUM(o.total_amount)                     AS revenue
+    FROM salespeople s
+    JOIN orders o ON s.salesperson_id = o.salesperson_id
+    WHERE o.status = 'COMPLETED'
+    GROUP BY s.salesperson_id, s.name, DATE_TRUNC('month', o.order_date)
+),
+with_lag AS (
+    SELECT
+        salesperson_id,
+        name,
+        month,
+        revenue,
+        LAG(revenue, 1) OVER (PARTITION BY salesperson_id ORDER BY month) AS prev1,
+        LAG(revenue, 2) OVER (PARTITION BY salesperson_id ORDER BY month) AS prev2
+    FROM monthly_sp
+)
+SELECT DISTINCT name AS 業務姓名, month AS 連續下滑截止月份
+FROM with_lag
+WHERE revenue < prev1
+  AND prev1 < prev2
+  AND prev1 IS NOT NULL
+  AND prev2 IS NOT NULL
+ORDER BY month DESC, name;
+```
+
+---
+
+### 題目 3：客戶消費四分位分析
+
+**需求**：將所有 ACTIVE 客戶按照年度消費額切為四等份，輸出每個客戶的等級與評分。
+
+```sql
+-- 解答
+WITH customer_annual AS (
+    SELECT
+        c.customer_id,
+        c.company_name,
+        c.industry,
+        COALESCE(SUM(o.total_amount), 0) AS annual_spending
+    FROM customers c
+    LEFT JOIN orders o
+        ON c.customer_id = o.customer_id
+        AND o.status = 'COMPLETED'
+        AND EXTRACT(YEAR FROM o.order_date) = 2024
+    WHERE c.status = 'ACTIVE'
+    GROUP BY c.customer_id, c.company_name, c.industry
+)
+SELECT
+    company_name,
+    industry,
+    annual_spending,
+    NTILE(4) OVER (ORDER BY annual_spending DESC) AS 分位等級,
+    CASE NTILE(4) OVER (ORDER BY annual_spending DESC)
+        WHEN 1 THEN '🏆 黃金 (Top 25%)'
+        WHEN 2 THEN '💎 白銀 (25-50%)'
+        WHEN 3 THEN '🥉 銅牌 (50-75%)'
+        WHEN 4 THEN '📋 一般 (Bottom 25%)'
+    END AS 客戶等級
+FROM customer_annual
+ORDER BY annual_spending DESC;
+```
+
+---
+
+### 題目 4：計算每月累積業績與年度目標達成率
+
+**需求**：假設年度目標為 6,000 萬，顯示 2024 年每月的累積業績與達成率。
+
+```sql
+-- 解答
+WITH monthly AS (
+    SELECT
+        DATE_TRUNC('month', order_date)::date AS month,
+        SUM(total_amount)                     AS revenue
+    FROM orders
+    WHERE status = 'COMPLETED'
+      AND EXTRACT(YEAR FROM order_date) = 2024
+    GROUP BY DATE_TRUNC('month', order_date)
+)
+SELECT
+    TO_CHAR(month, 'YYYY-MM')                                AS 月份,
+    revenue                                                  AS 當月業績,
+    SUM(revenue) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+                                                             AS 累積業績,
+    ROUND(
+        SUM(revenue) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+        / 60000000.0 * 100, 1
+    )                                                        AS 年度達成率
+FROM monthly
+ORDER BY month;
+```
+
+---
+
+### 題目 5：產品類別的 3 個月滑動平均銷售額
+
+**需求**：消除季節性波動，計算各產品類別的 3 個月滑動平均銷售額。
+
+```sql
+-- 解答
+WITH monthly_cat AS (
+    SELECT
+        p.category,
+        DATE_TRUNC('month', o.order_date)::date AS month,
+        SUM(oi.quantity * oi.unit_price)         AS category_revenue
+    FROM order_items oi
+    JOIN products p  ON oi.product_id = p.product_id
+    JOIN orders o    ON oi.order_id = o.order_id
+    WHERE o.status = 'COMPLETED'
+    GROUP BY p.category, DATE_TRUNC('month', o.order_date)
+)
+SELECT
+    category                                                AS 類別,
+    month                                                   AS 月份,
+    category_revenue                                        AS 當月銷售額,
+    ROUND(
+        AVG(category_revenue) OVER (
+            PARTITION BY category
+            ORDER BY month
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ), 0
+    )                                                       AS 三個月滑動均值
+FROM monthly_cat
+ORDER BY category, month;
+```
+
+---
+
+### 題目 6：找出每個客戶最高單筆訂單及其佔該客戶總消費的比例
+
+**需求**：識別哪些客戶的消費高度集中在單筆大訂單（風險：大客戶可能因一筆訂單取消而損失慘重）。
+
+```sql
+-- 解答
+SELECT
+    c.company_name,
+    o.order_number,
+    o.order_date,
+    o.total_amount                                              AS 單筆金額,
+    SUM(o.total_amount) OVER (PARTITION BY o.customer_id)      AS 客戶總消費,
+    MAX(o.total_amount) OVER (PARTITION BY o.customer_id)      AS 最高單筆,
+    ROUND(
+        o.total_amount * 100.0
+        / NULLIF(SUM(o.total_amount) OVER (PARTITION BY o.customer_id), 0),
+        1
+    )                                                          AS 佔總消費比例,
+    o.total_amount = MAX(o.total_amount) OVER (PARTITION BY o.customer_id)
+                                                               AS 是否為最大單
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+WHERE o.status = 'COMPLETED'
+ORDER BY 佔總消費比例 DESC;
+```
+
+---
+
+### 題目 7：同比成長率分析（各月 vs 去年同期）
+
+**需求**：產出 2024 年每個月的業績與 2023 年同期的比較，並標示成長或衰退。
+
+```sql
+-- 解答
+WITH yearly_monthly AS (
+    SELECT
+        EXTRACT(YEAR FROM order_date)::int    AS yr,
+        EXTRACT(MONTH FROM order_date)::int   AS mo,
+        SUM(total_amount)                     AS revenue
+    FROM orders
+    WHERE status = 'COMPLETED'
+      AND EXTRACT(YEAR FROM order_date) IN (2023, 2024)
+    GROUP BY yr, mo
+)
+SELECT
+    curr.mo                                     AS 月份,
+    curr.revenue                                AS Y2024業績,
+    prev.revenue                                AS Y2023業績,
+    ROUND(
+        (curr.revenue - COALESCE(prev.revenue, 0))
+        / NULLIF(prev.revenue, 0) * 100, 1
+    )                                           AS 同比成長率,
+    CASE
+        WHEN curr.revenue > COALESCE(prev.revenue, 0) THEN '📈 成長'
+        WHEN curr.revenue < prev.revenue             THEN '📉 衰退'
+        ELSE '➡️ 持平'
+    END                                         AS 同比趨勢
+FROM yearly_monthly curr
+LEFT JOIN yearly_monthly prev
+    ON curr.mo = prev.mo AND curr.yr = prev.yr + 1
+WHERE curr.yr = 2024
+ORDER BY curr.mo;
+```
+
+---
+
+### 題目 8：用視窗函數找出每個地區的「業績黑馬」
+
+**需求**：在每個地區中，找出「本月業績排名比上月排名進步最多」的業務員。
+
+```sql
+-- 解答
+WITH monthly_ranked AS (
+    SELECT
+        s.salesperson_id,
+        s.name,
+        s.region,
+        DATE_TRUNC('month', o.order_date)::date AS month,
+        SUM(o.total_amount)                     AS revenue,
+        DENSE_RANK() OVER (
+            PARTITION BY s.region, DATE_TRUNC('month', o.order_date)
+            ORDER BY SUM(o.total_amount) DESC
+        )                                       AS monthly_rank
+    FROM salespeople s
+    JOIN orders o ON s.salesperson_id = o.salesperson_id
+    WHERE o.status = 'COMPLETED'
+    GROUP BY s.salesperson_id, s.name, s.region, DATE_TRUNC('month', o.order_date)
+),
+with_rank_change AS (
+    SELECT
+        *,
+        LAG(monthly_rank) OVER (PARTITION BY salesperson_id ORDER BY month) AS last_rank,
+        LAG(monthly_rank) OVER (PARTITION BY salesperson_id ORDER BY month) - monthly_rank
+            AS rank_improvement   -- 正數 = 排名進步（數字變小）
+    FROM monthly_ranked
+)
+SELECT
+    region                AS 地區,
+    name                  AS 業務黑馬,
+    month                 AS 月份,
+    monthly_rank          AS 本月排名,
+    last_rank             AS 上月排名,
+    rank_improvement      AS 進步幾名
+FROM with_rank_change
+WHERE rank_improvement = (
+    -- 找出各地區當月進步最多的
+    SELECT MAX(w2.rank_improvement)
+    FROM with_rank_change w2
+    WHERE w2.region = with_rank_change.region
+      AND w2.month = with_rank_change.month
+      AND w2.rank_improvement > 0
+)
+ORDER BY month DESC, region;
+```
+
+---
+
+## 八、本章重點彙整
+
+```
+排名函數
+  ROW_NUMBER() — 唯一序號，取 Top N 首選
+  RANK()       — 同分跳號，體育競賽風格
+  DENSE_RANK() — 同分不跳號，客戶分級首選
+  NTILE(n)     — 等分切割，四分位分析
+
+位移函數
+  LAG(col, n)  — 取前 n 列 → 環比分析
+  LEAD(col, n) — 取後 n 列 → 購買間隔分析
+
+彙總型視窗函數
+  SUM() OVER (ORDER BY ... ROWS BETWEEN ...)  → 累積加總
+  AVG() OVER (ROWS BETWEEN n PRECEDING ...)   → 滑動平均
+  SUM() OVER (PARTITION BY ...)               → 分組佔比
+
+視窗框架
+  UNBOUNDED PRECEDING AND CURRENT ROW         → 累積（最常用）
+  n PRECEDING AND CURRENT ROW                 → 滑動視窗
+  UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING → 整個分組
+```
+
+---
+
+*下一篇：[03 日期、字串處理與效能優化入門](./03_日期字串處理與效能優化入門.md)*
