@@ -1,4 +1,3 @@
-﻿
 # 01 PostgreSQL 安裝與環境建立指南（保姆級無痛上手版）
 
 > **給轉職初學者的暖心提醒**：
@@ -6,13 +5,14 @@
 
 ---
 
-## 🗺️ 流程一覽：4 步完成環境建置
+## 🗺️ 流程一覽：5 步完成環境與學習歷程建置
 
 ```mermaid
 flowchart LR
     Step1["1. 下載安裝<br/>PostgreSQL"] --> Step2["2. 安裝主力工具<br/>DBeaver"]
     Step2 --> Step3["3. 建立連線<br/>匯入 B2B 資料"]
-    Step3 --> Step4["4. 第一筆查詢<br/>🎉 驗證成功 (Quick Win)"]
+    Step3 --> Step4["4. 第一筆查詢<br/>🎉 驗證成功"]
+    Step4 --> Step5["5. 建立 GitHub Repo<br/>🚀 啟動學習履歷"]
 ```
 
 ---
@@ -138,8 +138,8 @@ flowchart LR
 ### 1. 檢查 5 張資料表
 
 1. 回到 DBeaver 左側的「資料庫導覽」面板。
-2. 依序展開樹狀目錄：`postgres` ➜ `Databases` ➜ `postgres` ➜ `Schemas` ➜ `public` ➜ **`Tables (資料表)`**。
-3. 對著 `Tables` 按滑鼠右鍵 ➜ 點擊 **「重新整理 (Refresh)」**（或選取後按鍵盤 `F5`）。
+2. 依序展開樹狀目錄：`postgres` ➜ **`資料庫 (Databases)`** ➜ `postgres` ➜ **`綱要群 (Schemas)`** ➜ `public` ➜ **`表 (Tables)`**。
+3. 對著 `表 (Tables)` 按滑鼠右鍵 ➜ 點擊 **「重新整理 (Refresh)」**（或選取後按鍵盤 `F5`）。
 4. 你會看到 5 張專門為 B2B 商業實戰設計的資料表整齊出現：
    - 🏢 **`customers`**（企業客戶名冊）
    - 🧑‍💼 **`salespeople`**（業務團隊名單）
@@ -173,9 +173,74 @@ flowchart LR
 
 ---
 
+## 六、建立你的轉職作品集：Git 與 GitHub Repo 實戰設定（保姆級教學）
+
+> [!TIP]
+> **為什麼計畫中每一天都有「Git Commit 建議」？**
+> 1. **不可抹滅的成長證明**：面試時說「我學過 SQL」不夠有說服力；但在 GitHub 上有連續 30 天由淺入深的 Commit 紀錄與綠色活動格子（Contribution Graph），面試官一眼就能看出你的自律與代碼實力。
+> 2. **安全的代碼時光機**：寫錯或改爛了隨時能退回前一天的版本，練習筆記與作業永遠不會遺失。
+
+### 1. 核心觀念：Git 與 GitHub 有什麼不同？
+* **Git（本機工具）**：裝在電腦裡的「版本存檔器 / 時光機」，負責在本機記錄每次程式碼的修改。
+* **GitHub（雲端平台）**：微軟旗下的程式碼社群與展示平台，負責存放你同步上傳的專案，讓全世界與面試官都能閱覽。
+
+---
+
+### 步驟 1：註冊 GitHub 帳號（若已有可跳過）
+1. 前往 [github.com](https://github.com) 點擊右上角 **Sign up**。
+2. 依照網頁提示填寫 Email、密碼與使用者名稱（Username，建議取專業、簡潔的英文名稱）。
+3. 收取信箱驗證碼並完成驗證。
+
+---
+
+### 步驟 2：在 VS Code 內建一鍵發布到 GitHub（免打任何終端機指令！）
+
+VS Code 已經原生整合 GitHub，新手完全不需要在終端機敲打複雜的指令：
+
+1. **確認 VS Code 開啟目錄**：
+   確保目前 VS Code 開啟的根目錄是包含 `轉職計畫` 或 `01_Month01_SQL基礎` 的專案資料夾。
+2. **切換到「原始檔控制」面板**：
+   點擊 VS Code 最左側直列工具列上的 **「原始檔控制」圖示**（長得像三個圓點被線連起來的圖示），或直接按快捷鍵 **`Ctrl + Shift + G`**。
+3. **點擊「發行至 GitHub (Publish to GitHub)」**：
+   * 如果看到按鈕寫著 **「發行至 GitHub」** 或 **「初始化存放庫 (Initialize Repository)」**，直接點擊。
+   * VS Code 會在視窗右下角提示要求存取 GitHub，點擊 **「Allow（允許）」**，瀏覽器會自動彈出 GitHub 授權網頁，點擊確認授權。
+4. **選擇公開儲存庫（Public）**：
+   * 頂部搜尋列會跳出兩種選項：
+     - `Publish to GitHub public repository`（**強烈推薦選 Public**，面試官才看得到你的作品）
+     - `Publish to GitHub private repository`
+5. **確認儲存庫名稱**：
+   * 預設名稱建議填入 **`B2B-SQL`**，按下 `Enter`。
+   * VS Code 就會全自動建立遠端儲存庫，並把現有教材與設定全部推送到你的 GitHub！
+
+---
+
+### 步驟 3：日常學習「如何完成一次 Git Commit 存檔與同步」
+
+學習計畫表格中每天的「Git Commit 建議」（例如 Day 1 的 `feat: 初始化 PostgreSQL 與 DBeaver 環境`），操作步驟只需三秒鐘：
+
+```mermaid
+flowchart LR
+    A["1. 修改/寫好 SQL 筆記"] --> B["2. 在 Source Control 輸入訊息"]
+    B --> C["3. 點擊「認可 (Commit)」"]
+    C --> D["4. 點擊「同步變更 (Sync)」<br/>🚀 推上 GitHub"]
+```
+
+1. **完成當日練習**：例如你寫好了練習題的 SQL 檔案或筆記並按 `Ctrl + S` 存檔。
+2. **打開原始檔控制**：按 **`Ctrl + Shift + G`**，你會看到「變更 (Changes)」下方列出你今天動過的檔案。
+3. **輸入 Commit 訊息**：在最上方的輸入框（顯示 *訊息* 或 *Message*），貼上當天計畫建議的說明，例如：
+   ```text
+   feat: 初始化 PostgreSQL 與 DBeaver 環境
+   ```
+4. **點擊認可 (Commit)**：點擊輸入框下方的藍色按鈕 **「認可 (Commit)」**（這代表在本機建立存檔點）。
+5. **點擊同步 (Sync Changes / Push)**：點擊藍色按鈕 **「同步變更 (Sync Changes)」**（或左下角狀態列的循環旋轉箭頭）。
+6. **線上確認**：打開你的 GitHub 網頁（`https://github.com/你的帳號/B2B-SQL`），你會看見你的程式碼與當日 Commit 訊息已成功登上雲端！
+
+---
+
 ## 🔗 下一步與章節導航
 
-- **進階資料庫探索**：[08_讀懂陌生資料庫的五步驟.md](./08_讀懂陌生資料庫的五步驟.md)（Schema Thinking 與資料粒度觀念）
-- **下一篇**：[03_SQL核心語法_SELECT到JOIN全解析.md](./03_SQL核心語法_SELECT到JOIN全解析.md)（5 大階梯式實戰關卡與底層執行順序）
+- **下一篇（學習規劃）**：[02_本月學習計畫與目標.md](./02_本月學習計畫與目標.md)（4 週線性學習日程表）
+- **新手資料庫探索**：[03_讀懂陌生資料庫的五步驟.md](./03_讀懂陌生資料庫的五步驟.md)（Schema Thinking 與 DBeaver 探索起手式）
+- **語法講義**：[04_SQL核心語法_SELECT到JOIN全解析.md](./04_SQL核心語法_SELECT到JOIN全解析.md)（5 大階梯式實戰關卡與底層執行順序）
 - **資料庫腳本**：[data/b2b_m1_sample.sql](./data/b2b_m1_sample.sql)（Canonical 資料表定義與初始化腳本）
 - **回到目錄**：[Month 01 學習模組主導航](./README.md)

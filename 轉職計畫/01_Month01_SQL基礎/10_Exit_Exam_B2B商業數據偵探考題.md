@@ -1,4 +1,4 @@
-﻿# 🎓 M1 Exit Exam：B2B 商業數據偵探考題
+# 🎓 M1 Exit Exam：B2B 商業數據偵探考題
 
 > **「只會打 SELECT 不叫會 SQL，能在 15 分鐘內用數據回答總經理的商業問題，才叫合格的 Data Engineer。」**
 
@@ -149,3 +149,11 @@ GROUP BY c.customer_id, c.company_name;
 
 **評分結果**：_____ / 100
 > 通過 80 分以上，恭喜你正式具備 **Month 01: Job Ready (SQL 商業數據偵探)** 認證，獲准進入 **Month 02**！
+
+---
+
+## 🔗 章節導航
+
+- **前一篇（30 題實戰）**：[09_30道B2B商業SQL實戰練習題.md](./09_30道B2B商業SQL實戰練習題.md)
+- **回到目錄**：[Month 01 學習模組主導航](./README.md)
+- **晉級成果檢驗**：[學習驗收 Checkpoints](../../A2_學習驗收Checkpoints/README.md)
