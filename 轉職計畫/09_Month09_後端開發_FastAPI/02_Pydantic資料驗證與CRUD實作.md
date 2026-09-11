@@ -1,4 +1,4 @@
-# 02. Pydantic 資料驗證與企業級 CRUD 實戰
+﻿# 02. Pydantic 資料驗證與企業級 CRUD 實戰
 
 > **模組目標**：掌握 FastAPI 最核心的資料防護門神——**Pydantic v2**。深入理解宣告式型別校驗、欄位約束、自定義驗證器（`@field_validator`）與跨欄位連動驗證（`@model_validator`）；精通 Schema 職責分離模式（Create / Update / Response），杜絕敏感欄位洩漏；熟練運用 `ConfigDict(from_attributes=True)` 與 SQLAlchemy 2.0 ORM 無縫整合；並實作包含部分欄位更新（PATCH）、防超賣並發鎖定與軟刪除的企業級 CRUD 業務架構。
 
@@ -224,7 +224,7 @@ def create_order(payload: OrderCreateRequest, db: Session = Depends(get_db)):
     # 1. 檢查客戶存在性與額度
     customer = db.get(Customer, payload.customer_id)
     if not customer:
-        raise HTTPException(status_code=404, detail=f"客戶代碼不存在: {payload.customer_id}")
+        raise HTTPException(status_code=404, detail=f"客戶代號不存在: {payload.customer_id}")
 
     total_amount = Decimal("0.00")
     order_items_entities = []

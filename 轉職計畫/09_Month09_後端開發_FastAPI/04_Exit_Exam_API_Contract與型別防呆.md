@@ -1,6 +1,6 @@
-# 🎓 M9 Exit Exam：API Contract 契約規範與 Pydantic 型別防呆 (API Design Gate)
+﻿# 🎓 M9 Exit Exam：API Contract 契約規範與 Pydantic 型別防呆 (API Design Gate)
 
-> **「新手寫後端：看著教學拼出一個 `@app.get('/')` 就覺得自己會寫 API；工程師寫後端：在敲代碼前先定義好清晰的 API Contract（輸入、輸出、狀態碼、統一錯誤格式），並以 Pydantic 嚴防任何髒 Payload。」**
+> **「新手寫後端：看著教學拼出一個 `@app.get('/')` 就覺得自己會寫 API；工程師寫後端：在敲程式碼前先定義好清晰的 API Contract（輸入、輸出、狀態碼、統一錯誤格式），並以 Pydantic 嚴防任何髒 Payload。」**
 
 本測驗考察你身為後端與資料工程師的 **API 架構設計素養（API Design & Contract First）**。
 
@@ -22,7 +22,7 @@
 
 ## 📑 任務一：定義嚴謹的 API Contract（契約先行）
 
-請在實作代碼前，明確規範以下兩個核心端點的契約結構：
+請在實作程式碼前，明確規範以下兩個核心端點的契約結構：
 
 ### 1. `POST /api/v1/orders`（建立 B2B 訂單）
 - **Request Body (JSON)**：
@@ -47,7 +47,7 @@
 
 ## 🛠️ 任務二：Pydantic V2 邊界防呆模型
 
-在你的代碼中實現以下嚴格防呆規則：
+在你的程式碼中實現以下嚴格防呆規則：
 
 ```python
 from pydantic import BaseModel, Field, EmailStr, field_validator
@@ -114,7 +114,7 @@ def test_create_order_negative_amount():
 ## 🗣️ 口試題 (Interview Ready)
 
 1. 「在 FastAPI 裡面，`async def` 跟一般 `def` 路由有什麼本質區別？如果你在一個 `async def` 路由裡面寫了一個耗時 10 秒的純同步阻塞操作（例如 `time.sleep(10)` 或 Pandas 巨量計算），會發生什麼災難？」
-   - *答題要點*：FastAPI 的 `async def` 運行在主 Event Loop 上。若在其中執行同步阻塞代碼，會直接卡死整個伺服器的 Event Loop，導致所有其他用戶的並發請求全部排隊卡死！純計算或同步 I/O 應宣告為普通 `def`（FastAPI 會自動丟進外部 Threadpool 執行）或使用 Background Tasks / Celery。
+   - *答題要點*：FastAPI 的 `async def` 運行在主 Event Loop 上。若在其中執行同步阻塞程式碼，會直接卡死整個伺服器的 Event Loop，導致所有其他用戶的並發請求全部排隊卡死！純計算或同步 I/O 應宣告為普通 `def`（FastAPI 會自動丟進外部 Threadpool 執行）或使用 Background Tasks / Celery。
 2. 「RESTful API 中，`PUT` 與 `PATCH` 的差異是什麼？在資料冪等性（Idempotency）上有什麼不同？」
 
 ---

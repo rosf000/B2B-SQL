@@ -1,6 +1,6 @@
-# Month 07｜工程素養：Git 版本控制、Linux 伺服器與專業開源習慣
+﻿# Month 07｜工程素養：Git 版本控制、Linux 伺服器與專業開源習慣
 
-> **本月核心目標**：告別把代碼只塞在本機電腦或隨身碟的業餘習慣，像真正的軟體工程師一樣使用 Git 分支管理、Linux 命令列排錯，並打造專業高質感的 GitHub 個人作品集主頁。
+> **本月核心目標**：告別把程式碼只塞在本機電腦或隨身碟的業餘習慣，像真正的軟體工程師一樣使用 Git 分支管理、Linux 命令列排錯，並打造專業高質感的 GitHub 個人作品集主頁。
 
 ---
 
@@ -39,7 +39,7 @@ flowchart TD
   - [ ] 掌握 Linux 必備指令：`cd`, `ls`, `cat`, `grep`, `tail -f`。
   - [ ] 能使用 `docker compose up -d` 啟動現成的 PostgreSQL 環境。
 - 🔵 **Level 2 — Job Ready (標準求職線，80分晉級)**：
-  - [ ] 掌握 Git 分支管理 (`git checkout -b`, `git merge`) 與解決代碼衝突。
+  - [ ] 掌握 Git 分支管理 (`git checkout -b`, `git merge`) 與解決程式碼衝突。
   - [ ] 規範 Commit Message 格式（Conventional Commits: `feat:`, `fix:`, `docs:`）。
   - [ ] 獨立撰寫包含 Volume 資料持久化與環境變數綁定的 `docker-compose.yml`。
   - [ ] 通過 **[05_Exit_Exam_Docker網路與容器除錯Lab.md](./05_Exit_Exam_Docker網路與容器除錯Lab.md)**（排查 localhost 網路陷阱與健康檢查）。

@@ -1,4 +1,4 @@
-# 02. ETL 自動化管線與企業日誌系統設計
+﻿# 02. ETL 自動化管線與企業日誌系統設計
 
 > **模組目標**：打造工業級的資料處理管線（Data Pipeline）。深入理解 Extract（萃取）、Transform（清洗與轉換）、Load（載入）的核心設計原則，掌握髒資料隔離（Dead Letter Queue / Quarantine）、管線冪等性（Idempotency）、高效暫存表（Staging Table）載入架構，並建立具備日誌滾動（Rotating Log）與即時通訊告警（Webhook）的自動化排程系統。
 
@@ -185,7 +185,7 @@ def validate_and_transform_pipeline(raw_records: Generator[dict, None, None]) ->
         # 2. 客戶編號格式檢驗
         customer_id = row.get("Customer Code", "")
         if not customer_id.startswith("CUST_"):
-            errors.append(f"客戶代碼格式錯誤: {customer_id}")
+            errors.append(f"客戶代號格式錯誤: {customer_id}")
             
         # 3. 數量檢驗
         try:

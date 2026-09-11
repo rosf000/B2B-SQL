@@ -1,4 +1,4 @@
-# 02. 雲端部署策略指南：Render、Railway 與獨立 VPS 實戰
+﻿# 02. 雲端部署策略指南：Render、Railway 與獨立 VPS 實戰
 
 > **模組目標**：將你在本機打造的 B2B 資料庫與 FastAPI 微服務正式交付至網際網路。全面評估現代 PaaS（Render / Railway / Fly.io）與獨立 VPS（Ubuntu 雲端主機）的架構與成本選型矩陣；精通 Linux 伺服器安全加固 SOP（UFW 防火牆、Fail2ban、SSH 金鑰防護）；掌握 Nginx 反向代理配置與 Let's Encrypt 自動 HTTPS 憑證簽發；建立具備異地資料庫備份與健康監控的企業級生產環境。
 
@@ -31,7 +31,7 @@
 | 評估維度 | PaaS 平台 (Render / Railway) | 獨立 VPS (Ubuntu @ Lightsail / Linode) |
 | :--- | :--- | :--- |
 | **運維心智負擔** | **極低**（點幾下滑鼠即可上線） | **中至高**（需自行維護 Linux、防火牆、Docker） |
-| **部署方式** | `git push` 後自動觸發 Webhook 建置 | 透過 SSH 登入拉取代碼，或透過 GitHub Actions 部署 |
+| **部署方式** | `git push` 後自動觸發 Webhook 建置 | 透過 SSH 登入拉取程式碼，或透過 GitHub Actions 部署 |
 | **HTTPS 憑證** | 平台自動免費簽發與自動續期 | 需手動配置 Nginx 與 Certbot |
 | **硬體資源性價比** | 較低（1GB RAM 方案約 $7~$15/月） | **極高**（$4~$6/月即可享有 1GB~2GB RAM, 獨立 IPv4） |
 | **資料庫控制度** | 受限（備份通常依賴平台面板或付費加購） | **100% 完全掌控**（可客製化 pg_hba、延伸擴充模組） |

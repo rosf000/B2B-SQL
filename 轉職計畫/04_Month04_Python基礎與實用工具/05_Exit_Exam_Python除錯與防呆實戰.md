@@ -1,4 +1,4 @@
-# 🎓 M4 Exit Exam：Python 除錯與防禦性編程實戰 (Debug Lab)
+﻿# 🎓 M4 Exit Exam：Python 除錯與防禦性編程實戰 (Debug Lab)
 
 > **「初學者寫 Python 只要跑出結果就覺得大功告成；工程師寫 Python 第一眼看的是：空值會不會崩？型態錯了會不會 Crash？出錯時有沒有乾淨的 Traceback 與日誌？」**
 
@@ -10,7 +10,7 @@
 
 - 🟢 **Level 1 — Survival**：能看懂 Python Traceback 堆疊追蹤訊息，定位報錯發生的檔案與行號。
 - 🔵 **Level 2 — Job Ready (80分晉級線)**：
-  - 成功找出並修復以下髒代碼中的 5 大致命 Bug。
+  - 成功找出並修復以下髒程式碼中的 5 大致命 Bug。
   - 使用 Python 寫出防禦性封裝（安全轉型、`.get()` 默認值、例外捕捉）。
   - 使用 `assert` 撰寫單元測試，驗證 5 大極端髒資料輸入不崩潰。
 - 🔴 **Level 3 — Bonus (Interview Ready)**：
@@ -24,7 +24,7 @@
 以下是一段真實模擬的 B2B 訂單利潤批次計算腳本，內部暗藏 5 個隨時引爆的炸彈：
 
 ```python
-# buggy_pipeline.py (充滿隱患的原始代碼)
+# buggy_pipeline.py (充滿隱患的原始程式碼)
 def process_b2b_orders(raw_orders):
     processed = []
     for order in raw_orders:
@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
 ## 📝 結業簽核 (Pass Criteria)
 
-- [ ] 完整重構防禦型資料處理代碼，杜絕 5 大 Crash 炸彈
+- [ ] 完整重構防禦型資料處理程式碼，杜絕 5 大 Crash 炸彈
 - [ ] 實作單元測試腳本，所有斷言 100% 通過
 - [ ] 具備隔離區 (Quarantine) 與 Logging 紀錄機制
 - [ ] 能以口頭清晰解釋 EAFP 與例外處理設計哲學

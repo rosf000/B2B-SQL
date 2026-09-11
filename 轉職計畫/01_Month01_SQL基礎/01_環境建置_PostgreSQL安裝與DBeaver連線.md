@@ -1,4 +1,4 @@
-
+﻿
 # 01 PostgreSQL 安裝與環境建立指南（保姆級無痛上手版）
 
 > **給轉職初學者的暖心提醒**：
@@ -113,7 +113,7 @@ flowchart LR
 
 1. 在 VS Code 中開啟專案內的腳本檔案：[`data/b2b_m1_sample.sql`](./data/b2b_m1_sample.sql)。
 2. 按鍵盤 **`Ctrl + A`**（全選）➜ **`Ctrl + C`**（複製）。
-3. 切換回 DBeaver 的 SQL 編輯器，按鍵盤 **`Ctrl + V`**（貼上整份腳本代碼）。
+3. 切換回 DBeaver 的 SQL 編輯器，按鍵盤 **`Ctrl + V`**（貼上整份腳本程式碼）。
 
 ---
 
@@ -151,13 +151,13 @@ flowchart LR
 
 ### 2. 敲下你的第一行 SQL
 
-1. 在剛才的 SQL 編輯器中清空內容，或另起一行輸入以下代碼：
+1. 在剛才的 SQL 編輯器中清空內容，或另起一行輸入以下程式碼：
 
    ```sql
    SELECT customer_id, company_name, city, credit_limit, status FROM customers LIMIT 5;
    ```
 
-2. 將滑鼠游標停在這行代碼上，按鍵盤 **`Ctrl + Enter`**（執行單行查詢）。
+2. 將滑鼠游標停在這行程式碼上，按鍵盤 **`Ctrl + Enter`**（執行單行查詢）。
 3. 觀察編輯器下方彈出的結果表格，你將看見前 5 家真實企業客戶資料：
 
 | customer_id | company_name      | city       | credit_limit | status |

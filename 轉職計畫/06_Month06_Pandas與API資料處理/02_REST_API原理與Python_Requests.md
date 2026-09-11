@@ -1,4 +1,4 @@
-# 02. REST API 原理與 Python Requests 企業實戰
+﻿# 02. REST API 原理與 Python Requests 企業實戰
 
 > **模組目標**：掌握現代分散式系統中不可或缺的通訊協定 **HTTP / RESTful API**。深入剖析 HTTP 請求結構、狀態碼語意、冪等性設計；熟練運用 Python 業界標準庫 `requests` 串接第三方企業服務（如 ERP、金流閘道、電子發票、外幣匯率平台）。建立包含 TCP 連線複用（Session）、指數退避自動重試（Exponential Backoff Retry）、API 速率限制（Rate Limiting）應對、以及將複雜巢狀 JSON 展平為關聯式表格的工業級資料擷取管線。
 
@@ -306,7 +306,7 @@ print(df_flat_items)
 
 ## 5. 企業資安最佳實踐：憑證金鑰管理
 
-- **永遠不要把 API Token 寫死在代碼中上傳 Git**。
+- **永遠不要把 API Token 寫死在程式碼中上傳 Git**。
 - 安裝 `python-dotenv`：`pip install python-dotenv`。
 - 在專案根目錄建立 `.env` 檔案，並在 `.gitignore` 加入 `.env`。
 

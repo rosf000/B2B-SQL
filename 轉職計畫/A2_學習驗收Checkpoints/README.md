@@ -1,12 +1,12 @@
-# 98 — 工程能力 Checkpoints
+# A2｜學習驗收 Checkpoints：每月三維度自我驗收標準
 
-> 每個月完成後填寫。沒達標不要進下一個月。
+> 每個月完成後填寫。未達標請勿進入下一個月。
 
 ## 用途
 
 這不是學習清單，而是**驗收標準**。
 
-每個 Checkpoint 的三個維度：
+每個 Checkpoint 涵蓋三個維度：
 1. **Skills** — 技術概念是否理解
 2. **Project** — 實作成果是否存在
 3. **Explain** — 能不能講給別人聽（面試關鍵）
@@ -186,12 +186,12 @@
 - [ ] docker-compose up 能啟動 PostgreSQL + App
 - [ ] .gitignore 正確設定（.env 不在 Git 裡）
 - [ ] Commit message 有規範（feat / fix / docs）
-- [ ] **AI Coding Workflow 正式建立（有書面 SOP）**
+- [ ] **AI Coding 工作流正式建立（有書面 SOP，存於 `A1_AI協作工作流SOP/` 目錄）**
 
 ### Project
 
 - [ ] docker-compose.yml 啟動 PostgreSQL + PgAdmin 成功
-- [ ] 97_AI_Workflow/ 資料夾有至少一篇使用紀錄
+- [ ] `A1_AI協作工作流SOP/` 資料夾有至少一篇 AI 協作工作記錄
 
 ### Explain
 

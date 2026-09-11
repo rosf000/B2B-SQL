@@ -1,4 +1,4 @@
-# Month 09｜後端開發：使用 FastAPI 將 B2B 系統 API 化
+﻿# Month 09｜後端開發：使用 FastAPI 將 B2B 系統 API 化
 
 > **本月核心目標**：從單純的資料腳本跨入「現代 Web 後端服務」，使用 Python 當紅的高效能非同步框架 FastAPI，為 Month 8 的 B2B 客戶與訂單數據系統構建標準 RESTful API，並利用自動產生的 Swagger UI 進行互動式測試。
 
@@ -27,7 +27,7 @@ flowchart TD
 | **02** | [02_Pydantic資料驗證與CRUD實作.md](./02_Pydantic資料驗證與CRUD實作.md) | BaseModel 宣告、Field 驗證規則、Schema 與 ORM 映射轉換 | 第 2 週 |
 | **03** | [03_FastAPI_Testing與API文件品質.md](./03_FastAPI_Testing與API文件品質.md) | TestClient 單元測試、狀態碼斷言與 Swagger 互動文檔調優 | 第 3 週 |
 | **04** | [04_Exit_Exam_API_Contract與型別防呆.md](./04_Exit_Exam_API_Contract與型別防呆.md) | 🎓 **本月結業測驗**：API Contract 規範實作、Pydantic V2 邊界型別防禦與自動化測試套件驗證 | 第 4 週 |
-| **專案** | [b2b_fastapi_app/](./b2b_fastapi_app/) | 🏆 **生產級 API 代碼庫**：含 `main.py`, `models.py`, `schemas.py`, `crud.py`, `database.py` | 第 4 週 |
+| **專案** | [b2b_fastapi_app/](./b2b_fastapi_app/) | 🏆 **生產級 API 程式碼庫**：含 `main.py`, `models.py`, `schemas.py`, `crud.py`, `database.py` | 第 4 週 |
 
 ---
 

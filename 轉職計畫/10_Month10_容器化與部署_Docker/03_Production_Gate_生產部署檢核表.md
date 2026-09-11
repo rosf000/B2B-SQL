@@ -1,4 +1,4 @@
-# 🚀 M10 Production Gate：雲端部署與生產級檢核表 (Deployment Gate)
+﻿# 🚀 M10 Production Gate：雲端部署與生產級檢核表 (Deployment Gate)
 
 > **「在本地電腦跑得動叫玩具，能在雲端持續運行、金鑰不洩漏、容器可隨時銷毀重建、面試官點開 Demo URL 就能玩的，才叫 Production 軟體產品。」**
 
@@ -11,11 +11,11 @@ M10 是你在求職前將作品「公開上線」的最後一哩路。本檢核�
 - 🟢 **Level 1 — Survival**：能在本地使用 Dockerfile 與 docker-compose 打包應用並啟動成功。
 - 🔵 **Level 2 — Job Ready (80分晉級線)**：
   - 通過 **Production Checklist 10 大檢驗項**。
-  - 完成 Multi-stage Build 鏡像瘦身，並以非 root 用戶運行。
+  - 完成 Multi-stage Build 映像檔瘦身，並以非 root 用戶運行。
   - 部署至雲端（Render / Railway / Fly.io / VPS），擁有可公開連線的 Swagger API 演示網址。
   - 撰寫自動化冒煙測試腳本（`smoke_test.sh`），驗證遠端端點可用性。
 - 🔴 **Level 3 — Bonus (Interview Ready)**：
-  - 實作 GitHub Actions CI/CD 流水線，代碼 push 到 main 分支時自動執行測試並建置 Docker Image。
+  - 實作 GitHub Actions CI/CD 流水線，程式碼 push 到 main 分支時自動執行測試並建置 Docker Image。
   - 設計 PostgreSQL 定時自動備份腳本（`cron` + `pg_dump` 上傳至 S3/遠端存儲）。
 
 ---
@@ -85,7 +85,7 @@ echo "🎉 冒煙測試全數過關，生產就緒！"
 ## 🗣️ 口試題 (Interview Ready)
 
 1. **「為什麼在 Dockerfile 裡面寫 `COPY . .` 然後直接 run root 是嚴重的資安地雷？」**
-   - *答題要點*：若攻擊者利用應用漏洞（如 RCE 遠端代碼執行）攻破容器，以 root 運行的駭客可能透過 Container Escape（逃逸）直接取得宿主機的最高控制權！採用非 root 帳號能有效限縮攻擊面。
+   - *答題要點*：若攻擊者利用應用漏洞（如 RCE 遠端程式碼執行）攻破容器，以 root 運行的駭客可能透過 Container Escape（逃逸）直接取得宿主機的最高控制權！採用非 root 帳號能有效限縮攻擊面。
 2. **「在雲端部署時，如果資料庫密碼不能放進 Git，你實務上怎麼讓 Docker 容器讀到？有哪幾種常見管理方案？」**
    - *答題要點*：雲端平台的 Secret Management（如 Render Environment Variables、AWS Secrets Manager、Vault）或 Docker Swarm / K8s Secrets。在 CI/CD 中透過 GitHub Actions Encrypted Secrets 注入。
 

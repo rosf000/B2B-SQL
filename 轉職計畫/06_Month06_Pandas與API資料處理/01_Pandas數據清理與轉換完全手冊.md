@@ -1,4 +1,4 @@
-# 01. Pandas 數據清理與轉換完全手冊
+﻿# 01. Pandas 數據清理與轉換完全手冊
 
 > **模組目標**：掌握商業分析與資料工程中最核心的資料處理函式庫 **Pandas**。徹底搞懂底層向量化（Vectorization）運算原理，告別低效的 Python 迴圈；熟練運用缺失值與異常值清洗、高效記憶體優化技巧；精通多表 Merge / Join、GroupBy 多重聚合、透視表（Pivot Table）以及時間序列滾動分析。結合 B2B 企業資料庫情境，實作具備生產水準的分析管線。
 
@@ -107,7 +107,7 @@ print(total_sales)
 
 ### 2.2 索引取值關鍵對決：loc vs iloc
 
-這在初學者代碼中是引發 Bug 的頭號元兇：
+這在初學者程式碼中是引發 Bug 的頭號元兇：
 - **`loc`（Label-based）**：依據**標籤名稱**切片。**包含結尾端點**！
 - **`iloc`（Integer-position based）**：依據**底層數值位置（從 0 開始）**切片。**遵循 Python 慣例：左閉右開（不含結尾端點）**！
 
@@ -444,7 +444,7 @@ print(calculate_category_mom(items_data))
 
 ### 題目三：庫存出庫滑動監控與安全水位預警系統
 **業務情境**：
-倉庫管理系統記錄了每天各產品的出庫扣減紀錄（出庫日 `log_date`, 產品代碼 `product_id`, 出庫數量 `qty_out`），以及產品主表中的「當前現有庫存 `current_stock`」。
+倉庫管理系統記錄了每天各產品的出庫扣減紀錄（出庫日 `log_date`, 產品代號 `product_id`, 出庫數量 `qty_out`），以及產品主表中的「當前現有庫存 `current_stock`」。
 請撰寫一個監控演算法：
 1. 針對每項產品，計算「最近 7 天的每日平均出庫消耗量（7-day Rolling Burn Rate）」。
 2. 預估「現有庫存預計可支撐天數（Days of Inventory Remaining, DIR）」：

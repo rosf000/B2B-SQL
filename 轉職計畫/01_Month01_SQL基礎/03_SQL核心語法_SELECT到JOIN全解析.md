@@ -1,8 +1,8 @@
-# 03 SQL 核心語法精粹：從 SELECT 到 JOIN（階梯式實戰講義）
+﻿# 03 SQL 核心語法精粹：從 SELECT 到 JOIN（階梯式實戰講義）
 
 > **寫在前面：為什麼你不需要死背語法？**
 > SQL 不是一門「程式語言」，而是你與資料庫溝通的「商業英語」。每一句 SQL，本質上都是在回答一個具體的商業問題（例如：「上個月哪些客戶沒有下單？」、「誰是今年的業績冠軍？」）。
-> 請打開 **DBeaver**，一邊閱讀本篇，一邊在剛建好的資料庫中輸入範例代碼，對照下方的【預期查詢結果】，親身體驗數據被你調度出來的成就感！
+> 請打開 **DBeaver**，一邊閱讀本篇，一邊在剛建好的資料庫中輸入範例程式碼，對照下方的【預期查詢結果】，親身體驗數據被你調度出來的成就感！
 
 ---
 
@@ -40,7 +40,7 @@ erDiagram
 
     products {
         int product_id PK "產品編號"
-        string product_code "產品代碼(如SRV-001)"
+        string product_code "產品代號(如SRV-001)"
         string product_name "產品名稱"
         string category "類別(Hardware/Software/Security/Service)"
         numeric unit_price "對外售價"
@@ -82,7 +82,7 @@ erDiagram
 
 > 業務主管說：「請幫我調出所有位於 **台北 (Taipei)**，而且信用額度高於或等於 **10 萬** 的客戶名單。」
 
-#### SQL 代碼（請在 DBeaver 執行）
+#### SQL 程式碼（請在 DBeaver 執行）
 
 ```sql
 SELECT 
@@ -146,7 +146,7 @@ WHERE city = 'Taipei'
 
 > 採購主管說：「請找出定價在 **5 萬元以上** 的高階產品，依照售價從最高排到最低，只列出**最貴的前 3 名**。」
 
-##### SQL 代碼（請在 DBeaver 執行）
+##### SQL 程式碼（請在 DBeaver 執行）
 
 ```sql
 SELECT 
@@ -175,7 +175,7 @@ LIMIT 3;                            -- 只抓取排名前 3 筆
 
 > 行銷主管說：「我想針對軟體與雲端方案做促銷，但我記不得完整的品名，請幫我撈出名稱中含有 **'Cloud'** 或 **'Suite'** 的所有產品。」
 
-##### SQL 代碼（請在 DBeaver 執行）
+##### SQL 程式碼（請在 DBeaver 執行）
 
 ```sql
 SELECT 
@@ -203,7 +203,7 @@ WHERE product_name ILIKE '%Cloud%'
 
 > 通路策略主管說：「我們目前全台客戶分佈在哪些城市？請給我一份城市清單（不要給我重複出現的城市名稱）。」
 
-##### SQL 代碼（請在 DBeaver 執行）
+##### SQL 程式碼（請在 DBeaver 執行）
 
 ```sql
 -- 💡 對照提醒：如果不加 DISTINCT，會直接吐出 10 筆資料（光是 Taipei 就重複出現 4 次）
@@ -269,7 +269,7 @@ ORDER BY city ASC;                  -- 依字母排序，更利於主管閱讀
 
 > 經營管理團隊說：「請幫我按 **所在城市 (city)** 分組，計算每個城市共有多少客戶、平均信用額度是多少，但**只列出客戶數大於等於 2 家** 的重點發展城市。」
 
-#### SQL 代碼（請在 DBeaver 執行）
+#### SQL 程式碼（請在 DBeaver 執行）
 
 ```sql
 SELECT 
@@ -348,7 +348,7 @@ ORDER BY total_customers DESC;
 
 > 財務部說：「請將所有已完成訂單依金額劃分級別：30 萬以上為『Enterprise 大單』、10 萬至 30 萬為『Mid-Market 中單』、10 萬以下為『SMB 小單』。」
 
-#### SQL 代碼（請在 DBeaver 執行）
+#### SQL 程式碼（請在 DBeaver 執行）
 
 ```sql
 SELECT 

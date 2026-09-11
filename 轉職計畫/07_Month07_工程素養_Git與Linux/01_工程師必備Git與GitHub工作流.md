@@ -1,6 +1,6 @@
-# 01. 工程師必備 Git 與 GitHub 企業級工作流
+﻿# 01. 工程師必備 Git 與 GitHub 企業級工作流
 
-> **模組目標**：建立堅不可摧的軟體版本控制心智模型。從 Git 底層物件（Blob、Tree、Commit）與 DAG（有向無環圖）架構出發，徹底理解「工作區、暫存區、本地庫、遠端庫」四層流轉；精通分支策略（Git Flow vs GitHub Flow）、Merge vs Rebase 核心抉擇、衝突現場拆彈技巧；熟練使用 `git reflog`、`reset`、`revert` 救回誤刪代碼；並掌握企業級 Pull Request（PR）代碼審查與分支保護機制。
+> **模組目標**：建立堅不可摧的軟體版本控制心智模型。從 Git 底層物件（Blob、Tree、Commit）與 DAG（有向無環圖）架構出發，徹底理解「工作區、暫存區、本地庫、遠端庫」四層流轉；精通分支策略（Git Flow vs GitHub Flow）、Merge vs Rebase 核心抉擇、衝突現場拆彈技巧；熟練使用 `git reflog`、`reset`、`revert` 救回誤刪程式碼；並掌握企業級 Pull Request（PR）程式碼審查與分支保護機制。
 
 ---
 
@@ -83,10 +83,10 @@ Git 底層本質上是一個**內容尋址的鍵值資料庫（Content-Addressab
 git add -p order_service.py
 ```
 Git 會將檔案切分成多個程式碼塊（Hunk），並詢問你的意圖：
-- `y`：暫存此代碼塊
-- `n`：不暫存此代碼塊
-- `s`：將此代碼塊切得更小（Split）
-- `e`：手動編輯此代碼塊（Edit）
+- `y`：暫存此程式碼塊
+- `n`：不暫存此程式碼塊
+- `s`：將此程式碼塊切得更小（Split）
+- `e`：手動編輯此程式碼塊（Edit）
 
 ---
 
@@ -166,16 +166,16 @@ A---B---E---C'---D'  (feature，注意 C' 與 D' 雜湊值已改變！)
 
 ### 3.4 衝突解剖學：如何冷靜解決 Merge Conflict
 
-當兩個人在不同分支修改了同一個檔案的**同一行代碼**時，Git 會停止合併並在檔案中標註衝突標記：
+當兩個人在不同分支修改了同一個檔案的**同一行程式碼**時，Git 會停止合併並在檔案中標註衝突標記：
 
 ```python
-<<<<<<< HEAD (當前分支的代碼，例如 main)
+<<<<<<< HEAD (當前分支的程式碼，例如 main)
 def calculate_discount(amount: float) -> float:
     return amount * 0.95  # 全館 95 折
 =======
 def calculate_discount(amount: float) -> float:
     return amount * 0.90 if amount > 50000 else amount * 0.98 # 大額階梯折扣
->>>>>>> feature/tiered-discount (準備合併進來的代碼)
+>>>>>>> feature/tiered-discount (準備合併進來的程式碼)
 ```
 
 #### 衝突拆彈標準 SOP：
@@ -191,7 +191,7 @@ def calculate_discount(amount: float) -> float:
 
 ### 4.1 暫存工作進度：git stash 原理與技巧
 
-當你正在寫功能 A 寫到一半，主管突然說線上資料庫有緊急 Bug 需要切回 `main` 分支修復，但目前代碼編譯不會過，不想 Commit：
+當你正在寫功能 A 寫到一半，主管突然說線上資料庫有緊急 Bug 需要切回 `main` 分支修復，但目前程式碼編譯不會過，不想 Commit：
 
 ```bash
 # 1. 將當前未 Commit 的變更（含工作區與暫存區）存入堆疊
@@ -222,7 +222,7 @@ git stash pop  # 還原並從 stash 堆疊中彈出移除
 
 ### 4.3 遠端安全撤銷：git revert
 
-若有問題的 Commit **已經 `git push` 到公司遠端 `main` 分支**，絕對不能使用 `git reset --hard` 然後強制推（`git push -f`），這會把別人的代碼沖掉！
+若有問題的 Commit **已經 `git push` 到公司遠端 `main` 分支**，絕對不能使用 `git reset --hard` 然後強制推（`git push -f`），這會把別人的程式碼沖掉！
 
 **正確作法：`git revert <commit-id>`**：
 Git 會計算該 Commit 的「相反操作」（原本增加的變刪除，原本刪除的變增加），並產生一筆「全新 Commit」推上去。歷史記錄完整保留，隊友 pull 毫無衝突。
@@ -343,10 +343,10 @@ git reflog
 git branch feat/vip-tier-algorithm d8e9f01
 git switch feat/vip-tier-algorithm
 
-# 驗證代碼是否完全復原
+# 驗證程式碼是否完全復原
 git status
 git log -n 1
-# 所有 800 行代碼毫髮無傷，搶救成功！
+# 所有 800 行程式碼毫髮無傷，搶救成功！
 ```
 
 ---
@@ -354,9 +354,9 @@ git log -n 1
 ### 題目三：生產環境線上 Hotfix 與特性分支的衝突排解
 **業務情境**：
 1. 生產環境 `main` 剛合入了一個緊急 Hotfix：修復了 `order.py` 裡的稅率計算從 `0.05` 改為 `tax_rate = Decimal('0.05')` 以避免浮點數誤差。
-2. 你的特性分支 `feat/discount` 同時修改了同一段代碼，加入了階梯折扣邏輯。
+2. 你的特性分支 `feat/discount` 同時修改了同一段程式碼，加入了階梯折扣邏輯。
 3. 當你在本地執行 `git checkout feat/discount` 並嘗試 `git rebase main` 時，發生了 Merge Conflict。
-請列出在終端機中解決衝突、驗證代碼並成功完成 Rebase 的完整工作流。
+請列出在終端機中解決衝突、驗證程式碼並成功完成 Rebase 的完整工作流。
 
 #### 【題目三解答】
 ```bash

@@ -1,6 +1,6 @@
-# 01. Docker 與 Docker Compose 容器化實戰教學
+﻿# 01. Docker 與 Docker Compose 容器化實戰教學
 
-> **模組目標**：掌握現代軟體工程必備的交付標準——**Docker 容器化**。告別「在我電腦上明明可以跑（It works on my machine）」的環境災難；深入理解 Linux 底層隔離機制（Namespaces, Cgroups, UnionFS）；精通多階段建置（Multi-stage Builds）將 Python 鏡像從 1GB 驟降至 100MB；並熟練運用 Docker Compose 編排完整的 B2B 微服務應用棧（FastAPI + PostgreSQL + 自動健康檢查與資料持久化）。
+> **模組目標**：掌握現代軟體工程必備的交付標準——**Docker 容器化**。告別「在我電腦上明明可以跑（It works on my machine）」的環境災難；深入理解 Linux 底層隔離機制（Namespaces, Cgroups, UnionFS）；精通多階段建置（Multi-stage Builds）將 Python 映像檔從 1GB 驟降至 100MB；並熟練運用 Docker Compose 編排完整的 B2B 微服務應用棧（FastAPI + PostgreSQL + 自動健康檢查與資料持久化）。
 
 ---
 
@@ -8,11 +8,11 @@
 1. [容器化本質與底層隔離技術](#1-容器化本質與底層隔離技術)
    - [1.1 虛擬機（VM）vs 容器（Container）架構對比](#11-虛擬機vm-vs-容器container架構對比)
    - [1.2 Linux 兩大核心支柱：Namespaces 與 Cgroups](#12-linux-兩大核心支柱namespaces-與-cgroups)
-   - [1.3 鏡像分層存儲與 Copy-on-Write（CoW）機制](#13-鏡像分層存儲與-copy-on-writecow機制)
+   - [1.3 映像檔分層存儲與 Copy-on-Write（CoW）機制](#13-映像檔分層存儲與-copy-on-writecow機制)
 2. [工業級 Dockerfile 撰寫實戰](#2-工業級-dockerfile-撰寫實戰)
    - [2.1 核心指令解析：COPY, RUN, ENTRYPOINT vs CMD](#21-核心指令解析copy-run-entrypoint-vs-cmd)
    - [2.2 構建快取（Build Cache）最大化命中原則](#22-構建快取build-cache最大化命中原則)
-   - [2.3 多階段建置（Multi-stage Builds）鏡像瘦身大法](#23-多階段建置multi-stage-builds鏡像瘦身大法)
+   - [2.3 多階段建置（Multi-stage Builds）映像檔瘦身大法](#23-多階段建置multi-stage-builds映像檔瘦身大法)
    - [2.4 容器資安防線：以非 root 專屬用戶運行](#24-容器資安防線以非-root-專屬用戶運行)
 3. [資料持久化與容器虛擬網路](#3-資料持久化與容器虛擬網路)
    - [3.1 資料庫持久化首選：Named Volume](#31-資料庫持久化首選named-volume)
@@ -66,12 +66,12 @@ Docker 並非一種全新的作業系統，它巧妙地組合了 Linux 核心的
 
 ---
 
-### 1.3 鏡像分層存儲與 Copy-on-Write（CoW）機制
+### 1.3 映像檔分層存儲與 Copy-on-Write（CoW）機制
 
-Docker 鏡像是以「**層（Layers）**」為單位堆疊的。Dockerfile 中的每一行指令（如 `RUN`, `COPY`）都會生成一個**只讀層（Read-Only Layer）**：
+Docker 映像檔是以「**層（Layers）**」為單位堆疊的。Dockerfile 中的每一行指令（如 `RUN`, `COPY`）都會生成一個**只讀層（Read-Only Layer）**：
 - 當多個容器基於同一個 `python:3.11-slim` 啟動時，它們在硬碟中共用相同的底層 Layer，不會重複佔用磁碟。
 - 當容器啟動時，Docker 會在頂層加上一個極薄的「**可寫層（Container R/W Layer）**」。
-- 當應用要修改底層檔案時，Docker 採用 **Copy-on-Write（寫時複製）**：將底層檔案複製一份到頂層可寫層進行修改，底層原始鏡像始終乾淨完好。
+- 當應用要修改底層檔案時，Docker 採用 **Copy-on-Write（寫時複製）**：將底層檔案複製一份到頂層可寫層進行修改，底層原始映像檔始終乾淨完好。
 
 ---
 
@@ -80,9 +80,9 @@ Docker 鏡像是以「**層（Layers）**」為單位堆疊的。Dockerfile 中�
 ### 2.1 核心指令解析：COPY, RUN, ENTRYPOINT vs CMD
 
 - `WORKDIR /app`：設定工作目錄（相當於進入容器後的預設 `cd /app`）。
-- `COPY src dest`：將宿主機檔案複製進鏡像。
-- `RUN command`：在**鏡像構建階段（Build time）**執行指令（例如 `pip install`）。
-- `EXPOSE 8000`：僅為文檔聲明，提示該鏡像預期監聽的埠號。
+- `COPY src dest`：將宿主機檔案複製進映像檔。
+- `RUN command`：在**映像檔構建階段（Build time）**執行指令（例如 `pip install`）。
+- `EXPOSE 8000`：僅為文檔聲明，提示該映像檔預期監聽的埠號。
 - `CMD ["python", "main.py"]`：容器**啟動階段（Run time）**的預設指令，可被 `docker run` 後面的參數輕鬆覆蓋。
 - `ENTRYPOINT ["python", "main.py"]`：固化執行檔，後面的參數會被當成引數傳遞給它。
 
@@ -90,7 +90,7 @@ Docker 鏡像是以「**層（Layers）**」為單位堆疊的。Dockerfile 中�
 
 ### 2.2 構建快取（Build Cache）最大化命中原則
 
-Docker 在構建鏡像時，如果發現指令及輸入檔案自上次構建以來沒有改變，會直接重用「快取層（Cached Layer）」。
+Docker 在構建映像檔時，如果發現指令及輸入檔案自上次構建以來沒有改變，會直接重用「快取層（Cached Layer）」。
 
 #### ❌ 菜鳥寫法（每次修改程式碼，整台重裝 10 分鐘）：
 ```dockerfile
@@ -98,32 +98,32 @@ COPY . /app               # 致命錯誤！只要修改一行 main.py，這層�
 RUN pip install -r requirements.txt  # 下方所有步驟快取全爆，每次都要重新下載上百個套件！
 ```
 
-#### ✅ 資深工程師寫法（分離依賴項與業務代碼）：
+#### ✅ 資深工程師寫法（分離依賴項與業務程式碼）：
 ```dockerfile
 # 1. 優先單獨 COPY 依賴項清單
 COPY requirements.txt /app/
 # 2. 安裝依賴（只要 requirements.txt 沒改，此層直接 100% 命中快取，1 秒跳過！）
 RUN pip install --no-cache-dir -r requirements.txt
-# 3. 最後才 COPY 經常頻繁變動的業務代碼
+# 3. 最後才 COPY 經常頻繁變動的業務程式碼
 COPY . /app/
 ```
 
 ---
 
-### 2.3 多階段建置（Multi-stage Builds）鏡像瘦身大法
+### 2.3 多階段建置（Multi-stage Builds）映像檔瘦身大法
 
-傳統 Python 專案若需要安裝 C 語言擴充庫（如 `gcc`, `libpq-dev` 來編譯 psycopg2），編譯完後這些巨大的編譯工具留在鏡像中，會讓 Image 膨脹到 **800MB ~ 1.2GB**，且暗藏資安漏洞。
+傳統 Python 專案若需要安裝 C 語言擴充庫（如 `gcc`, `libpq-dev` 來編譯 psycopg2），編譯完後這些巨大的編譯工具留在映像檔中，會讓 Image 膨脹到 **800MB ~ 1.2GB**，且暗藏資安漏洞。
 
 **多階段建置（Multi-stage Build）** 允許我們在一個 Dockerfile 中使用多個 `FROM`：
 - **Stage 1 (Builder)**：下載編譯器，把 Wheel 安裝打包好。
-- **Stage 2 (Final Runner)**：使用純淨的 Slim 鏡像，只把 Stage 1 編譯好的 `.venv` 複製過來，丟棄所有無用的編譯工具。鏡像瞬間縮小至 **80MB ~ 120MB**！
+- **Stage 2 (Final Runner)**：使用純淨的 Slim 映像檔，只把 Stage 1 編譯好的 `.venv` 複製過來，丟棄所有無用的編譯工具。映像檔瞬間縮小至 **80MB ~ 120MB**！
 
 ---
 
 ### 2.4 容器資安防線：以非 root 專屬用戶運行
 
 預設情況下，容器內的進程是以 `root`（UID 0）身份執行的！
-若你的 API 存在遠端代碼執行（RCE）漏洞，駭客一旦攻破容器，可能利用核心漏洞進一步提權控制整個實體宿主機。
+若你的 API 存在遠端程式碼執行（RCE）漏洞，駭客一旦攻破容器，可能利用核心漏洞進一步提權控制整個實體宿主機。
 
 **生產級必備準則**：建立並切換為非特權用戶：
 ```dockerfile
@@ -155,7 +155,7 @@ volumes:
 
 ### 3.2 本地熱重載開發神器：Bind Mount
 
-在本地開發時，如果每次改一行代碼都要重新 `docker build`，開發體驗會極差。
+在本地開發時，如果每次改一行程式碼都要重新 `docker build`，開發體驗會極差。
 透過 **Bind Mount** 將本機專案目錄直接掛載進容器，搭配 Uvicorn `--reload`，實現本機存檔、容器即刻自動熱重載：
 
 ```yaml
@@ -308,7 +308,7 @@ RUN groupadd -g 10001 b2bgroup && \
     useradd -u 10001 -g b2bgroup -s /sbin/nologin -M b2buser && \
     chown -R b2buser:b2bgroup /app
 
-# 複製應用代碼並切換擁有者
+# 複製應用程式碼並切換擁有者
 COPY --chown=b2buser:b2bgroup . /app
 
 # 切換為安全非 root 使用者執行

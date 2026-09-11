@@ -1,4 +1,4 @@
-# 03. 高說服力 GitHub README 撰寫模板與作品集打造指南
+﻿# 03. 高說服力 GitHub README 撰寫模板與作品集打造指南
 
 > **模組目標**：打造能夠在 30 秒內抓住技術主管與 HR 眼球的黃金開源作品集。深入剖析轉職工程師常見的 GitHub 地雷、解析資深面試官在 README 中尋找的關鍵指標（商業痛點、系統架構圖、效能 Benchmark、自動化測試與一鍵啟動）。本篇提供兩個開箱即用的企業級完整 README 範本（B2B 資料工程管線專案、FastAPI 雲端微服務專案），助你大幅提升技術面試邀請率。
 
@@ -189,7 +189,7 @@ python main.py --source tests/data/sample_orders_50k.csv
 本專案使用 `pytest` 進行完整的單元測試與資料庫整合測試：
 
 ```bash
-# 執行所有測試並計算代碼覆蓋率
+# 執行所有測試並計算程式碼覆蓋率
 pytest -v --cov=src --cov-report=term-missing
 ```
 ````
@@ -259,7 +259,7 @@ docker compose logs -f api
 
 1. **GIF / 影片錄製工具（Demo Presentation）**：
    - **ScreenToGif (Windows)**：免費開源、輕量，可直接編輯剪輯影格、加速 1.5 倍播放並產出高清晰度的 `.gif` 嵌入 README。
-   - 效果：面試官無需 clone 你的代碼，滑動 README 的第一眼就能看見「Swagger 介面操作」或「終端機批次匯入順暢噴出日誌」的震撼動效。
+   - 效果：面試官無需 clone 你的程式碼，滑動 README 的第一眼就能看見「Swagger 介面操作」或「終端機批次匯入順暢噴出日誌」的震撼動效。
 2. **系統架構圖工具**：
-   - **Mermaid.js**：直接原生支援 GitHub Markdown，用代碼繪製流程圖與時序圖，版本控管最優雅。
+   - **Mermaid.js**：直接原生支援 GitHub Markdown，用程式碼繪製流程圖與時序圖，版本控管最優雅。
    - **Excalidraw** / **Draw.io**：手繪風或專業現代架構圖，匯出為 SVG/PNG 放在專案 `docs/images/` 目錄中。

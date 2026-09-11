@@ -1,4 +1,4 @@
-# 01 Python 環境、語法與資料結構全攻略
+﻿# 01 Python 環境、語法與資料結構全攻略
 
 > **寫在前面：Python 是資料工程師的瑞士刀**
 > SQL 讓你能查詢資料，Python 讓你能**自動化**所有事情：
@@ -485,7 +485,7 @@ large_dict = {i: True for i in range(1_000_000)}
 
 ## 四、推導式（Comprehension）— Pythonic 的精華
 
-推導式讓你用一行優雅的代碼取代 3-5 行的迴圈。
+推導式讓你用一行優雅的程式碼取代 3-5 行的迴圈。
 
 ### 4.1 List Comprehension
 
@@ -566,7 +566,7 @@ unique_industries = {order["industry"] for order in orders}
 
 ## 五、dataclasses — 優雅地定義資料結構
 
-`dataclasses` 是 Python 3.7+ 的內建模組，讓你定義「資料類別」時不需要寫大量的 `__init__` 樣板代碼。
+`dataclasses` 是 Python 3.7+ 的內建模組，讓你定義「資料類別」時不需要寫大量的 `__init__` 樣板程式碼。
 
 ```python
 from dataclasses import dataclass, field

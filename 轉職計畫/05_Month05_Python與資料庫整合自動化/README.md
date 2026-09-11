@@ -45,4 +45,4 @@ flowchart TD
   - [ ] 通過 **[04_Production工程三件套_冪等性_品質檢查與稽核日誌.md](./04_Production工程三件套_冪等性_品質檢查與稽核日誌.md)** Exit 驗證。
 - 🔴 **Level 3 — Bonus (面試溢價線)**：
   - [ ] 掌握連線池 (Connection Pool) 參數調優（`pool_size`, `max_overflow`）。
-  - [ ] 實作資料庫交易交易控制 (`session.commit()`, `session.rollback()`) 與異常自動回滾。
+  - [ ] 實作資料庫交易控制 (`session.commit()`, `session.rollback()`) 與異常自動回滾。

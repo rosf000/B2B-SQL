@@ -1,4 +1,4 @@
-# Month 06｜Pandas 與 REST API：處理真實世界的外部資料
+﻿# Month 06｜Pandas 與 REST API：處理真實世界的外部資料
 
 > **本月核心目標**：掌握現代資料處理主流函式庫 Pandas，並學會使用 Python `requests` 串接外部 REST API（如政府公開資料、匯率、氣象或企業 SaaS API），完成「外部 API ➜ 資料清理轉換 ➜ PostgreSQL 儲存 ➜ 分析視覺化」完整流程。
 
@@ -27,7 +27,7 @@ flowchart TD
 | **02** | [02_REST_API原理與Python_Requests.md](./02_REST_API原理與Python_Requests.md) | HTTP 核心概念、Requests 實戰、處理分頁 (Pagination) 與 Rate Limit 限制 | 第 3 週 |
 | **03** | [03_Data_Quality模組指南.md](./03_Data_Quality模組指南.md) | Pandas 資料驗證、Schema 檢核與異常值偵測工具封裝 | 第 3 週 |
 | **04** | [04_Exit_Exam_API_Failure_Lab.md](./04_Exit_Exam_API_Failure_Lab.md) | 🎓 **本月結業測驗**：API Failure & Resilience 實戰，防禦 429 限流、500 報錯、Timeout 超時與髒資料死信落盤 | 第 4 週 |
-| **專案** | [Case_外部API資料擷取與分析存儲/](./Case_外部API資料擷取與分析存儲/README.md) | 🏆 **外部 API 入庫案例**：端到端 API 資料擷取、清洗轉換並寫入 PostgreSQL 的可執行專案代碼 | 第 4 週 |
+| **專案** | [Case_外部API資料擷取與分析存儲/](./Case_外部API資料擷取與分析存儲/README.md) | 🏆 **外部 API 入庫案例**：端到端 API 資料擷取、清洗轉換並寫入 PostgreSQL 的可執行專案程式碼 | 第 4 週 |
 
 ---
 

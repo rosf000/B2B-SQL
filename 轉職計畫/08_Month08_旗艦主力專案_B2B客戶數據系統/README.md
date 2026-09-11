@@ -12,7 +12,7 @@ flowchart TD
     S1["第 1 週：架構落實 ＋ 3NF 資料庫部署<br/>閱讀 architecture.md ➜ 部署 schema.sql ➜ 載入萬筆數據 ➜ 確立資料字典"]
     S2["第 2 週：智慧清洗 ＋ Levenshtein 模糊去重<br/>開發 data_cleaner.py ➜ 統編加權校驗 ➜ 相似度比對 ➜ 隔離區與日誌"]
     S3["第 3 週：多維度商業分析引擎開發<br/>開發 analytics.py ➜ 實作 RFM 客戶分群 ➜ Quota 達成率 ➜ 營收時序 MoM"]
-    S4["第 4 週：7 大 Portfolio Gate 審查 ＋ 投遞啟動<br/>代碼規範重構 ➜ 破壞防禦測試 ➜ 完善開源 README ➜ 通過 7 大 Gate 認證！"]
+    S4["第 4 週：7 大 Portfolio Gate 審查 ＋ 投遞啟動<br/>程式碼規範重構 ➜ 破壞防禦測試 ➜ 完善開源 README ➜ 通過 7 大 Gate 認證！"]
 
     S1 --> S2 --> S3 --> S4
 ```

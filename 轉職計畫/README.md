@@ -6,14 +6,11 @@
 
 ---
 
-## 🎯 職涯定位
-
-```
 ## 🎯 職涯定位（Career Positioning）
 
 ```
 ❌ 業餘轉職者：「我學了 Python / SQL，我懂 AI Agent」
-✅ 95 分工程定位：
+✅ 目標工程定位：
    「我是 B2B Data Automation / Junior Data Engineer。
     我懂企業資料痛點，能設計高防禦力的 ETL 自動化管線與 3NF 資料庫，
     並以嚴謹的驗證機制（Validator & Guardrails）將 AI 落地為可靠的企業生產力槓桿。」

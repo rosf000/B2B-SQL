@@ -1,4 +1,4 @@
-# Month 10｜容器化與雲端部署：讓所有人都能使用你的服務
+﻿# Month 10｜容器化與雲端部署：讓所有人都能使用你的服務
 
 > **本月核心目標**：擺脫「在我電腦上可以跑，在你電腦上會壞掉」的窘境。掌握 Docker 映像檔建置、Docker Compose 多容器編排（FastAPI + PostgreSQL + pgAdmin），並將作品一鍵部署至雲端平台（如 Render / Railway / AWS VPS），產出一個有即時線上網址的 Live Demo。
 
@@ -23,7 +23,7 @@ flowchart TD
 | 序號 | 篇章名稱 | 核心目標與學習內容 | 推薦時機 |
 | :---: | :--- | :--- | :---: |
 | **00** | [00_本月學習計畫與目標.md](./00_本月學習計畫與目標.md) | 📅 **4 週 28 天每日學習排程**、Git Commit 規範與驗收標準 | 開學第一天必讀 |
-| **01** | [01_Docker進階_多階段建置與容器安全.md](./01_Docker進階_多階段建置與容器安全.md) | Docker 核心深化、Multi-stage Build 鏡像瘦身、非 root 容器安全與網路隔離 | 第 1 週 |
+| **01** | [01_Docker進階_多階段建置與容器安全.md](./01_Docker進階_多階段建置與容器安全.md) | Docker 核心深化、Multi-stage Build 映像檔瘦身、非 root 容器安全與網路隔離 | 第 1 週 |
 | **02** | [02_雲端部署策略_PaaS與VPS選型實戰.md](./02_雲端部署策略_PaaS與VPS選型實戰.md) | PaaS（Render / Railway）vs 自建 VPS 選型矩陣、Nginx 反向代理、HTTPS 憑證 | 第 3 週 |
 | **03** | [03_Production_Gate_生產部署檢核表.md](./03_Production_Gate_生產部署檢核表.md) | 🚀 **本月結業通關閘門 (Production Gate)**：10 大生產檢核清單、Secrets 審計與自動化冒煙測試 | 第 4 週 |
 | **配置** | [Dockerfile](./Dockerfile) | FastAPI 生產環境輕量化多階段構建檔 | 第 1 週 |
