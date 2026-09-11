@@ -4,6 +4,33 @@
 
 ---
 
+## 🗺️ Month 09 四步後端開發修煉旅程（Roadmap）
+
+```mermaid
+flowchart TD
+    S1["第 1 週：RESTful 規範 ＋ 路由設計<br/>閱讀 01 講義 ➜ Uvicorn 啟動 ➜ Swagger UI ➜ Path/Query 參數 ➜ async/await"]
+    S2["第 2 週：Pydantic 契約 ＋ CRUD 實作<br/>閱讀 02 講義 ➜ Request/Response Schema ➜ Depends 連線池 ➜ 完整 CRUD"]
+    S3["第 3 週：異常中介 ＋ TestClient 測試<br/>閱讀 03 講義 ➜ 全域 Exception Middleware ➜ CORS 跨域 ➜ 自動化單元測試 ➜ Swagger 調優"]
+    S4["第 4 週：M8 專案 API 化 ＋ Exit Exam<br/>封裝分析與去重引擎 ➜ 部署 b2b_fastapi_app ➜ 通過 Exit Exam 契約防禦！"]
+
+    S1 --> S2 --> S3 --> S4
+```
+
+---
+
+## 📂 本模組教材與應用程式導航
+
+| 序號 | 篇章名稱 | 核心目標與學習內容 | 推薦時機 |
+| :---: | :--- | :--- | :---: |
+| **00** | [00_本月學習計畫與目標.md](./00_本月學習計畫與目標.md) | 📅 **4 週 28 天每日學習排程**、Git Commit 規範與驗收標準 | 開學第一天必讀 |
+| **01** | [01_RESTful_API設計與FastAPI快速上手.md](./01_RESTful_API設計與FastAPI快速上手.md) | REST 原則、非同步 async/await 概念與路徑參數/查詢參數 | 第 1 週 |
+| **02** | [02_Pydantic資料驗證與CRUD實作.md](./02_Pydantic資料驗證與CRUD實作.md) | BaseModel 宣告、Field 驗證規則、Schema 與 ORM 映射轉換 | 第 2 週 |
+| **03** | [03_FastAPI_Testing與API文件品質.md](./03_FastAPI_Testing與API文件品質.md) | TestClient 單元測試、狀態碼斷言與 Swagger 互動文檔調優 | 第 3 週 |
+| **04** | [04_Exit_Exam_API_Contract與型別防呆.md](./04_Exit_Exam_API_Contract與型別防呆.md) | 🎓 **本月結業測驗**：API Contract 規範實作、Pydantic V2 邊界型別防禦與自動化測試套件驗證 | 第 4 週 |
+| **專案** | [b2b_fastapi_app/](./b2b_fastapi_app/) | 🏆 **生產級 API 代碼庫**：含 `main.py`, `models.py`, `schemas.py`, `crud.py`, `database.py` | 第 4 週 |
+
+---
+
 ## 🎯 本月三層完成度標準 (Three-Tier Mastery)
 
 - 🟢 **Level 1 — Survival (必做及格線)**：
@@ -19,18 +46,3 @@
 - 🔴 **Level 3 — Bonus (面試溢價線)**：
   - [ ] 深刻理解 `async def` 與同步 `def` 的執行緒模型差異與 Event Loop 阻塞避坑。
   - [ ] 實作 JWT Token 認證或 API Key 授權中介軟體 (Middleware)。
-
----
-
-## 📂 本模組教材與應用程式導航
-
-1. [01_RESTful_API設計與FastAPI快速上手.md](./01_RESTful_API設計與FastAPI快速上手.md) 🟢 🔵
-   - REST 原則、非同步 async/await 概念與路徑參數/查詢參數。
-2. [02_Pydantic資料驗證與CRUD實作.md](./02_Pydantic資料驗證與CRUD實作.md) 🟢 🔵
-   - BaseModel 宣告、Field 驗證規則、Schema 與 ORM 映射轉換。
-3. [03_FastAPI_Testing與API文件品質.md](./03_FastAPI_Testing與API文件品質.md) 🔵 🧪
-   - TestClient 單元測試、狀態碼斷言與 Swagger 互動文檔調優。
-4. [04_Exit_Exam_API_Contract與型別防呆.md](./04_Exit_Exam_API_Contract與型別防呆.md) 🎓 🔵
-   - **本月結業測驗**：API Contract 規範實作、Pydantic V2 邊界型別防禦與自動化測試套件驗證。
-5. [b2b_fastapi_app/](./b2b_fastapi_app/) 🔵
-   - 完整的生產級 FastAPI 專案代碼（含 `main.py`, `models.py`, `schemas.py`, `crud.py`, `database.py`）。

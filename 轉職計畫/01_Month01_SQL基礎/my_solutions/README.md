@@ -14,7 +14,7 @@
 
 ## 參考模板
 
-詳見 [06_AI_SQL_Review_Workflow.md](../06_AI_SQL_Review_Workflow.md)
+詳見 [09_AI協助SQL複習工作流.md](../09_AI協助SQL複習工作流.md)
 
 ---
 

@@ -1,4 +1,4 @@
-# 06 — AI SQL Review Workflow
+# 09 — AI 協助 SQL 複習工作流（AI Review SOP）
 
 > **「用 AI 學 SQL」和「讓 AI 寫 SQL」是完全不同的事。**
 > 前者讓你越來越強，後者讓你越來越依賴。
@@ -23,7 +23,7 @@
 
 ```
 1. 讀題
-2. 用「SQL 問題拆解框架」填表（參考 03_SQL問題拆解框架.md）
+2. 用「SQL 問題拆解框架」填表（參考 04_SQL商業問題拆解框架.md）
 3. 自己寫 SQL（哪怕不完整）
 4. 執行，看結果
 5. 如果結果不對，嘗試 Debug（至少 10 分鐘）
@@ -204,9 +204,8 @@ Review 這條 SQL，指出：效能問題、邏輯問題、可讀性問題、潛
 
 ## 🔗 下一步與章節導航
 
-- **前一篇**：[05_SQL_Debugging.md](./05_SQL_Debugging.md)（三型態 SQL 排錯與診斷）
-- **實戰題庫手寫**：[03_30道商業場景SQL實戰練習題_含解答.md](./03_30道商業場景SQL實戰練習題_含解答.md)（將 AI Review SOP 應用於解題）
+- **前一篇**：[07_SQL除錯方法論.md](./07_SQL除錯方法論.md)（三型態 SQL 排錯與診斷）
+- **實戰題庫手寫**：[06_30道B2B商業SQL實戰練習題.md](./06_30道B2B商業SQL實戰練習題.md)（將 AI Review SOP 應用於解題）
 - **學習歷程本**：[my_solutions/README.md](./my_solutions/README.md)（記錄自己從第一版到最終版的軌跡）
-- **品質檢核**：[07_B2B資料品質檢查指南.md](./07_B2B資料品質檢查指南.md)（以資料工程角度檢視品質）
-- **驗收標準**：[08_Month01_驗收Checkpoint.md](./08_Month01_驗收Checkpoint.md)（完成本月 Checkpoint 檢核）
+- **結業考核**：[10_Exit_Exam_B2B商業數據偵探考題.md](./10_Exit_Exam_B2B商業數據偵探考題.md)（80分晉級門檻）
 - **回到目錄**：[Month 01 學習模組主導航](./README.md)

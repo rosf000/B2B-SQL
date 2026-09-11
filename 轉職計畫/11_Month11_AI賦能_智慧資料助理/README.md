@@ -4,6 +4,20 @@
 
 ---
 
+## 🗺️ Month 11 四步 AI 助理修煉旅程（Roadmap）
+
+```mermaid
+flowchart TD
+    S1["第 1 週：Prompt 工程 ＋ 結構化輸出<br/>閱讀 01 講義 ➜ System Prompt ➜ Few-Shot 防幻覺 ➜ Pydantic 強制 JSON 輸出"]
+    S2["第 2 週：Text-to-SQL 原理 ＋ Schema 注入<br/>閱讀 02 講義 ➜ 動態注入 DDL ➜ 業務名詞映射 ➜ 自動生成多表 JOIN SQL"]
+    S3["第 3 週：AI Safety Gate 企業級安全防禦<br/>閱讀 00 安全指南 ➜ 唯讀帳號隔離 ➜ AST 語法樹校驗 ➜ 自動注入 LIMIT ➜ 滲透演練"]
+    S4["第 4 週：AI 助理專案整合 ＋ 結業考核<br/>交付 ai_sql_assistant ➜ 打造互動式 CLI ➜ 通過 10 大安全滲透測試！"]
+
+    S1 --> S2 --> S3 --> S4
+```
+
+---
+
 ## 📌 雙軌實作路線：Project 4A vs Project 4B
 
 為了避免零基礎或時間有限的學員負擔過重，M11 正式採行**雙軌分流機制**：
@@ -28,6 +42,18 @@
 
 ---
 
+## 📂 本模組教材與應用程式導航
+
+| 序號 | 篇章名稱 | 核心目標與學習內容 | 推薦時機 |
+| :---: | :--- | :--- | :---: |
+| **00** | [00_本月學習計畫與目標.md](./00_本月學習計畫與目標.md) | 📅 **4 週 28 天每日學習排程**、Git Commit 規範與驗收標準 | 開學第一天必讀 |
+| **安全** | [00_AI_Safety_Gate_安全防禦檢驗標準.md](./00_AI_Safety_Gate_安全防禦檢驗標準.md) | 🏆 **本月結業通關閘門 (AI Safety Gate)**：企業級 AI 防護鏈、AST 語法校驗器代碼、唯讀帳號隔離與 10 大滲透攻擊評測 | 第 3~4 週 |
+| **01** | [01_LLM_API_Prompt工程與Structured_Output.md](./01_LLM_API_Prompt工程與Structured_Output.md) | Prompt 樣板設計、角色設定、防幻覺與 Schema 注入技術 | 第 1 週 |
+| **02** | [02_Text_to_SQL與Function_Calling原理解析.md](./02_Text_to_SQL與Function_Calling原理解析.md) | 智慧 Agent 的運作迴圈 (Plan ➜ Tool Call ➜ Execute ➜ Synthesize) | 第 2 週 |
+| **專案** | [ai_sql_assistant/](./ai_sql_assistant/) | 🏆 **生產級 AI 數據助理代碼庫**：含互動式 CLI 介面、AST 校驗器與 Demo 範例 | 第 4 週 |
+
+---
+
 ## 🎯 本月三層完成度標準 (Three-Tier Mastery)
 
 - 🟢 **Level 1 — Survival (必做及格線)**：
@@ -40,16 +66,3 @@
 - 🔴 **Level 3 — Bonus (面試溢價線)**：
   - [ ] **Track B 進階**：完成多角色 AI Agent 工作流（生成 ➜ 語法校驗 ➜ 唯讀執行 ➜ 商業圖表報告）。
   - [ ] 撰寫 AI 評測集，計算 Text-to-SQL 的執行準確率與安全性攔截率。
-
----
-
-## 📂 本模組教材與應用程式導航
-
-- [00_AI_Safety_Gate_安全防禦檢驗標準.md](./00_AI_Safety_Gate_安全防禦檢驗標準.md) 🤖 🔵
-  - 🏆 **本月結業通關閘門 (AI Safety Gate)**：企業級 AI 防護鏈、AST 語法校驗器代碼、唯讀帳號隔離與 10 大滲透攻擊評測。
-1. [01_LLM_API_Prompt工程與Structured_Output.md](./01_LLM_API_Prompt工程與Structured_Output.md) 🟢 🔵
-   - Prompt 樣板設計、角色設定、防幻覺與 Schema 注入技術。
-2. [02_Text_to_SQL與Function_Calling原理解析.md](./02_Text_to_SQL與Function_Calling原理解析.md) 🔵 🔴
-   - 智慧 Agent 的運作迴圈 (Plan ➜ Tool Call ➜ Execute ➜ Synthesize)。
-3. [ai_sql_assistant/](./ai_sql_assistant/) 🔵
-   - 可直接執行的 AI 資料庫助理專案源碼（含互動式 CLI 介面與 Demo 範例）。

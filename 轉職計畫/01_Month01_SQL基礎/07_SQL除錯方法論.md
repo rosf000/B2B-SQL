@@ -1,4 +1,4 @@
-# 05 — SQL Debugging 三型態
+# 07 — SQL 除錯方法論（Debugging 三型態）
 
 > **AI 時代，寫 SQL 越來越容易；但判斷 SQL 是否正確，越來越重要。**
 > 這是你不能外包給 AI 的核心能力。
@@ -319,8 +319,8 @@ SELECT COUNT(*) FROM (
 
 ## 🔗 下一步與章節導航
 
-- **前一篇**：[04_JOIN陷阱與資料重複.md](./04_JOIN陷阱與資料重複.md)（JOIN Explosion 深度診斷）
-- **下一篇（AI 協作流程）**：[06_AI_SQL_Review_Workflow.md](./06_AI_SQL_Review_Workflow.md)（AI 輔助 Code Review 與學習軌跡存檔）
-- **品質檢核**：[07_B2B資料品質檢查指南.md](./07_B2B資料品質檢查指南.md)（四維度資料品質檢核）
-- **實戰題庫**：[03_30道商業場景SQL實戰練習題_含解答.md](./03_30道商業場景SQL實戰練習題_含解答.md)（將 Debug 思維應用於題目）
+- **前一篇**：[05_JOIN陷阱與資料粒度問題.md](./05_JOIN陷阱與資料粒度問題.md)（JOIN Explosion 深度診斷）
+- **下一篇（AI 協作流程）**：[09_AI協助SQL複習工作流.md](./09_AI協助SQL複習工作流.md)（AI 輔助 Code Review 與學習軌跡存檔）
+- **資料庫探索 SOP**：[08_讀懂陌生資料庫的五步驟.md](./08_讀懂陌生資料庫的五步驟.md)（資料探索與異常值檢驗）
+- **實戰題庫**：[06_30道B2B商業SQL實戰練習題.md](./06_30道B2B商業SQL實戰練習題.md)（將 Debug 思維應用於題目）
 - **回到目錄**：[Month 01 學習模組主導航](./README.md)

@@ -175,7 +175,7 @@ flowchart LR
 
 ## 🔗 下一步與章節導航
 
-- **前一篇**：[00_資料庫閱讀指南.md](./00_資料庫閱讀指南.md)（Schema Thinking 與資料粒度觀念）
-- **下一篇**：[02_SQL核心語法精粹_SELECT至JOIN.md](./02_SQL核心語法精粹_SELECT至JOIN.md)（5 大階梯式實戰關卡與底層執行順序）
-- **資料集詳解**：[data/README.md](./data/README.md)（Canonical 資料表定義與欄位規範）
+- **進階資料庫探索**：[08_讀懂陌生資料庫的五步驟.md](./08_讀懂陌生資料庫的五步驟.md)（Schema Thinking 與資料粒度觀念）
+- **下一篇**：[03_SQL核心語法_SELECT到JOIN全解析.md](./03_SQL核心語法_SELECT到JOIN全解析.md)（5 大階梯式實戰關卡與底層執行順序）
+- **資料庫腳本**：[data/b2b_m1_sample.sql](./data/b2b_m1_sample.sql)（Canonical 資料表定義與初始化腳本）
 - **回到目錄**：[Month 01 學習模組主導航](./README.md)

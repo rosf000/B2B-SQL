@@ -5,6 +5,26 @@
 
 ---
 
+## 🗺️ Month 08 四步旗艦作品交付旅程（Roadmap）
+
+```mermaid
+flowchart TD
+    S1["第 1 週：架構落實 ＋ 3NF 資料庫部署<br/>閱讀 architecture.md ➜ 部署 schema.sql ➜ 載入萬筆數據 ➜ 確立資料字典"]
+    S2["第 2 週：智慧清洗 ＋ Levenshtein 模糊去重<br/>開發 data_cleaner.py ➜ 統編加權校驗 ➜ 相似度比對 ➜ 隔離區與日誌"]
+    S3["第 3 週：多維度商業分析引擎開發<br/>開發 analytics.py ➜ 實作 RFM 客戶分群 ➜ Quota 達成率 ➜ 營收時序 MoM"]
+    S4["第 4 週：7 大 Portfolio Gate 審查 ＋ 投遞啟動<br/>代碼規範重構 ➜ 破壞防禦測試 ➜ 完善開源 README ➜ 通過 7 大 Gate 認證！"]
+
+    S1 --> S2 --> S3 --> S4
+```
+
+| 檔案導航 | 說明 |
+| :--- | :--- |
+| 📅 **[00_本月學習計畫與目標.md](./00_本月學習計畫與目標.md)** | **4 週 28 天每日專案衝刺排程**、Git Commit 規範與驗收標準 |
+| 🏆 **[00_Portfolio_Gate_求職通關7大審查標準.md](./00_Portfolio_Gate_求職通關7大審查標準.md)** | 面試官視角 7 大通關審查（通過後正式開啟履歷投遞） |
+| 🏛️ **[architecture.md](./architecture.md)** | 系統四層架構設計文檔與資料流規範 |
+
+---
+
 ## 📌 版本說明：兩階段交付策略
 
 本旗艦作品分兩個版本交付，這樣在 M8 就能開始投履歷，不需要等 M11 完成 AI 功能：
