@@ -4,22 +4,52 @@
 
 ---
 
-## 🎯 本月技能檢核清單
+## 📌 雙軌實作路線：Project 4A vs Project 4B
 
-- [ ] 理解 LLM API (OpenAI / Google Gemini / Anthropic) 呼叫機制與 Token 計價
-- [ ] 掌握 Prompt Engineering（System Prompt, Few-Shot 範例提示）
-- [ ] 掌握結構化輸出 (Structured Output) 與 Pydantic 整合
-- [ ] 深入理解 Tool Use / Function Calling 原理
-- [ ] 設計防禦 SQL 注入與惡意刪庫 (Read-Only SQL Validator) 的安全防護層
-- [ ] 完成 **AI Text-to-SQL 智慧數據查詢助理專案 (Project 4)**
+為了避免零基礎或時間有限的學員負擔過重，M11 正式採行**雙軌分流機制**：
+
+```
+                    ┌────────────────────────────────────────────────────────┐
+                    │                      Month 11                          │
+                    └──────────────────────────┬─────────────────────────────┘
+                                               │
+                      ┌────────────────────────┴────────────────────────┐
+                      ▼                                                 ▼
+        【Track A：Data Engineer 必修】                     【Track B：AI 賦能加分項】
+          Project 4A: Production Data Pipeline                Project 4B: AI Business Assistant
+          - Airflow 定時排程與 DAG 設計                        - Text-to-SQL 智慧數據查詢
+          - 自動重試 (Retry) 與 Failure Alert                 - 🛡️ AST SQL Validator 安全防衛
+          - Data Quality 自動化監控告警                       - 唯讀權限隔離與自然語言報告生成
+```
+
+> **選軌建議**：
+> - 目標 **Junior Data Engineer / Data Automation**：請務必完成 **Track A (Project 4A)**。
+> - 目標 **AI-Augmented Data Engineer / 爭取更高溢價**：在完成 4A 後挑戰 **Track B (Project 4B)** 作為面試殺手鐧！
+
+---
+
+## 🎯 本月三層完成度標準 (Three-Tier Mastery)
+
+- 🟢 **Level 1 — Survival (必做及格線)**：
+  - [ ] 能呼叫 OpenAI / Gemini API 透過 Prompt 生成基本 SQL 查詢。
+  - [ ] 理解 Prompt Engineering 基礎（System Prompt, Few-Shot 範例）。
+- 🔵 **Level 2 — Job Ready (標準求職線，80分晉級)**：
+  - [ ] **Track A 必修**：完成 Airflow 定時排程 ETL 管線，具備重試機制與 Data Quality 監控。
+  - [ ] 掌握 Function Calling / Tool Use 與結構化輸出 (Pydantic)。
+  - [ ] 通過 **[00_AI_Safety_Gate_安全防禦檢驗標準.md](./00_AI_Safety_Gate_安全防禦檢驗標準.md)**（AST 攔截 DROP/DELETE、唯讀帳號隔離與自動注入 LIMIT）。
+- 🔴 **Level 3 — Bonus (面試溢價線)**：
+  - [ ] **Track B 進階**：完成多角色 AI Agent 工作流（生成 ➜ 語法校驗 ➜ 唯讀執行 ➜ 商業圖表報告）。
+  - [ ] 撰寫 AI 評測集，計算 Text-to-SQL 的執行準確率與安全性攔截率。
 
 ---
 
 ## 📂 本模組教材與應用程式導航
 
-1. [01_LLM_API_Prompt工程與Structured_Output.md](./01_LLM_API_Prompt工程與Structured_Output.md)
+- [00_AI_Safety_Gate_安全防禦檢驗標準.md](./00_AI_Safety_Gate_安全防禦檢驗標準.md) 🤖 🔵
+  - 🏆 **本月結業通關閘門 (AI Safety Gate)**：企業級 AI 防護鏈、AST 語法校驗器代碼、唯讀帳號隔離與 10 大滲透攻擊評測。
+1. [01_LLM_API_Prompt工程與Structured_Output.md](./01_LLM_API_Prompt工程與Structured_Output.md) 🟢 🔵
    - Prompt 樣板設計、角色設定、防幻覺與 Schema 注入技術。
-2. [02_Text_to_SQL與Function_Calling原理解析.md](./02_Text_to_SQL與Function_Calling原理解析.md)
+2. [02_Text_to_SQL與Function_Calling原理解析.md](./02_Text_to_SQL與Function_Calling原理解析.md) 🔵 🔴
    - 智慧 Agent 的運作迴圈 (Plan ➜ Tool Call ➜ Execute ➜ Synthesize)。
-3. [ai_sql_assistant/](./ai_sql_assistant/)
+3. [ai_sql_assistant/](./ai_sql_assistant/) 🔵
    - 可直接執行的 AI 資料庫助理專案源碼（含互動式 CLI 介面與 Demo 範例）。

@@ -4,29 +4,33 @@
 
 ---
 
-## 🎯 本月技能檢核清單
+## 🎯 本月三層完成度標準 (Three-Tier Mastery)
 
-- [ ] 理解資料庫連線池 (Connection Pool) 與 Engine 機制
-- [ ] 掌握 psycopg2 原始 SQL 執行與參數化查詢（徹底防禦 SQL Injection）
-- [ ] 掌握 SQLAlchemy 2.0 核心查詢與 ORM Declarative 映射
-- [ ] 掌握交易交易控制 (`session.commit()`, `session.rollback()`)
-- [ ] 理解 ETL (Extract ➜ Transform ➜ Load) 架構思維
-- [ ] 建立具備日誌 (Logging)、例外重試、環境變數 (`.env`) 的穩定管線
-- [ ] 完成 **Project 2：Excel 至 PostgreSQL 自動化 ETL 管線專案**
+- 🟢 **Level 1 — Survival (必做及格線)**：
+  - [ ] 能使用 psycopg2 / SQLAlchemy 成功連線本地 PostgreSQL 並執行 SELECT。
+  - [ ] 掌握基礎 ETL 流程：從 Excel 讀取資料並寫入資料庫。
+  - [ ] 掌握 `.env` 環境變數讀取與敏感資訊隔離。
+- 🔵 **Level 2 — Job Ready (標準求職線，80分晉級)**：
+  - [ ] 掌握 SQLAlchemy 2.0 參數化綁定（徹底防禦 SQL Injection）。
+  - [ ] 實作 **Production 三件套**：冪等性（跑兩次資料不翻倍）+ Data Quality 檢查 + 稽核日誌。
+  - [ ] 使用 Pytest 撰寫資料清洗與驗證規則的自動化單元測試。
+  - [ ] 完成 **Project 2：Excel 至 PostgreSQL 自動化 ETL 管線專案**。
+  - [ ] 通過 **[04_Production工程三件套_冪等性_品質檢查與稽核日誌.md](./04_Production工程三件套_冪等性_品質檢查與稽核日誌.md)** Exit 驗證。
+- 🔴 **Level 3 — Bonus (面試溢價線)**：
+  - [ ] 掌握連線池 (Connection Pool) 參數調優（`pool_size`, `max_overflow`）。
+  - [ ] 實作資料庫交易交易控制 (`session.commit()`, `session.rollback()`) 與異常自動回滾。
 
 ---
 
 ## 📂 本模組教材與專案導航
 
-1. [01_SQLAlchemy與psycopg2實務.md](./01_SQLAlchemy與psycopg2實務.md)
+1. [01_SQLAlchemy與psycopg2實務.md](./01_SQLAlchemy與psycopg2實務.md) 🟢 🔵
    - 連線設定、參數綁定、ORM 映射與批次寫入效能對比。
-2. [02_ETL自動化管線與日誌系統設計.md](./02_ETL自動化管線與日誌系統設計.md)
+2. [02_ETL自動化管線與日誌系統設計.md](./02_ETL自動化管線與日誌系統設計.md) 🟢 🔵
    - 資料清洗過濾器、重複鍵防呆處理 (UPSERT)、日誌輸出與錯誤告警。
-3. [03_ETL_Testing指南.md](./03_ETL_Testing指南.md)
+3. [03_ETL_Testing指南.md](./03_ETL_Testing指南.md) 🔵 🧪
    - Pytest 單元測試框架、資料清洗邏輯測試與驗證規則自動化測試。
-4. [04_Production工程三件套_冪等性_品質檢查與稽核日誌.md](./04_Production工程三件套_冪等性_品質檢查與稽核日誌.md)
-   - 🛡️ **冪等性 (Idempotency)**：UPSERT 與原子性分區替換，保證腳本重跑資料不重複。
-   - 🔍 **資料品質閘門 (Data Quality Gate)**：NULL、重複值、筆數突變異常自動攔截。
-   - 📜 **管線稽核日誌 (Audit Log)**：PostgreSQL 元資料表記錄執行耗時與狀態追蹤。
-5. [Project_02_Excel至PostgreSQL自動化ETL管線/](./Project_02_Excel至PostgreSQL自動化ETL管線/README.md)
+4. [04_Production工程三件套_冪等性_品質檢查與稽核日誌.md](./04_Production工程三件套_冪等性_品質檢查與稽核日誌.md) 🎓 🔵
+   - 🛡️ **本月結業測驗 (Exit Exam)**：驗證冪等性 (Idempotency)、Data Quality Gate 攔截異常與 Audit Log 執行日誌。
+5. [Project_02_Excel至PostgreSQL自動化ETL管線/](./Project_02_Excel至PostgreSQL自動化ETL管線/README.md) 🔵
    - 第二個開源作品：包含完整的 Python ETL 程式碼、設定檔、模擬 Excel 生成腳本與 GitHub README。

@@ -4,31 +4,36 @@
 
 ---
 
-## 🎯 本月技能檢核清單
+## 🎯 本月三層完成度標準 (Three-Tier Mastery)
 
-- [ ] 安裝 Python 3.11+ 與 VS Code 環境設定
-- [ ] 掌握虛擬環境管理 (`python -m venv .venv` 與 `pip install`)
-- [ ] 熟練 4 大內建資料結構：`list`, `dict`, `tuple`, `set`
-- [ ] 掌握控制流程：`if / elif / else` 條件分支與 `for / while` 迴圈
-- [ ] 掌握列表推導式 (List Comprehension) 與字典推導式
-- [ ] 掌握函式定義、參數預設值、`*args` / `**kwargs` 與 Return 值
-- [ ] 掌握檔案讀寫 I/O (`with open(...) as f`) 與 JSON 處理
-- [ ] 掌握例外處理 (`try ... except ... finally`) 與錯誤除錯技巧
-- [ ] 獨立完成 3 款可執行的 Python 實用辦公室工具
+- 🟢 **Level 1 — Survival (必做及格線)**：
+  - [ ] 成功安裝 Python 3.11+ 與 VS Code，能在終端機執行 `.py` 腳本。
+  - [ ] 熟練基本資料型態與 4 大容器：`list`, `dict`, `tuple`, `set`。
+  - [ ] 能看懂基本報錯 Traceback，定位發生錯誤的行數。
+- 🔵 **Level 2 — Job Ready (標準求職線，80分晉級)**：
+  - [ ] 掌握函式模組化、預設參數、檔案讀寫 (`with open`) 與 JSON 處理。
+  - [ ] 掌握防禦性編程：`.get()` 預設值、`try...except` 精確捕獲特定異常。
+  - [ ] 獨立完成 3 款可執行的 B2B 自動化小工具（整理/去重/批次命名）。
+  - [ ] 通過 **[05_Exit_Exam_Python除錯與防呆實戰.md](./05_Exit_Exam_Python除錯與防呆實戰.md)**（修復 5 大 Crash 地雷並寫出單元測試）。
+- 🔴 **Level 3 — Bonus (面試溢價線)**：
+  - [ ] 掌握列表推導式與字典推導式的高效記憶體寫法。
+  - [ ] 理解 Python EAFP 設計哲學與自定義 Exception 類別。
 
 ---
 
 ## 📂 本模組教材與工具代碼導航
 
-1. [01_Python環境_語法_資料結構全攻略.md](./01_Python環境_語法_資料結構全攻略.md)
+1. [01_Python環境_語法_資料結構全攻略.md](./01_Python環境_語法_資料結構全攻略.md) 🟢
    - 環境配置、基礎型態、切片、字典索引與常用內建方法。
-2. [02_函式_模組與例外處理除錯實務.md](./02_函式_模組與例外處理除錯實務.md)
+2. [02_函式_模組與例外處理除錯實務.md](./02_函式_模組與例外處理除錯實務.md) 🟢 🔵
    - 模組化設計、自訂例外、30 分鐘除錯心法與日誌基礎。
-3. [03_B2B工作情境Python應用.md](./03_B2B工作情境Python應用.md)
+3. [03_B2B工作情境Python應用.md](./03_B2B工作情境Python應用.md) 🔵
    - **M4 → M5 橋接篇**：用 B2B 真實場景（去重工具、週報彙整、沉睡客戶偵測）把語法轉化成實際解決方案。
-4. [04_Python語法練習題庫.md](./04_Python語法練習題庫.md)
+4. [04_Python語法練習題庫.md](./04_Python語法練習題庫.md) 🟢 🔵
    - 15 道精選基礎與商業演算法練習題（含詳細解法）。
-5. **實用自動化小工具原始碼**：[Project_04_B2B三大自動化工具/](./Project_04_B2B三大自動化工具/)
+5. [05_Exit_Exam_Python除錯與防呆實戰.md](./05_Exit_Exam_Python除錯與防呆實戰.md) 🎓 🔵
+   - **本月結業測驗**：Python Debug Lab 實戰，修復 KeyError/None/ZeroDivision 等 5 大崩潰炸彈，實作隔離區與單元測試。
+6. **實用自動化小工具原始碼**：[Project_04_B2B三大自動化工具/](./Project_04_B2B三大自動化工具/) 🔵
    - `01_excel_organizer.py`：CSV / Excel 報表欄位清洗與格式化工具。
    - `02_duplicate_detector.py`：客戶重複名單與相似統編檢查工具。
    - `03_batch_renamer.py`：發票/合約 PDF 檔案批次重新命名與歸檔工具。

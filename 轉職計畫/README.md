@@ -77,27 +77,27 @@ flowchart TD
 
 ---
 
-## 📂 教材目錄導航
+## 📂 教材目錄導航（12 個月 × 12 大 Gate 通關認證）
 
-| 月份模組 | 主題名稱 | 核心內容與實作成果 | 驗證標準 | 狀態 |
+| 月份模組 | 主題名稱 | 核心內容與實作成果 | 通關考核 (Gate / Exit Exam) | 狀態 |
 | :--- | :--- | :--- | :---: | :---: |
-| **00 導讀** | [轉職戰略與導讀](./00_轉職戰略與導讀/README.md) | B2B 優勢定位、三層完成制度、AI Policy 5 級階梯、能力雷達矩陣 | 閱讀並確立法則 | ✅ |
-| **Month 01** | [SQL 基礎 + Git 起手](./01_Month01_SQL基礎/README.md) | PostgreSQL、SELECT/JOIN/GROUP BY、Git 第一天 commit | 🎓 Exit Exam 80分 | ✅ |
-| **Month 02** | [SQL 進階與分析](./02_Month02_SQL進階與分析/README.md) | Subquery、CTE、Window Functions、Index 調優、**Project 1** | 🎓 Exit Exam + 面試README | ✅ |
-| **Month 03** | [資料庫設計與建模](./03_Month03_資料庫設計與建模/README.md) | 3NF 正規化、Index B-Tree 原理、**AI Schema 審查除錯題** | 找出 AI 缺陷設計 | ✅ |
-| **Month 04** | [Python（目標導向）](./04_Month04_Python基礎與實用工具/README.md) | 聚焦 B2B 工具、字串/日期處理、例外除錯排錯防呆 | Debug 驗收實作 | ✅ |
-| **Month 05** | [Python × ETL × Database](./05_Month05_Python與資料庫整合自動化/README.md) | **🛡️ Production 三件套：冪等性 (Idempotency)、Data Quality、Audit Log** | 跑兩次無重複 + DQ攔截 | ✅ |
-| **Month 06** | [Pandas + API 資料處理](./06_Month06_Pandas與API資料處理/README.md) | 資料清洗、REST API 入庫、**API Failure Lab (429/500/髒資料防禦)** | 異常狀態自動重試 | ✅ |
-| **Month 07** | [Linux + Docker + AI Workflow](./07_Month07_工程素養_Git與Linux/README.md) | Linux 實用指令、Docker Compose、**Docker 容器網路除錯 Lab** | 解決 localhost 陷阱 | ✅ |
-| **Month 08** | [🏆 旗艦：B2B 客戶數據系統](./08_Month08_旗艦主力專案_B2B客戶數據系統/README.md) | 3NF Schema + Levenshtein 去重 + 企業級安全 AI 防禦鏈 | 🏆 通過 7 大 Gate (M8起投遞) | ✅ |
-| **Month 09** | [FastAPI 後端開發](./09_Month09_後端開發_FastAPI/README.md) | 旗艦專案 API 化、CRUD、API Contract、Pydantic 防呆 | Swagger 可互動測試 | ✅ |
-| **Month 10** | [Docker 容器化與雲端部署](./10_Month10_容器化與部署_Docker/README.md) | 一鍵 Compose 啟動、雲端部署、**🚀 Production Checklist (Secrets/Health)** | 公開 Demo URL | ✅ |
-| **Month 11** | [Airflow 管線與 AI 助理](./11_Month11_AI賦能_智慧資料助理/README.md) | **雙軌制**：Track A (Airflow 自動化監控告警) / Track B (安全 AI Agent) | DAG 自動排程無誤 | ✅ |
-| **Month 12** | [求職衝刺與數據看盤](./12_Month12_轉職衝刺與求職寶典/README.md) | 📊 **求職數據實驗室**：每週 Funnel 追蹤、技術弱點覆盤、面試 50 題庫 | 獲取 Offer | ✅ |
+| **00 導讀** | [轉職戰略與導讀](./00_轉職戰略與導讀/README.md) | B2B 優勢定位、三層完成制度、AI Policy 5 級階梯、4大求職路徑 | 確立法則與學習閉環 | ✅ |
+| **Month 01** | [SQL 基礎 + Git 起手](./01_Month01_SQL基礎/README.md) | PostgreSQL、SELECT/JOIN/GROUP BY、Git 第一天 commit | 🎓 M1 Exit Exam (商業數據偵探 80分) | ✅ |
+| **Month 02** | [SQL 進階與分析](./02_Month02_SQL進階與分析/README.md) | Subquery、CTE、Window Functions、Index 調優、**Project 1** | 🎓 M2 Exit Exam (MoM/RFM/Index調優) | ✅ |
+| **Month 03** | [資料庫設計與建模](./03_Month03_資料庫設計與建模/README.md) | 3NF 正規化、Index B-Tree 原理、Constraint 破壞測試 | 🎓 M3 Exit Exam (Schema Review 抓6大漏洞) | ✅ |
+| **Month 04** | [Python（目標導向）](./04_Month04_Python基礎與實用工具/README.md) | 聚焦 B2B 工具、字串/日期處理、例外除錯排錯防呆 | 🎓 M4 Exit Exam (Python Debug Lab 除錯防呆) | ✅ |
+| **Month 05** | [Python × ETL × Database](./05_Month05_Python與資料庫整合自動化/README.md) | **🛡️ Production 三件套：冪等性 (Idempotency)、DQ、Audit Log** | 🎓 M5 Exit Exam (跑兩次無重複+DQ攔截) | ✅ |
+| **Month 06** | [Pandas + API 資料處理](./06_Month06_Pandas與API資料處理/README.md) | 資料清洗、REST API 入庫、異常狀態指數退避重試 | 🎓 M6 Exit Exam (API Failure Lab 防禦) | ✅ |
+| **Month 07** | [Linux + Docker + AI Workflow](./07_Month07_工程素養_Git與Linux/README.md) | Linux 實用指令、Docker Compose、容器網路排錯診斷 | 🎓 M7 Exit Exam (Docker 容器除錯 Lab) | ✅ |
+| **Month 08** | [🏆 旗艦：B2B 客戶數據系統](./08_Month08_旗艦主力專案_B2B客戶數據系統/README.md) | 3NF Schema + Levenshtein 去重 + 企業級安全 AI 防禦鏈 | 🏆 **Portfolio Gate (7大審核，開始投遞)** | ✅ |
+| **Month 09** | [FastAPI 後端開發](./09_Month09_後端開發_FastAPI/README.md) | 旗艦專案 API 化、CRUD、API Contract、Pydantic 防呆 | 🎓 M9 Exit Exam (API Contract & 型別防呆) | ✅ |
+| **Month 10** | [Docker 容器化與雲端部署](./10_Month10_容器化與部署_Docker/README.md) | 一鍵 Compose 啟動、雲端部署、Secrets 不進 Git | 🚀 **Production Gate (10大上線檢核+冒煙測試)** | ✅ |
+| **Month 11** | [Airflow 管線與 AI 助理](./11_Month11_AI賦能_智慧資料助理/README.md) | **雙軌制**：Track A (Airflow 自動化) / Track B (安全 AI Agent) | 🤖 **AI Safety Gate (AST校驗+滲透評測)** | ✅ |
+| **Month 12** | [求職衝刺與數據看盤](./12_Month12_轉職衝刺與求職寶典/README.md) | 📊 **求職數據實驗室**：每週 Funnel 追蹤、技術弱點覆盤閉環 | 🎯 **Job Ready Gate (取得 Offer 簽約)** | ✅ |
 
 ---
 
-## 🔥 四大主力作品
+## 🔥 四大主力作品（清楚拆分 4A 必修與 4B 加分）
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -114,11 +114,31 @@ flowchart TD
 │      User ➜ Question ➜ AI SQL ➜ SQL Validator ➜ Permission ➜ DB ➜ Explain   │
 │   ➜ 達成 7 大 Portfolio Gate 審查標準，錄製 3 分鐘高轉換 Demo              │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ Project 4：Production Pipeline & AI 智慧助理 (Month 11)                     │
-│   ➜ Track A (必修)：Airflow 定時排程 ETL、自動重試、Data Quality 監控與告警 │
-│   ➜ Track B (加分)：多角色 AI SQL 助理（生成 ➜ 驗證 ➜ 執行 ➜ 商業報告）     │
+│ Project 4A：Production Data Pipeline (Month 11) 【Data Engineer 必修】       │
+│   ➜ Airflow 定時排程與 DAG 調度、自動重試 (Retry)、Data Quality 監控與告警  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Project 4B：AI Business Data Assistant (Month 11) 【AI 賦能加分項】          │
+│   ➜ Text-to-SQL 智慧助理、AST SQL 語法校驗器 (禁DROP/DELETE)、唯讀帳號隔離  │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🧪 貫穿全課程的測試主線 (Testing Mindset)
+
+教材不再將測試視為個別工具，而是建立全鏈路的工程品質主線：
+- **M1 SQL 對帳測試** ➜ **M2 查詢極值邊界測試** ➜ **M3 Constraint 破壞測試** ➜ **M4 Python 單元測試**
+- ➜ **M5 ETL Pytest 測試** ➜ **M6 API 模擬測試 (Mocking)** ➜ **M7 Docker 健康檢查** ➜ **M8 E2E 整合測試**
+- ➜ **M9 FastAPI TestClient 測試** ➜ **M10 雲端冒煙測試 (Smoke Test)** ➜ **M11 AI 安全滲透評測** ➜ **M12 作品健康度掃描**
+
+---
+
+## 🎯 4 大目標職位路徑 (Build Paths：不必學完 12 個月才求職)
+
+1. 🏃 **Path A (Data Analyst 商業數據分析師)**：M1 ➜ M2 (Project 1) ➜ M3 ➜ M6 ➜ M12（約 4~5 個月即可求職）
+2. ⚡ **Path B (Data Automation Engineer 資料自動化工程師)**：M1 ➜ M2 ➜ M4 ➜ M5 (Project 2) ➜ M6 ➜ M7 ➜ M12（約 6~7 個月即可求職）
+3. 🏆 **Path C (Junior Data Engineer 初階資料工程師 - 核心旗艦)**：M1 ➜ M2 ➜ M3 ➜ M4 ➜ M5 ➜ M7 ➜ M8 (Project 3 通過 7 大 Gate) ➜ M10 ➜ M11 (Project 4A) ➜ M12
+4. 🛠️ **Path D (Junior Backend Engineer 初階後端工程師)**：M1 ➜ M3 ➜ M4 ➜ M7 ➜ M8 ➜ M9 ➜ M10 ➜ M12
 
 ---
 

@@ -58,42 +58,53 @@ B2B Data / Automation Engineer
 
 ---
 
-## 🔥 四大主力作品
+## 🔥 四大主力作品（清楚拆分 4A 必修與 4B 加分）
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ Project 1：SQL Business Analysis (M2)                           │
-│   ➜ 銷售資料分析、Cohort、RFM、CTE、Window Functions            │
+│ Project 1：B2B 銷售多維度分析 (M2)                              │
+│   ➜ 銷售資料分析、Cohort、RFM、CTE、Window Functions、8步面試README │
 ├─────────────────────────────────────────────────────────────────┤
-│ Project 2：Automated ETL Pipeline (M5)                          │
-│   ➜ Excel → Python → 清洗驗證 → PostgreSQL，含 Logging/Config  │
+│ Project 2：企業級自動化 ETL 管線 (M5)                           │
+│   ➜ 注入 Production 三件套：冪等性 (Idempotency) + DQ + 稽核日誌│
 ├─────────────────────────────────────────────────────────────────┤
 │ Project 3：AI-Augmented B2B Data Platform (M8–M10) 🏆 旗艦     │
-│   ➜ B2B 資料庫設計 + ETL + FastAPI + Docker + AI Agent          │
-│   ➜ 輸入：「找出三個月沒下單但過去消費超過 50 萬的客戶」         │
-│   ➜ 輸出：AI 自動生成 SQL → 驗證 → 查詢 → 自然語言報告          │
+│   ➜ 3NF 資料庫 + Levenshtein 去重 + FastAPI + Docker Compose    │
+│   ➜ 🛡️ 企業級安全防禦鏈（AST校驗+唯讀隔離）➜ 通過 7 大 Gate 投遞 │
 ├─────────────────────────────────────────────────────────────────┤
-│ Project 4：Data Pipeline with Airflow (M11)                     │
-│   ➜ 定時排程 ETL、資料品質監控、告警通知                        │
+│ Project 4A：Production Data Pipeline (M11) 【Data Engineer 必修】│
+│   ➜ Airflow 定時排程與 DAG 調度、自動重試、DQ 監控、Slack 告警  │
+├─────────────────────────────────────────────────────────────────┤
+│ Project 4B：AI Business Data Assistant (M11) 【AI 賦能加分項】  │
+│   ➜ Text-to-SQL 智慧助理、AST 語法校驗器 (禁DROP)、自然語言報告 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📋 年度 Checklist（AI-Native 版）
+## 🧪 貫穿全課程的測試主線 (Testing Mindset)
 
-- [ ] **M1**：Git + GitHub 第一天就建立，SQL 開始就 commit
-- [ ] **M2**：Window Functions 搞懂，完成 Project 1，上傳 GitHub
-- [ ] **M3**：設計 B2B ER 圖，用 AI 生成 Schema 再自己找問題
-- [ ] **M4**：Python 只學 B2B 工作需要的，寫出 3 個實用小工具
-- [ ] **M5**：完成 ETL Pipeline，有 Logging / Config / Error Handling
-- [ ] **M6**：API 資料入庫，Pandas 清洗，AI Review 自己的 Code
-- [ ] **M7**：Linux + Docker Compose，建立 AI Coding 工作流習慣
-- [ ] **M8**：旗艦作品完成，架構圖、Demo、README 完整 → **開始投履歷**
-- [ ] **M9**：B2B 系統 API 化，Swagger 文件完整
-- [ ] **M10**：docker-compose 一鍵啟動，部署到雲端有可存取 URL
-- [ ] **M11**：Airflow 排程 ETL，或 AI Agent 多角色系統擇一深入
-- [ ] **M12**：根據面試回饋補強，每週追蹤投遞結果
+教材不再將測試視為個別工具，而是建立全鏈路的工程品質主線：
+- **M1 SQL 對帳測試** ➜ **M2 查詢極值邊界測試** ➜ **M3 Constraint 破壞測試** ➜ **M4 Python 單元測試**
+- ➜ **M5 ETL Pytest 測試** ➜ **M6 API 模擬測試 (Mocking)** ➜ **M7 Docker 健康檢查** ➜ **M8 E2E 整合測試**
+- ➜ **M9 FastAPI TestClient 測試** ➜ **M10 雲端冒煙測試 (Smoke Test)** ➜ **M11 AI 安全滲透評測** ➜ **M12 作品健康度掃描**
+
+---
+
+## 📋 年度 12 大 Gate 通關檢核表 (Pass Criteria)
+
+- [ ] **M1 Exit Exam**：商業數據偵探考題通過（80分線），Git 第一天 commit 紀錄
+- [ ] **M2 Exit Exam**：Window Functions + MoM 計算，完成 Project 1 面試化 8 步 README
+- [ ] **M3 Exit Exam**：Schema Review 通過，成功抓出 AI 設計的 6 大缺陷 Schema
+- [ ] **M4 Exit Exam**：Python Debug Lab 通過，修復 KeyError / None / ZeroDivision 等 5 大崩潰炸彈
+- [ ] **M5 Exit Exam**：Production 三件套驗證（冪等性跑兩次不膨脹 + DQ 閘門攔截 + Audit Log）
+- [ ] **M6 Exit Exam**：API Failure Lab 通過（404/429/500/Timeout 指數退避重試與死信落盤）
+- [ ] **M7 Exit Exam**：Docker Failure Lab 通過（解決 Container 內的 localhost 網路世紀難題）
+- [ ] **M8 Portfolio Gate**：🏆 通過 7 大求職審核（架構圖、白板 SQL、Pydantic、安全 AI、災難情境、3 分鐘 Demo）➜ **開始投履歷**
+- [ ] **M9 Exit Exam**：FastAPI API Contract 契約規範與 Pydantic 型別防呆通過
+- [ ] **M10 Production Gate**：🚀 10 大生產檢核通過（Secrets 不進 Git、健康檢查、公開可訪問 Demo URL）
+- [ ] **M11 AI Safety Gate**：🤖 AST SQL Validator 100% 阻絕破壞性指令，唯讀權限隔離
+- [ ] **M12 Job Ready Gate**：🎯 啟用 Job Search Dashboard 每週覆盤閉環，刷熟面試 50 題，斬獲 Offer！
 
 ---
 
