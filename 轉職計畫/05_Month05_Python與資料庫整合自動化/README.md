@@ -22,5 +22,11 @@
    - 連線設定、參數綁定、ORM 映射與批次寫入效能對比。
 2. [02_ETL自動化管線與日誌系統設計.md](./02_ETL自動化管線與日誌系統設計.md)
    - 資料清洗過濾器、重複鍵防呆處理 (UPSERT)、日誌輸出與錯誤告警。
-3. [Project_02_Excel至PostgreSQL自動化ETL管線/](./Project_02_Excel至PostgreSQL自動化ETL管線/README.md)
+3. [03_ETL_Testing指南.md](./03_ETL_Testing指南.md)
+   - Pytest 單元測試框架、資料清洗邏輯測試與驗證規則自動化測試。
+4. [04_Production工程三件套_冪等性_品質檢查與稽核日誌.md](./04_Production工程三件套_冪等性_品質檢查與稽核日誌.md)
+   - 🛡️ **冪等性 (Idempotency)**：UPSERT 與原子性分區替換，保證腳本重跑資料不重複。
+   - 🔍 **資料品質閘門 (Data Quality Gate)**：NULL、重複值、筆數突變異常自動攔截。
+   - 📜 **管線稽核日誌 (Audit Log)**：PostgreSQL 元資料表記錄執行耗時與狀態追蹤。
+5. [Project_02_Excel至PostgreSQL自動化ETL管線/](./Project_02_Excel至PostgreSQL自動化ETL管線/README.md)
    - 第二個開源作品：包含完整的 Python ETL 程式碼、設定檔、模擬 Excel 生成腳本與 GitHub README。

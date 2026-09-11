@@ -21,3 +21,8 @@
    - 在職轉職者的時間管理指南（每週 15-20 小時的高效學習閉環）。
    - 「不盲目抄 AI 代碼、先 Debug 30 分鐘」的刻意練習法。
    - Notion / Google Sheet 進度排程表模板。
+
+4. [04_能力評測與三層完成制度.md](./04_能力評測與三層完成制度.md)
+   - 掌握 **三層完成制度**（Survival / Job Ready / Interview Ready），消除焦慮。
+   - 遵守 **AI Usage Policy 5 級階梯**（從 Level 0 禁止抄寫到 Level 4 安全防護鏈）。
+   - 查看 **12 個月能力雷達矩陣** 與每月 Exit Exam 通關準則。

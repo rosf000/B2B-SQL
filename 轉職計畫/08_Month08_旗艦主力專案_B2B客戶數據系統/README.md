@@ -73,8 +73,9 @@ flowchart LR
 
 ---
 
-## 📁 模組結構
+## 📁 模組結構與求職審查
 
+- [00_Portfolio_Gate_求職通關7大審查標準.md](./00_Portfolio_Gate_求職通關7大審查標準.md)：🏆 **投遞前必讀**！包含架構手繪、白板 SQL、企業級 AI 安全防禦鏈、四大災難防禦問答與 3 分鐘 Demo 劇本。
 - [architecture.md](./architecture.md)：詳細系統架構說明與 ER 關聯圖。
 - [db/schema.sql](./db/schema.sql)：資料庫 DDL 建立腳本。
 - [db/seed_mock_data.sql](./db/seed_mock_data.sql)：完整 B2B 測試數據。

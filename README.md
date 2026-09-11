@@ -39,19 +39,19 @@ B2B Data / Automation Engineer
 
 | 模組 | 主題 | 核心內容 | 狀態 |
 |:---|:---|:---|:---:|
-| **00 導讀** | [轉職戰略與導讀](./轉職計畫/00_轉職戰略與導讀/README.md) | B2B 優勢定位、AI-Native 學習方法、求職節奏 | ✅ |
-| **Month 01** | [SQL 基礎 + Git 起手](./轉職計畫/01_Month01_SQL基礎/README.md) | SELECT/JOIN/GROUP BY（9 篇教材、正確學習順序） | ✅ |
-| **Month 02** | [SQL 進階與分析](./轉職計畫/02_Month02_SQL進階與分析/README.md) | CTE、Window Functions、Project 1 銷售分析 | ✅ |
+| **00 導讀** | [轉職戰略與導讀](./轉職計畫/00_轉職戰略與導讀/README.md) | B2B 優勢定位、三層完成制度、AI Policy 5 級階梯、求職節奏 | ✅ |
+| **Month 01** | [SQL 基礎 + Git 起手](./轉職計畫/01_Month01_SQL基礎/README.md) | SELECT/JOIN/GROUP BY（10 篇教材、**🎓 Exit Exam 商業數據偵探 80分線**） | ✅ |
+| **Month 02** | [SQL 進階與分析](./轉職計畫/02_Month02_SQL進階與分析/README.md) | CTE、Window Functions、Index 調優、**Project 1 八步面試敘事法** | ✅ |
 | **Month 03** | [資料庫設計與建模](./轉職計畫/03_Month03_資料庫設計與建模/README.md) | ERD、正規化、Index、ACID、AI 生成 Schema → 你來 Review | ✅ |
-| **Month 04** | [Python 基礎（目標導向）](./轉職計畫/04_Month04_Python基礎與實用工具/README.md) | 語法 → B2B 情境橋接 → 練習題 → 三大自動化工具 | ✅ |
-| **Month 05** | [Python × ETL × Database](./轉職計畫/05_Month05_Python與資料庫整合自動化/README.md) | ETL Pipeline、Logging、Config、Retry、Project 2 | ✅ |
-| **Month 06** | [Pandas + API 資料處理](./轉職計畫/06_Month06_Pandas與API資料處理/README.md) | 資料清洗、REST API 入庫、AI 協助 Code Review | ✅ |
-| **Month 07** | [Git + Linux + Docker 入門](./轉職計畫/07_Month07_工程素養_Git與Linux/README.md) | Linux 基礎、**Docker 入門**（M10 深化的前置）、AI 工作流 | ✅ |
-| **Month 08** | [🔥 旗艦：B2B Data Platform v1.0](./轉職計畫/08_Month08_旗艦主力專案_B2B客戶數據系統/README.md) | B2B 系統工程版、面試核心作品、**開始投履歷**（v2.0 在 M11） | ✅ |
-| **Month 09** | [FastAPI API 化 + 測試](./轉職計畫/09_Month09_後端開發_FastAPI/README.md) | CRUD、Swagger、基礎 Auth、**pytest API 測試** | ✅ |
-| **Month 10** | [Docker 進階 + 雲端部署](./轉職計畫/10_Month10_容器化與部署_Docker/README.md) | Multi-stage Build、docker-compose 生產版、雲端 Demo URL | ✅ |
-| **Month 11** | [AI Agent：Text-to-SQL](./轉職計畫/11_Month11_AI賦能_智慧資料助理/README.md) | LLM API、Function Calling、旗艦作品升級為 v2.0（含 AI） | ✅ |
-| **Month 12** | [求職衝刺](./轉職計畫/12_Month12_轉職衝刺與求職寶典/README.md) | 履歷精修、面試 50 題、根據 JD 補強、持續投遞 | ✅ |
+| **Month 04** | [Python 基礎（目標導向）](./轉職計畫/04_Month04_Python基礎與實用工具/README.md) | 語法 → B2B 情境橋接 → 練習題 → 三大自動化工具與 Debug 訓練 | ✅ |
+| **Month 05** | [Python × ETL × Database](./轉職計畫/05_Month05_Python與資料庫整合自動化/README.md) | **🛡️ Production 三件套：冪等性 (Idempotency) + Data Quality + 稽核日誌** | ✅ |
+| **Month 06** | [Pandas + API 資料處理](./轉職計畫/06_Month06_Pandas與API資料處理/README.md) | 資料清洗、REST API 入庫、API Failure 防禦、AI 協助 Code Review | ✅ |
+| **Month 07** | [Git + Linux + Docker 入門](./轉職計畫/07_Month07_工程素養_Git與Linux/README.md) | Linux 基礎、Docker 本機環境建置、容器網路除錯、AI 工作流 | ✅ |
+| **Month 08** | [🏆 旗艦：B2B Data Platform](./轉職計畫/08_Month08_旗艦主力專案_B2B客戶數據系統/README.md) | 3NF 資料庫 + Levenshtein 去重 + **通過 7 大 Portfolio Gate（開始投遞）** | ✅ |
+| **Month 09** | [FastAPI API 化 + 測試](./轉職計畫/09_Month09_後端開發_FastAPI/README.md) | CRUD、Swagger、API Contract、Pydantic 防呆、pytest 測試 | ✅ |
+| **Month 10** | [Docker 進階 + 雲端部署](./轉職計畫/10_Month10_容器化與部署_Docker/README.md) | Multi-stage Build、docker-compose 生產版、Production Checklist | ✅ |
+| **Month 11** | [Airflow 管線與 AI 智慧助理](./轉職計畫/11_Month11_AI賦能_智慧資料助理/README.md) | 雙軌制：Track A (Airflow 定時監控) / Track B (企業級安全 AI SQL Agent) | ✅ |
+| **Month 12** | [求職衝刺與數據看盤](./轉職計畫/12_Month12_轉職衝刺與求職寶典/README.md) | 📊 **求職數據實驗室**：每週 Funnel 看盤、面試弱點覆盤、面試 50 題庫 | ✅ |
 | **A1** | [AI 協作工作流 SOP](./轉職計畫/A1_AI協作工作流SOP/README.md) | 每個任務都該用的 AI 協作標準流程與 Prompt 範本庫 | ✅ |
 | **A2** | [學習驗收 Checkpoints](./轉職計畫/A2_學習驗收Checkpoints/README.md) | 每月完成標準（Skills / Project / Explain 三維度） | ✅ |
 | **A3** | [職缺市場研究](./轉職計畫/A3_職缺市場研究/README.md) | 目標職缺分析、技能矩陣、投遞追蹤表 | ✅ |
