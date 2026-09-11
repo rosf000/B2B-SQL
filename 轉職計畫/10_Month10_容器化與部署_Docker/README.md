@@ -18,9 +18,11 @@
 
 ## 📂 本模組教材與容器配置導航
 
-1. [01_Docker與Docker_Compose實戰教學.md](./01_Docker與Docker_Compose實戰教學.md)
-   - Docker 核心概念、指令全集與網路隔離原理。
-2. [02_雲端部屬策略指南_Render_Railway_VPS.md](./02_雲端部屬策略指南_Render_Railway_VPS.md)
-   - 免費/低成本雲端部署步驟指南 (Render / Railway / Fly.io)。
+1. [01_Docker進階_多階段建置與容器安全.md](./01_Docker進階_多階段建置與容器安全.md)
+   - Docker 核心概念深化（M7 入門的延伸）、Multi-stage Build 鏡像瘦身、非 root 容器安全、指令全集與網路隔離原理。
+2. [02_雲端部署策略_PaaS與VPS選型實戰.md](./02_雲端部署策略_PaaS與VPS選型實戰.md)
+   - PaaS（Render / Railway / Fly.io）vs 自建 VPS 選型矩陣、Nginx 反向代理、HTTPS 自動憑證、異地備份。
 3. [Dockerfile](./Dockerfile)：FastAPI 生產環境輕量化構建檔。
 4. [docker-compose.yml](./docker-compose.yml)：一鍵啟動 FastAPI 後端 + PostgreSQL 16 + Adminer GUI。
+
+> **📌 前置知識**：本月的 Docker 內容是 [M7/04_Docker入門_本機開發環境建置.md](../07_Month07_工程素養_Git與Linux/04_Docker入門_本機開發環境建置.md) 的進階延伸，請確認已完成 M7 的 Docker 入門章節。

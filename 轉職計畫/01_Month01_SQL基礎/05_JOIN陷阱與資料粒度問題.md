@@ -10,6 +10,8 @@
 
 ### 基本範例
 
+> 💡【概念示意範例】（此處使用簡化的抽象訂單表說明 1:N 關聯原理；Canonical 資料庫請參閱 `data/b2b_m1_sample.sql`）：
+
 ```
 customers 表：
 customer_id | name
@@ -28,6 +30,7 @@ order_id | customer_id | amount
 JOIN 後：
 
 ```sql
+-- 【概念示意查詢】
 SELECT c.customer_id, c.name, o.amount
 FROM customers c
 JOIN orders o ON c.customer_id = o.customer_id;
@@ -47,6 +50,8 @@ customer_id | name  | amount
 ---
 
 ## 危險案例：SUM 變成三倍
+
+> 💡【概念示意範例】（展示 1:N 明細關聯對 SUM 的放大效應）：
 
 ```
 orders 表（3 筆，總金額 = 450）：
@@ -71,9 +76,10 @@ order_id | product_id | qty
 
 ```sql
 -- ⚠️ 這條 SQL 結果是錯的！
+-- 【概念示意】：若以 orders.total_amount（此處以概念欄位 amount 示意）直接在 JOIN order_items 後加總：
 SELECT
     o.customer_id,
-    SUM(o.amount) AS total_revenue      -- 問題在這裡
+    SUM(o.amount) AS total_revenue      -- 問題在這裡：被 order_items 的行數重複放大
 FROM orders o
 JOIN order_items oi ON o.order_id = oi.order_id
 GROUP BY o.customer_id;
@@ -100,21 +106,21 @@ SUM 結果 = (100+100) + (200+200) + (150+150) = 900
 
 **症狀：** SUM 的結果遠大於預期
 
-**診斷：**
+**診斷（可直接在 Canonical 資料庫執行）：**
 ```sql
 -- 先不 GROUP BY，看 JOIN 後的原始資料
-SELECT o.order_id, o.amount, oi.product_id
+SELECT o.order_id, o.total_amount, oi.product_id
 FROM orders o
 JOIN order_items oi ON o.order_id = oi.order_id
 LIMIT 20;
 -- 看看同一個 order_id 出現幾次
 ```
 
-**修正方法：**
+**修正方法（Canonical 資料庫適用）：**
 ```sql
--- 方法 1：先 SUM order_items，再 JOIN
+-- 方法 1：先 SUM order_items，再 JOIN（CTE 預先聚合，Month 02 會深入解析 CTE）
 WITH order_totals AS (
-    SELECT order_id, SUM(unit_price * quantity) AS line_total
+    SELECT order_id, SUM(subtotal) AS line_total
     FROM order_items
     GROUP BY order_id
 )
@@ -123,8 +129,8 @@ FROM orders o
 JOIN order_totals ot ON o.order_id = ot.order_id
 GROUP BY o.customer_id;
 
--- 方法 2：直接從 order_items 計算，不碰 orders.amount
-SELECT o.customer_id, SUM(oi.unit_price * oi.quantity) AS total_revenue
+-- 方法 2：直接從 order_items 計算，不碰 orders.total_amount
+SELECT o.customer_id, SUM(oi.subtotal) AS total_revenue
 FROM orders o
 JOIN order_items oi ON o.order_id = oi.order_id
 GROUP BY o.customer_id;
@@ -243,22 +249,21 @@ LIMIT 10;
 ---
 
 ## 快速診斷 SQL
-
 ```sql
--- 當你懷疑 JOIN 有問題，用這個模式確認：
+-- 當你懷疑 JOIN 有問題，用這個模式在 Canonical 資料庫確認：
 
 SELECT
     o.order_id,
-    o.amount,           -- orders 表的 amount
-    COUNT(oi.order_item_id) AS item_count,   -- 有幾個 order_items
-    SUM(oi.unit_price * oi.quantity) AS calculated_amount  -- 計算出的金額
+    o.total_amount,                          -- orders 表的 total_amount
+    COUNT(oi.item_id) AS item_count,         -- 有幾個 order_items
+    SUM(oi.subtotal) AS calculated_amount    -- 由明細彙總出的金額
 FROM orders o
 JOIN order_items oi ON o.order_id = oi.order_id
-GROUP BY o.order_id, o.amount
+GROUP BY o.order_id, o.total_amount
 ORDER BY o.order_id
 LIMIT 10;
 
--- 如果 orders.amount 和 calculated_amount 差很多，就有問題
+-- 如果 orders.total_amount 和 calculated_amount 差很多，就有問題
 ```
 
 ---
@@ -267,7 +272,17 @@ LIMIT 10;
 
 不看答案，試著回答：
 
-- [ ] 為什麼 `JOIN order_items` 後 `SUM(orders.amount)` 會變成兩倍？
+- [ ] 為什麼 `JOIN order_items` 後 `SUM(orders.total_amount)` 會變成兩倍？
 - [ ] `COUNT(*)` 和 `COUNT(column_name)` 在 LEFT JOIN 後有什麼差別？
 - [ ] 如果懷疑 JOIN 有 Explosion，你會怎麼診斷？
 - [ ] 什麼情況下 Many-to-Many JOIN 會造成「笛卡兒積」？
+
+---
+
+## 🔗 下一步與章節導航
+
+- **前一篇**：[03_SQL問題拆解框架.md](./03_SQL問題拆解框架.md)（5 Level 拆解思維模板）
+- **下一篇（全面排錯）**：[05_SQL_Debugging.md](./05_SQL_Debugging.md)（Syntax / Logic / Data 三型態排錯指南）
+- **實戰手寫題庫**：[03_30道商業場景SQL實戰練習題_含解答.md](./03_30道商業場景SQL實戰練習題_含解答.md)（特別推薦 Q21-Q30 跨表實戰與對賬）
+- **品質驗證**：[07_B2B資料品質檢查指南.md](./07_B2B資料品質檢查指南.md)（Consistency 財務一致性核對）
+- **回到目錄**：[Month 01 學習模組主導航](./README.md)

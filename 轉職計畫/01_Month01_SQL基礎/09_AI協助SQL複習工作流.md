@@ -181,7 +181,7 @@ Review 這條 SQL，指出：效能問題、邏輯問題、可讀性問題、潛
 ### 出練習題
 ```
 出 3 道關於 [主題] 的 B2B SQL 練習題，難度中等，不要給答案。
-情境設定：一個 B2B 企業客戶管理系統，有 customers、orders、order_items、salespersons 表。
+情境設定：一個 B2B 企業客戶管理系統，有 customers、orders、order_items、salespeople 表。
 ```
 
 ### Hint 模式
@@ -199,3 +199,14 @@ Review 這條 SQL，指出：效能問題、邏輯問題、可讀性問題、潛
 版本 B：[SQL B]
 情境：[資料量大小、使用場合]
 ```
+
+---
+
+## 🔗 下一步與章節導航
+
+- **前一篇**：[05_SQL_Debugging.md](./05_SQL_Debugging.md)（三型態 SQL 排錯與診斷）
+- **實戰題庫手寫**：[03_30道商業場景SQL實戰練習題_含解答.md](./03_30道商業場景SQL實戰練習題_含解答.md)（將 AI Review SOP 應用於解題）
+- **學習歷程本**：[my_solutions/README.md](./my_solutions/README.md)（記錄自己從第一版到最終版的軌跡）
+- **品質檢核**：[07_B2B資料品質檢查指南.md](./07_B2B資料品質檢查指南.md)（以資料工程角度檢視品質）
+- **驗收標準**：[08_Month01_驗收Checkpoint.md](./08_Month01_驗收Checkpoint.md)（完成本月 Checkpoint 檢核）
+- **回到目錄**：[Month 01 學習模組主導航](./README.md)

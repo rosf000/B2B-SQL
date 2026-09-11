@@ -83,12 +83,12 @@ Time Range：
   2026 年 Q1–Q3
 
 Required Tables：
-  - salespersons（業務員資料）
+  - salespeople（業務員資料）
   - orders（訂單，含業務員 ID 和日期）
   - order_items（訂單明細，含金額）
 
 Join Key：
-  salespersons.salesperson_id = orders.salesperson_id
+  salespeople.salesperson_id = orders.salesperson_id
   orders.order_id = order_items.order_id
 
 Data Grain（JOIN 後）：
@@ -114,13 +114,13 @@ SELECT
         WHEN SUM(oi.unit_price * oi.quantity) >= 1000000 THEN '✅ 達標'
         ELSE '❌ 未達標'
     END AS target_status
-FROM salespersons s
+FROM salespeople s
 JOIN orders o ON s.salesperson_id = o.salesperson_id
 JOIN order_items oi ON o.order_id = oi.order_id
 WHERE
     EXTRACT(YEAR FROM o.order_date) = 2026
     AND EXTRACT(QUARTER FROM o.order_date) IN (1, 2, 3)
-    AND o.status != 'cancelled'
+    AND o.status != 'CANCELLED'
 GROUP BY s.salesperson_id, s.name
 ORDER BY total_revenue DESC;
 ```
@@ -129,17 +129,17 @@ ORDER BY total_revenue DESC;
 
 ```sql
 -- 驗證 1：業務員總數對不對？
-SELECT COUNT(DISTINCT salesperson_id) FROM salespersons;
+SELECT COUNT(DISTINCT salesperson_id) FROM salespeople;
 
 -- 驗證 2：隨機抽查一個業務的數字對不對？
 SELECT s.name, SUM(oi.unit_price * oi.quantity)
 FROM orders o
 JOIN order_items oi ON o.order_id = oi.order_id
-JOIN salespersons s ON o.salesperson_id = s.salesperson_id
-WHERE s.name = '王小明'
-  AND EXTRACT(YEAR FROM o.order_date) = 2026
+JOIN salespeople s ON o.salesperson_id = s.salesperson_id
+WHERE s.name = 'Alex Chen'
+  AND EXTRACT(YEAR FROM o.order_date) = 2024
   AND EXTRACT(QUARTER FROM o.order_date) IN (1, 2, 3)
-  AND o.status != 'cancelled'
+  AND o.status != 'CANCELLED'
 GROUP BY s.name;
 ```
 
@@ -175,7 +175,7 @@ GROUP BY s.name;
 ```
 題目：每個客戶的總訂購金額
 拆解：
-  Metric: SUM(amount)
+  Metric: SUM(total_amount)
   Dimension: customer
   Tables: customers + orders
   Join Key: customer_id
@@ -240,3 +240,13 @@ GROUP BY s.name;
 - Expected Result：
 
 寫完後再開始寫 SQL。
+
+---
+
+## 🔗 下一步與章節導航
+
+- **前一篇**：[02_SQL核心語法精粹_SELECT至JOIN.md](./02_SQL核心語法精粹_SELECT至JOIN.md)（核心語法與執行順序）
+- **下一篇（避坑專案）**：[04_JOIN陷阱與資料重複.md](./04_JOIN陷阱與資料重複.md)（JOIN Explosion 診斷與修正）
+- **實戰手寫題庫**：[03_30道商業場景SQL實戰練習題_含解答.md](./03_30道商業場景SQL實戰練習題_含解答.md)（30 道 B2B 實戰練習）
+- **學習軌跡模板**：[my_solutions/README.md](./my_solutions/README.md)（落實思考 → 寫作 → 改進）
+- **回到目錄**：[Month 01 學習模組主導航](./README.md)

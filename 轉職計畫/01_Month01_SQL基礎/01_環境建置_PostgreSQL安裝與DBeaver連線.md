@@ -137,7 +137,7 @@ flowchart LR
 
 ### 1. 檢查 5 張資料表
 
-1. 回到 pgAdmin 左側的「資料庫導覽」面板。
+1. 回到 DBeaver 左側的「資料庫導覽」面板。
 2. 依序展開樹狀目錄：`postgres` ➜ `Databases` ➜ `postgres` ➜ `Schemas` ➜ `public` ➜ **`Tables (資料表)`**。
 3. 對著 `Tables` 按滑鼠右鍵 ➜ 點擊 **「重新整理 (Refresh)」**（或選取後按鍵盤 `F5`）。
 4. 你會看到 5 張專門為 B2B 商業實戰設計的資料表整齊出現：
@@ -173,7 +173,9 @@ flowchart LR
 
 ---
 
-## 🚀 下一步
+## 🔗 下一步與章節導航
 
-現在你已經有了真實資料庫，接下來請前往下一篇，認識這 5 張資料表背後的商業關係，並學會最核心的 SQL 語法：
-👉 [02_SQL核心語法精粹_SELECT至JOIN.md](./02_SQL核心語法精粹_SELECT至JOIN.md)
+- **前一篇**：[00_資料庫閱讀指南.md](./00_資料庫閱讀指南.md)（Schema Thinking 與資料粒度觀念）
+- **下一篇**：[02_SQL核心語法精粹_SELECT至JOIN.md](./02_SQL核心語法精粹_SELECT至JOIN.md)（5 大階梯式實戰關卡與底層執行順序）
+- **資料集詳解**：[data/README.md](./data/README.md)（Canonical 資料表定義與欄位規範）
+- **回到目錄**：[Month 01 學習模組主導航](./README.md)

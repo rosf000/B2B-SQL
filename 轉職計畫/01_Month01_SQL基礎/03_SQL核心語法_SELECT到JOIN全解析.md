@@ -491,3 +491,13 @@ ORDER BY total_spent DESC;
 | `ERROR: aggregate functions are not allowed in WHERE` | 在 WHERE 裡寫了 COUNT/SUM 等聚合函數 | 聚合條件必須寫在**HAVING** 中 |
 | `ERROR: column "xxx" must appear in the GROUP BY clause` | SELECT 中有非聚合欄位未列入 GROUP BY | 將該欄位加入`GROUP BY`，或對它使用聚合函數 |
 | `ERROR: division by zero` | 計算時除數為 0 | 使用`NULLIF(除數, 0)` 保護 |
+
+---
+
+## 🔗 下一步與章節導航
+
+- **前一篇**：[01_PostgreSQL安裝與環境建立指南.md](./01_PostgreSQL安裝與環境建立指南.md)（環境建置與連線驗證）
+- **下一篇（拆解思維）**：[03_SQL問題拆解框架.md](./03_SQL問題拆解框架.md)（5 Level 拆解框架，動手寫 SQL 前先規劃）
+- **實戰手寫題庫**：[03_30道商業場景SQL實戰練習題_含解答.md](./03_30道商業場景SQL實戰練習題_含解答.md)（30 道 B2B 商業實戰自測題）
+- **避坑必備**：[04_JOIN陷阱與資料重複.md](./04_JOIN陷阱與資料重複.md)（深入了解 1:N 笛卡兒積與金額膨脹）
+- **回到目錄**：[Month 01 學習模組主導航](./README.md)

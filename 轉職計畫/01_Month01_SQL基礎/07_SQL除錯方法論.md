@@ -37,10 +37,10 @@ SELECT * FROM customers WHERE country = "Taiwan";
 -- ERROR: column "Taiwan" does not exist
 
 -- 錯誤 4：GROUP BY 沒包含所有 SELECT 的非聚合欄位
-SELECT customer_id, name, SUM(amount)
+SELECT customer_id, status, SUM(total_amount)
 FROM orders
 GROUP BY customer_id;
--- ERROR: column "name" must appear in GROUP BY or be used in aggregate
+-- ERROR: column "orders.status" must appear in the GROUP BY clause or be used in an aggregate function
 
 -- 錯誤 5：JOIN 條件寫錯
 SELECT * FROM orders JOIN customers;
@@ -151,12 +151,10 @@ SQL 語法和邏輯都對，但資料本身有問題，導致結果不可信。
 #### 3a：重複資料導致 SUM 變大
 
 ```sql
--- 計算客戶 1001 的總營收
-SELECT SUM(amount) FROM orders WHERE customer_id = 1001;
--- 結果：3,000,000
-
--- 但實際上這個客戶只有 1,000,000 的訂單
--- → 可能是 orders 表有重複的記錄！
+-- 計算客戶 1 的總營收
+SELECT SUM(total_amount) FROM orders WHERE customer_id = 1;
+-- 結果可能遠高於實際業務數字
+-- → 可能是 orders 表有重複記錄，或 JOIN 之後發生了 Grain 膨脹！
 ```
 
 **診斷：**
@@ -180,11 +178,11 @@ ORDER BY order_id;
 #### 3b：測試資料混入正式資料
 
 ```sql
--- 刪除測試資料前，先用 SELECT 確認
-SELECT * FROM customers WHERE name LIKE '%test%' OR name LIKE '%TEST%';
-SELECT * FROM customers WHERE email LIKE '%@test.%';
-SELECT * FROM orders WHERE amount = 0;
-SELECT * FROM orders WHERE amount < 0;  -- 負值訂單？
+-- 刪除或排除測試資料前，先用 SELECT 確認
+SELECT * FROM customers WHERE company_name ILIKE '%test%';
+SELECT * FROM salespeople WHERE email LIKE '%@test.%';
+SELECT * FROM orders WHERE total_amount = 0;
+SELECT * FROM orders WHERE total_amount < 0;  -- 負值異常訂單？
 ```
 
 #### 3c：時區問題
@@ -196,7 +194,7 @@ SELECT * FROM orders WHERE amount < 0;  -- 負值訂單？
 
 SELECT
     DATE_TRUNC('month', order_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Taipei') AS month,
-    SUM(amount)
+    SUM(total_amount)
 FROM orders
 GROUP BY 1
 ORDER BY 1;
@@ -238,7 +236,7 @@ Step 5: 用「已知答案」驗證
 ```sql
 -- 題目：找出每個業務員的客戶數
 SELECT s.name, COUNT(c.customer_id) AS customer_count
-FROM salespersons s
+FROM salespeople s
 JOIN customers c ON s.salesperson_id = c.salesperson_id
 GROUP BY s.salesperson_id;
 
@@ -287,10 +285,10 @@ ORDER BY 1;
 ```sql
 -- 計算 VIP 客戶（歷史消費 > 100 萬）的數量
 SELECT COUNT(*) FROM (
-    SELECT customer_id, SUM(amount) AS total
+    SELECT customer_id, SUM(total_amount) AS total
     FROM orders
     GROUP BY customer_id
-    HAVING SUM(amount) > 1000000
+    HAVING SUM(total_amount) > 1000000
 ) AS vip;
 
 -- 結果：147 個 VIP 客戶
@@ -301,7 +299,7 @@ SELECT COUNT(*) FROM (
 <summary>診斷方向</summary>
 
 可能原因：
-1. orders 有重複記錄（amount 被加了多倍）
+1. orders 有重複記錄（total_amount 被加了多倍）
 2. 有測試訂單、取消訂單沒有排除
 3. 有負值的退款訂單需要扣除
 
@@ -316,3 +314,13 @@ SELECT COUNT(*) FROM (
 - [ ] 為什麼 `WHERE country != 'Taiwan'` 會漏掉 country 是 NULL 的列？
 - [ ] BETWEEN 在處理 TIMESTAMP 時有什麼邊界問題？
 - [ ] Type 2 Logic Error 和 Type 3 Data Error，你怎麼分辨？
+
+---
+
+## 🔗 下一步與章節導航
+
+- **前一篇**：[04_JOIN陷阱與資料重複.md](./04_JOIN陷阱與資料重複.md)（JOIN Explosion 深度診斷）
+- **下一篇（AI 協作流程）**：[06_AI_SQL_Review_Workflow.md](./06_AI_SQL_Review_Workflow.md)（AI 輔助 Code Review 與學習軌跡存檔）
+- **品質檢核**：[07_B2B資料品質檢查指南.md](./07_B2B資料品質檢查指南.md)（四維度資料品質檢核）
+- **實戰題庫**：[03_30道商業場景SQL實戰練習題_含解答.md](./03_30道商業場景SQL實戰練習題_含解答.md)（將 Debug 思維應用於題目）
+- **回到目錄**：[Month 01 學習模組主導航](./README.md)

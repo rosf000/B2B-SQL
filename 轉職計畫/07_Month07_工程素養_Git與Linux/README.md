@@ -25,3 +25,5 @@
    - 伺服器部署必備 30 個高頻指令、進程排查與日誌監控 (`tail -f`)。
 3. [03_高說服力GitHub_README撰寫模板.md](./03_高說服力GitHub_README撰寫模板.md)
    - 面試官最想看的 README 結構：架構圖、痛點對比、快速啟動指令與技術亮點。
+4. [04_Docker入門_本機開發環境建置.md](./04_Docker入門_本機開發環境建置.md)
+   - Image / Container / Volume 核心概念、撰寫 Dockerfile、docker-compose.yml 實作、**一鍵啟動 PostgreSQL + PgAdmin 開發環境**（M8 旗艦作品的前提）。
