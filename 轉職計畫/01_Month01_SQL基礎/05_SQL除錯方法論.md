@@ -192,7 +192,7 @@ Step 5：用「已知答案」驗證
 
 ---
 
-## 六、Debug 題庫（5 題）
+## 六、Debug 題庫（3 題）
 
 ### 題目 1：JOIN 方向問題
 
@@ -268,66 +268,7 @@ HAVING SUM(total_amount) > 50000;
 
 </details>
 
----
 
-### 題目 4：Type 3 Data Error（資料品質）
-
-```sql
--- 題目：計算 VIP 客戶（歷史消費 > 100 萬）的數量
-SELECT COUNT(*) FROM (
-    SELECT customer_id, SUM(total_amount) AS total
-    FROM orders
-    GROUP BY customer_id
-    HAVING SUM(total_amount) > 1000000
-) AS vip;
-
--- 結果：147 個 VIP 客戶
--- 但行銷說只有 50 個，哪裡有問題？
-```
-
-<details>
-<summary>診斷方向</summary>
-
-可能原因：
-1. `orders` 有重複記錄，`total_amount` 被加了多倍
-2. 有測試訂單或已取消的訂單沒有排除
-3. 有負值的退款訂單需要扣除
-
-診斷 SQL：
-```sql
-SELECT order_id, COUNT(*)
-FROM orders
-GROUP BY order_id
-HAVING COUNT(*) > 1;
-```
-
-</details>
-
----
-
-### 題目 5：DISTINCT 位置問題
-
-```sql
--- 題目：計算每個業務員服務的不重複客戶數
-SELECT salesperson_id, DISTINCT COUNT(customer_id) AS unique_customers
-FROM orders
-GROUP BY salesperson_id;
-
--- 問題：SQL 直接報錯
--- 為什麼？怎麼修？
-```
-
-<details>
-<summary>提示（先自己想再看）</summary>
-
-`DISTINCT` 不能放在 `COUNT` 和欄位名稱之間，要放在括號內：
-```sql
-SELECT salesperson_id, COUNT(DISTINCT customer_id) AS unique_customers
-FROM orders
-GROUP BY salesperson_id;
-```
-
-</details>
 
 ---
 
