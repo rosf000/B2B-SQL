@@ -84,20 +84,11 @@ WHERE COALESCE(country, '') != 'Taiwan';
 
 #### 2b：日期範圍邊界
 
-> ⚠️ **本節涉及 TIMESTAMP 精度與 M2 日期函式（DATE_TRUNC），屬 M2 進階內容。M1 階段先理解「邊界存在」的概念即可，不需記憶詳細語法。**
-
 ```sql
 -- 想找「2026年1月的訂單」
-SELECT * FROM orders WHERE order_date BETWEEN '2026-01-01' AND '2026-01-31';
-
--- ⚠️ 問題：如果 order_date 是 TIMESTAMP 類型
--- '2026-01-31' 被解讀為 '2026-01-31 00:00:00'
--- 1月31日的訂單（下午）會被漏掉！
-
--- 建議寫法（繼續式範圍判斷，避免 BETWEEN 的邊界嵌阱）：
+-- 建議用 >= / < 而不用 BETWEEN，避免時間戳邊界問題
 SELECT * FROM orders
 WHERE order_date >= '2026-01-01' AND order_date < '2026-02-01';
--- ✔️ M1 階段就能看應用，記住這個寫法即可
 ```
 
 #### 2c：JOIN 方向錯誤
@@ -162,20 +153,11 @@ SELECT SUM(total_amount) FROM orders WHERE customer_id = 1;
 
 **診斷：**
 ```sql
--- 找出重複的訂單（數量暴增的根本原因）
+-- 找出重複的訂單
 SELECT order_id, COUNT(*)
 FROM orders
 GROUP BY order_id
 HAVING COUNT(*) > 1;
-
--- ⚠️ 下方寫法屬 M2 進階（子查詢 Subquery），供參考知道即可，不需複現：
-SELECT *
-FROM orders
-WHERE order_id IN (
-    SELECT order_id FROM orders
-    GROUP BY order_id HAVING COUNT(*) > 1
-)
-ORDER BY order_id;
 ```
 
 #### 3b：測試資料混入正式資料
@@ -188,16 +170,6 @@ SELECT * FROM orders WHERE total_amount = 0;
 SELECT * FROM orders WHERE total_amount < 0;  -- 負值異常訂單？
 ```
 
-#### 3c：時區問題
-
-> ⚠️ **本節內容（DATE_TRUNC + AT TIME ZONE）屬 M2 以上進階主題，超出 M1 課綱範圍。M1 階段對時區需有基本認知，詳細語法留到 M2 日期模組學習。**
-
-**概念瞭解即可：**
-```
-你的 server 可能設定為 UTC，但業務資料的時間和台灣時區可能有 8 小時差。
-如果沒有處理時區轉換，月份統計可能差一天。
-→ 這是 M2 日期處理模組會專門解決的常見陷阱。
-```
 
 ---
 
@@ -253,34 +225,6 @@ JOIN 是 INNER JOIN，沒有客戶的業務員不會出現。應改為 LEFT JOIN
 
 ---
 
-### 題目 2：找出 Bug
-
-```sql
--- 題目：計算 2026 年每月新客戶數（定義：第一次下單的月份）
-SELECT
-    DATE_TRUNC('month', order_date) AS month,
-    COUNT(DISTINCT customer_id) AS new_customers
-FROM orders
-WHERE EXTRACT(YEAR FROM order_date) = 2026
-GROUP BY 1
-ORDER BY 1;
-
--- 問題：這個 SQL 不是「新客戶」，是「當月有下單的客戶」
--- 怎麼找真正的新客戶（第一次下單）？
-```
-
-<details>
-<summary>提示</summary>
-
-> ⚠️ **此題的正確解法需用到 Subquery 與 MIN() 組合，屬 M2 課綱（子查詢）範圍。**
-> M1 階段能辨識「這個 SQL 算的是『每月有下單的客戶』，不是『對該客戶而言第一次下單的月份』」就算有成果。
-
-待 M2 學完 Subquery 後，再回來用 MIN(order_date) 解此題。
-
-</details>
-
----
-
 ### 題目 3：Type 3 Data Error
 
 ```sql
@@ -313,7 +257,6 @@ SELECT COUNT(*) FROM (
 
 - [ ] NULL 和空字串 `''` 在 WHERE 條件中有什麼不同？
 - [ ] 為什麼 `WHERE country != 'Taiwan'` 會漏掉 country 是 NULL 的列？
-- [ ] BETWEEN 在處理 TIMESTAMP 時有什麼邊界問題？
 - [ ] Type 2 Logic Error 和 Type 3 Data Error，你怎麼分辨？
 
 ---
