@@ -33,36 +33,37 @@
 
 ```mermaid
 flowchart TD
-    subgraph Phase1 [第一階段：SQL + Database + Git (M1-M3)]
+    subgraph Phase1 ["第一階段：SQL + Database + Git (M1-M3)"]
         M1["Month 01: SQL 基礎 + Exit Exam\n商業數據偵探 + Git 第一天建立"] --> M2["Month 02: SQL 進階分析\nWindow Functions / Index 調優"]
         M2 --> P1["🎯 Project 1: 銷售資料多維度分析\n(面試版 8 步商業敘事架構)"]
         P1 --> M3["Month 03: 資料庫設計與建模\n+ AI 生成 Schema → 你找問題"]
     end
 
-    subgraph Phase2 [第二階段：Python + ETL (M4-M6)]
+    subgraph Phase2 ["第二階段：Python + ETL (M4-M6)"]
         M3 --> M4["Month 04: Python 實用自動化\nDebug 能力與邊界防呆訓練"]
         M4 --> M5["Month 05: Python × ETL × Database\n🛡️ Production三件套: 冪等性/DQ/稽核日誌"]
         M5 --> P2["🎯 Project 2: 自動化 ETL 管線\n(含 Pytest 自動化測試)"]
         P2 --> M6["Month 06: Pandas + API 處理\nAPI Failure Lab (404/429/Timeout防禦)"]
     end
 
-    subgraph Phase3 [第三階段：工程素養 (M7)]
+    subgraph Phase3 ["第三階段：工程素養 (M7)"]
         M6 --> M7["Month 07: Linux + Docker + AI Workflow\nDocker Failure Lab (容器網路排錯)"]
     end
 
-    subgraph Phase4 [第四階段：旗艦作品 (M8-M9)]
-        M7 --> P3["🏆 Project 3 (旗艦): AI-Augmented B2B Data Platform\n通過 7 大 Portfolio Gate ➜ 開始投履歷"]
+    subgraph Phase4 ["第四階段：旗艦作品 (M8-M9)"]
+        M7 --> M8["Month 08: 旗艦整合\nB2B 系統 + AI 防禦鏈 + Portfolio Gate"]
+        M8 --> P3["🏆 Project 3 (旗艦): AI-Augmented B2B Data Platform\n通過 7 大 Portfolio Gate ➜ 開始投履歷"]
         P3 --> M9["Month 09: FastAPI 後端開發\nAPI Contract 契約 + Pydantic 強型別防呆"]
     end
 
-    subgraph Phase5 [第五階段：部署 + 深化 (M10-M11)]
+    subgraph Phase5 ["第五階段：部署 + 深化 (M10-M11)"]
         M9 --> M10["Month 10: Docker 雲端部署\n🚀 Production Checklist (Secrets/Health/CI)"]
         M10 --> M11["Month 11: 雙軌分流\nTrack A: Airflow 管線 (必修)\nTrack B: AI SQL Agent (進階)"]
         M11 --> P4["🤖 Project 4: Production Pipeline / AI Assistant"]
     end
 
-    subgraph Phase6 [求職數據實驗室 (M8 起)]
-        P3 -.->|M8 開始投| JOB["M12: 求職衝刺與數據看盤\n📊 每週 Funnel Dashboard、技術弱點覆盤閉環"]
+    subgraph Phase6 ["求職數據實驗室 (M8 起)"]
+        P3 -.-|M8 Portfolio Gate 通過後立即投遞| JOB["M12: 求職衝刺與數據看盤\n📊 每週 Funnel Dashboard、技術弱點覆盤閉環"]
     end
 
     style P1 fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
@@ -95,6 +96,8 @@ flowchart TD
 ---
 
 ## 🔥 四大主力作品（清楚拆分 4A 必修與 4B 加分）
+
+> **說明**：Project 1–3 為所有路徑的核心必修；Project 4A 為 Data Engineer 路線必修；Project 4B 為選修加分項目，適合偏 AI 應用方向的學習者。
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -134,7 +137,7 @@ flowchart TD
 
 1. 🏃 **Path A (Data Analyst 商業數據分析師)**：M1 ➜ M2 (Project 1) ➜ M3 ➜ M6 ➜ M12（約 4~5 個月即可求職）
 2. ⚡ **Path B (Data Automation Engineer 資料自動化工程師)**：M1 ➜ M2 ➜ M4 ➜ M5 (Project 2) ➜ M6 ➜ M7 ➜ M12（約 6~7 個月即可求職）
-3. 🏆 **Path C (Junior Data Engineer 初階資料工程師 - 核心旗艦)**：M1 ➜ M2 ➜ M3 ➜ M4 ➜ M5 ➜ M7 ➜ M8 (Project 3 通過 7 大 Gate) ➜ M10 ➜ M11 (Project 4A) ➜ M12
+3. 🏆 **Path C (Junior Data Engineer 初階資料工程師 - 核心旗艦)**：M1 ➜ M2 ➜ M3 ➜ M4 ➜ M5 ➜ M6 ➜ M7 ➜ M8 (Project 3 通過 7 大 Gate) ➜ M10 ➜ M11 (Project 4A) ➜ M12
 4. 🛠️ **Path D (Junior Backend Engineer 初階後端工程師)**：M1 ➜ M3 ➜ M4 ➜ M7 ➜ M8 ➜ M9 ➜ M10 ➜ M12
 
 ---

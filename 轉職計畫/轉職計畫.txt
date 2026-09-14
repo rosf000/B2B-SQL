@@ -17,7 +17,7 @@
 * [ ] 安裝 Git，設定 user.name / user.email
 * [ ] 學 `git init` / `git add` / `git commit` / `git push`
 * [ ] 寫第一個 README.md
-* [ ] **從現在起，每天至少一次 commit**
+* [ ] **從現在起，每日至少一次 commit**
 
 ### SQL 基礎
 
@@ -152,7 +152,7 @@ Salespeople / Activities
 
 * [ ] Excel 整理工具（openpyxl / pandas 初探）
 * [ ] 重複資料檢查工具（找出 email / 公司名 重複）
-* [ ] 批次檔案重新命名工具
+* [ ] 客戶聯絡資料批次驗證工具（email 格式、電話格式檢查）
 
 ### AI 協作方式
 
@@ -179,7 +179,7 @@ AI：Generate Code
 * [ ] 執行 SQL / 讀取資料 / 寫入資料
 * [ ] Update / Delete / Transaction
 * [ ] Exception Handling（資料庫層級）
-* [ ] **Logging 基礎**（不能只有 print）
+* [ ] **Logging 基礎**（不能只靠 `print()` 輸出，需建立正式 Logging 機制）
 * [ ] **Environment Variables**（.env 不能 commit 到 Git）
 * [ ] **Config 設定檔分離**
 * [ ] **Retry 機制**（失敗自動重試）
@@ -500,7 +500,7 @@ Agent 4: Report Generator → 生成自然語言報告
 ```
 70% → 選定方向深入（Airflow 或 AI Agent）
 20% → Project 4 完成與文件
-10% → 旗艦作品的 Testing / 修善
+10% → 旗艦作品的 Testing / Bug 修復與優化
 ```
 
 **月底成果：**

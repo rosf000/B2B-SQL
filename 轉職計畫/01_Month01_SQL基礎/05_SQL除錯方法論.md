@@ -84,6 +84,8 @@ WHERE COALESCE(country, '') != 'Taiwan';
 
 #### 2b：日期範圍邊界
 
+> ⚠️ **本節涉及 TIMESTAMP 精度與 M2 日期函式（DATE_TRUNC），屬 M2 進階內容。M1 階段先理解「邊界存在」的概念即可，不需記忆詳細語法。**
+
 ```sql
 -- 想找「2026年1月的訂單」
 SELECT * FROM orders WHERE order_date BETWEEN '2026-01-01' AND '2026-01-31';
@@ -92,9 +94,10 @@ SELECT * FROM orders WHERE order_date BETWEEN '2026-01-01' AND '2026-01-31';
 -- '2026-01-31' 被解讀為 '2026-01-31 00:00:00'
 -- 1月31日的訂單（下午）會被漏掉！
 
--- 正確寫法：
+-- 建議寫法（繼續式範圍判斷，避免 BETWEEN 的邊界嵌阱）：
 SELECT * FROM orders
 WHERE order_date >= '2026-01-01' AND order_date < '2026-02-01';
+-- ✔️ M1 階段就能看應用，記住這個寫法即可
 ```
 
 #### 2c：JOIN 方向錯誤
@@ -159,13 +162,13 @@ SELECT SUM(total_amount) FROM orders WHERE customer_id = 1;
 
 **診斷：**
 ```sql
--- 找出重複的訂單
+-- 找出重複的訂單（數量暴增的根本原因）
 SELECT order_id, COUNT(*)
 FROM orders
 GROUP BY order_id
 HAVING COUNT(*) > 1;
 
--- 或更詳細地看
+-- ⚠️ 下方寫法屬 M2 進階（子查詢 Subquery），供參考知道即可，不需複現：
 SELECT *
 FROM orders
 WHERE order_id IN (
@@ -187,17 +190,13 @@ SELECT * FROM orders WHERE total_amount < 0;  -- 負值異常訂單？
 
 #### 3c：時區問題
 
-```sql
--- 你的 server 是 UTC，但業務資料是台灣時間
--- '2026-01-31 23:30:00 UTC' = '2026-02-01 07:30:00 台灣時間'
--- 月份統計會差一天！
+> ⚠️ **本節內容（DATE_TRUNC + AT TIME ZONE）屬 M2 以上進階主題，超出 M1 課綱範圍。M1 階段對時區需有基本認知，詳細語法留到 M2 日期模組學習。**
 
-SELECT
-    DATE_TRUNC('month', order_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Taipei') AS month,
-    SUM(total_amount)
-FROM orders
-GROUP BY 1
-ORDER BY 1;
+**概念瞭解即可：**
+```
+你的 server 可能設定為 UTC，但業務資料的時間和台灣時區可能有 8 小時差。
+如果沒有處理時區轉換，月份統計可能差一天。
+→ 這是 M2 日期處理模組會專門解決的常見陷阱。
 ```
 
 ---
@@ -273,8 +272,10 @@ ORDER BY 1;
 <details>
 <summary>提示</summary>
 
-需要先找每個客戶的 `MIN(order_date)`（第一筆訂單日期），
-再用這個日期做統計，而不是用所有訂單的日期。
+> ⚠️ **此題的正確解法需用到 Subquery 與 MIN() 組合，屬 M2 課綱（子查詢）範圍。**
+> M1 階段能辨識「這個 SQL 算的是『每月有下單的客戶』，不是『對該客戶而言第一次下單的月份』」就算有成果。
+
+待 M2 學完 Subquery 後，再回來用 MIN(order_date) 解此題。
 
 </details>
 
