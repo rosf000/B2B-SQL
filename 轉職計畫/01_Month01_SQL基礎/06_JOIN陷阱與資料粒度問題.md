@@ -255,8 +255,8 @@ ORDER BY order_count DESC;
 | customer_id | order_count |
 | :---------: | :---------: |
 |      1      |      3      |
-|      2      |      2      |
 |      4      |      2      |
+|      2      |      2      |
 |      8      |      2      |
 
 > 👆 **這說明什麼？**
