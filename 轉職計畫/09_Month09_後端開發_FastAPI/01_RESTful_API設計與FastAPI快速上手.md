@@ -1,4 +1,4 @@
-﻿# 01. RESTful API 設計與 FastAPI 快速上手指南
+# 01. RESTful API 設計與 FastAPI 快速上手指南
 
 > **模組目標**：掌握現代 Python 後端開發之王——**FastAPI**。深入剖析 ASGI 與非同步（Asyncio）底層運行機制，打破「`async def` 一律比較快」的迷思；熟練運用 FastAPI 強大的依賴注入系統（Dependency Injection / `Depends`）實現資料庫連線生命週期管理與安全認證；掌握模組化 `APIRouter` 設計原則與全域統一例外處理器（Global Exception Handler），打造具備高併發、自帶 Swagger 文件的企業級 B2B 微服務。
 
@@ -73,7 +73,10 @@ Node.js 與 Python Asyncio 的核心思想相同：單執行緒事件循環。
 
 ### 2.3 致命陷阱：在 async 函式中呼叫阻塞式程式碼
 
-⚠️ **這是新人最容易搞垮伺服器的災難性錯誤！**
+> [!CAUTION]
+> **致命陷阱：在 async 函式中呼叫同步阻塞式程式碼**  
+> 這是轉職新人最常搞垮生產環境的經典錯誤！FastAPI 的 `async def` 運行於主執行緒的 Event Loop。如果在其中呼叫了耗時的同步阻塞函式（如 `time.sleep()`、原生 `psycopg2` 查詢或大規模 Pandas 運算），會**直接凍結整個伺服器的 Event Loop**，導致全系統所有連線瞬時卡死！
+
 
 ```python
 # 致命錯誤示範！
@@ -101,6 +104,12 @@ async def good_async_endpoint():
 ---
 
 ## 3. RESTful 路由設計與參數解析全攻略
+
+> [!TIP]
+> **RESTful API 設計黃金法則**：
+> - **資源導向**：URL 名稱一律使用名詞複數（如 `/api/v1/customers`、`/api/v1/orders`），嚴禁動詞（避免 `/get_customer` 或 `/delete_order`）。
+> - **動詞表義**：使用 HTTP Method 表達操作語意（`GET` 讀取、`POST` 新增、`PUT` 全量替換、`PATCH` 部分更新、`DELETE` 刪除）。
+> - **狀態碼精確**：200（成功）、201（已建立）、400（參數業務錯誤）、401（未驗證身分）、403（無權限）、404（資源不存在）、422（Pydantic 格式校驗失敗）。
 
 ### 3.1 路徑參數（Path）與型別約束
 
@@ -216,6 +225,10 @@ app.include_router(customers.router, prefix="/api/v1")
 ---
 
 ### 4.2 資料庫 Session 注入器設計模式
+
+> [!IMPORTANT]
+> **連線池防漏核心機制**：
+> 透過 `yield db` 配合 `finally: db.close()`，即便業務邏輯或 SQL 查詢中途拋出未捕獲例外，FastAPI 也必定會保證執行 `finally` 區塊，將資料庫連線即時歸還至連線池 (Connection Pool)，徹底避免連線池耗盡 (Pool Exhaustion) 導致服務癱瘓！
 
 結合生成器（Generator）與 `yield`，FastAPI 能確保每次 HTTP 請求分配獨立 Session，並在請求結束（無論成功或拋出異常）自動關閉：
 
@@ -453,3 +466,29 @@ def health_check(response: Response, db: Session = Depends(get_db)):
         
     return health_status
 ```
+
+---
+
+## 🎯 本章重點彙整 (Key Takeaways)
+
+```text
+┌───────────────────┬──────────────────────────────────────────────────────────┐
+│ 核心維度          │ 工程實踐重點與面試得分點                                 │
+├───────────────────┼──────────────────────────────────────────────────────────┤
+│ WSGI vs ASGI      │ ASGI 以 Event Loop 事件循環支援高併發非同步 I/O。        │
+│ async def 陷阱    │ async 內嚴禁呼叫同步阻塞函式；阻塞/傳統 ORM 走一般 def。 │
+│ 依賴注入 (Depends)│ 利用 yield + finally 自動管控 Session 生命週期，防止洩漏。│
+│ APIRouter 模組化  │ 依業務實體拆分路由，保持 main.py 極簡與高內聚架構。       │
+│ 全域例外處理      │ 自訂 HTTPException Handler，確保跨端點一致 JSON 回傳規格。│
+└───────────────────┴──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔗 章節導航
+
+- **前一篇**：[00_本月學習計畫與目標.md](./00_本月學習計畫與目標.md)（FastAPI 4 週學習排程與交付成果）
+- **下一篇**：[02_Pydantic資料驗證與CRUD實作.md](./02_Pydantic資料驗證與CRUD實作.md)（Pydantic V2 強型別契約與防禦性 CRUD）
+- **單元測試**：[03_FastAPI_Testing與API文件品質.md](./03_FastAPI_Testing與API文件品質.md)（TestClient 自動化測試與 Swagger 優化）
+- **回到目錄**：[Month 09 學習模組主導航](./README.md)
+

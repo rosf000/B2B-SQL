@@ -284,8 +284,8 @@ HAVING SUM(total_amount) > 50000;
 
 ## 🔗 章節導航
 
-- **前一篇**：[04_SQL核心語法_SELECT到JOIN全解析.md](./04_SQL核心語法_SELECT到JOIN全解析.md)
+- **前一篇**：[04_SQL核心語法_SELECT到JOIN全解析.md](./04_SQL核心語法_SELECT到JOIN全解析.md)（語法全套建立）
 - **下一篇**：[06_JOIN陷阱與資料粒度問題.md](./06_JOIN陷阱與資料粒度問題.md)（JOIN Explosion 與 Fan-out 深度診斷）
-- **商業問題拆解**：[07_SQL商業問題拆解框架.md](./07_SQL商業問題拆解框架.md)
-- **實戰題庫**：[09_30道B2B商業SQL實戰練習題.md](./09_30道B2B商業SQL實戰練習題.md)
+- **商業問題拆解**：[07_SQL商業問題拆解框架.md](./07_SQL商業問題拆解框架.md)（5 Level 分層思維模板）
+- **實戰題庫**：[09_30道B2B商業SQL實戰練習題.md](./09_30道B2B商業SQL實戰練習題.md)（特別推薦 Q11–Q20 含大量除錯實戰題）
 - **回到目錄**：[Month 01 學習模組主導航](./README.md)

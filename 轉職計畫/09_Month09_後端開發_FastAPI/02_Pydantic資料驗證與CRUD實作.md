@@ -1,4 +1,4 @@
-﻿# 02. Pydantic 資料驗證與企業級 CRUD 實戰
+# 02. Pydantic 資料驗證與企業級 CRUD 實戰
 
 > **模組目標**：掌握 FastAPI 最核心的資料防護門神——**Pydantic v2**。深入理解宣告式型別校驗、欄位約束、自定義驗證器（`@field_validator`）與跨欄位連動驗證（`@model_validator`）；精通 Schema 職責分離模式（Create / Update / Response），杜絕敏感欄位洩漏；熟練運用 `ConfigDict(from_attributes=True)` 與 SQLAlchemy 2.0 ORM 無縫整合；並實作包含部分欄位更新（PATCH）、防超賣並發鎖定與軟刪除的企業級 CRUD 業務架構。
 
@@ -160,6 +160,10 @@ class OrderApprovalRequest(BaseModel):
 ---
 
 ## 3. 企業級 Schema 職責分層模式（Separation of Concerns）
+
+> [!IMPORTANT]
+> **杜絕量體賦值攻擊 (Mass Assignment Vulnerability)**：
+> 絕不能讓前端直接傳送或接收資料庫 ORM 的完整欄位！若直接將 ORM 模型用於 Request Body，攻擊者可能在 JSON 中偷塞 `is_admin: true` 或 `credit_limit: 99999999`。透過明確拆分 Create / Update / Response，能從架構層杜絕資料篡改與機密洩漏。
 
 ### 3.1 為什麼嚴禁「一個 Model 打天下」？
 
@@ -503,3 +507,29 @@ def list_products(
         items=products
     )
 ```
+
+---
+
+## 🎯 本章重點彙整 (Key Takeaways)
+
+```text
+┌───────────────────┬──────────────────────────────────────────────────────────┐
+│ 核心觀念          │ 工程實踐重點與面試得分點                                 │
+├───────────────────┼──────────────────────────────────────────────────────────┤
+│ Parsing > Checking│ Pydantic 是強型別轉換與解析引擎，非僅單純型別報錯。       │
+│ Schema 職責分層   │ 嚴格拆分 Create / Update / Response，徹底杜絕敏感欄位洩漏。│
+│ from_attributes   │ ConfigDict(from_attributes=True) 實現 ORM 物件自動序列化。│
+│ 增量更新 PATCH    │ 使用 exclude_unset=True，只更新前端真正傳遞的非空異動欄位。│
+│ 軟刪除與資安      │ 商業核心資料嚴禁物理刪除；金額計算一律採用 Decimal 精度。│
+└───────────────────┴──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔗 章節導航
+
+- **前一篇**：[01_RESTful_API設計與FastAPI快速上手.md](./01_RESTful_API設計與FastAPI快速上手.md)（ASGI、路由與 Depends 注入）
+- **下一篇**：[03_FastAPI_Testing與API文件品質.md](./03_FastAPI_Testing與API文件品質.md)（TestClient 自動化單元測試與覆蓋率）
+- **結業考核**：[04_Exit_Exam_API_Contract與型別防呆.md](./04_Exit_Exam_API_Contract與型別防呆.md)（API Contract 防禦實戰測驗）
+- **回到目錄**：[Month 09 學習模組主導航](./README.md)
+

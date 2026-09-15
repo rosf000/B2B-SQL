@@ -172,6 +172,10 @@ SYSTEM_PROMPT = """
 
 ### 3.2 資安防禦三道盾牌：唯讀使用者、語法 AST 審查與強制 LIMIT
 
+> [!CAUTION]
+> **企業級 Text-to-SQL 資安底線**  
+> 絕對不要相信模型自己的安全約束！若直接使用資料庫管理員帳號 (`postgres` / `sa`) 執行 AI 生成的 SQL，一旦遭遇 Prompt Injection 或幻覺誤殺，整座資料庫可能被 `DROP` 或資料被外洩。必須貫徹「**DB 唯讀權限隔離 + AST 語法樹白名單 + 伺服器端強制 LIMIT**」三道鋼鐵防線！
+
 即便在 Prompt 中寫了一萬遍「只能寫 SELECT」，黑客依然可能透過越獄誘導模型生成 `DROP TABLE`。我們必須實作多層物理與邏輯防禦：
 
 #### 防禦盾牌一：資料庫層面建立只讀帳戶（Least Privilege）
@@ -215,6 +219,10 @@ def validate_sql_safety(sql: str) -> str:
 ---
 
 ### 3.3 自我修復迴圈（Self-Correction Loop）：錯誤反饋自動糾正
+
+> [!TIP]
+> **閉環自我修復 (Self-Correction Loop) 的威力**：
+> 人類寫 SQL 也常有錯字。生產實踐表明，當第一輪生成的 SQL 報錯時（如少寫一個 GROUP BY 欄位），只要將 PostgreSQL 的精確報錯訊息原封不動回餵給 LLM，模型自我修復的成功率高達 **85% 以上**！這能大幅減少終端使用者的挫折感。
 
 即使最頂尖的模型，偶爾也會發生欄位名稱打錯或 GROUP BY 欄位漏列的情況。
 **自我修復架構（Self-Correction Loop）**：
@@ -522,3 +530,29 @@ def evaluate_text_to_sql_benchmark(conn, assistant_func) -> float:
     print(f"==========================================")
     return accuracy
 ```
+
+---
+
+## 🎯 本章重點彙整 (Key Takeaways)
+
+```text
+┌───────────────────┬──────────────────────────────────────────────────────────┐
+│ 核心觀念          │ 工程實踐重點與面試得分點                                 │
+├───────────────────┼──────────────────────────────────────────────────────────┤
+│ Function Calling  │ LLM 扮演「大腦決策與參數提取」，由後端安全引擎執行實體操作│
+│ 三道安全防線      │ DB 唯讀帳戶隔離 + Python AST 語法白名單 + 強制 LIMIT 50  │
+│ 動態 Schema 注入  │ 壓縮 DDL 與列舉枚舉值，避免浪費 Context Window 與 Token 成本│
+│ 自我修復迴圈      │ SQL 報錯時回餵原生錯誤 Traceback，自動修正語法與欄位錯字 │
+│ Benchmark 評測    │ 使用 Golden SQL 與 Execution Accuracy 建立客觀品質評測體系│
+└───────────────────┴──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔗 章節導航
+
+- **前一篇**：[01_LLM_API_Prompt工程與Structured_Output.md](./01_LLM_API_Prompt工程與Structured_Output.md)（Prompt 工程、Token 精算與原生結構化輸出）
+- **安全審查**：[00_AI_Safety_Gate_安全防禦檢驗標準.md](./00_AI_Safety_Gate_安全防禦檢驗標準.md)（10 大滲透測試標準與 AST 防禦認證）
+- **邁向下一月**：[Month 12 轉職衝刺與求職寶典](../12_Month12_轉職衝刺與求職寶典/README.md)（中英文履歷、50大核心面試題與求職看板）
+- **回到目錄**：[Month 11 學習模組主導航](./README.md)
+

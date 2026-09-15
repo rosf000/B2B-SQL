@@ -1,4 +1,4 @@
-﻿# 03. 高說服力 GitHub README 撰寫模板與作品集打造指南
+# 03. 高說服力 GitHub README 撰寫模板與作品集打造指南
 
 > **模組目標**：打造能夠在 30 秒內抓住技術主管與 HR 眼球的黃金開源作品集。深入剖析轉職工程師常見的 GitHub 地雷、解析資深面試官在 README 中尋找的關鍵指標（商業痛點、系統架構圖、效能 Benchmark、自動化測試與一鍵啟動）。本篇提供兩個開箱即用的企業級完整 README 範本（B2B 資料工程管線專案、FastAPI 雲端微服務專案），助你大幅提升技術面試邀請率。
 
@@ -156,7 +156,7 @@ docker compose up -d
 
 ### 3. 安裝依賴並執行 ETL 管線
 ```bash
-# 建議使用 Python 3.11+
+# 建議使用 Python 3.13+
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -205,10 +205,10 @@ pytest -v --cov=src --cov-report=term-missing
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-009688.svg?style=flat&logo=FastAPI)](https://fastapi.tiangolo.com)
 [![Pydantic](https://img.shields.io/badge/Pydantic-v2.6-E92063.svg?logo=Pydantic)](https://docs.pydantic.dev/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg?logo=PostgreSQL)](https://www.postgresql.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791.svg?logo=PostgreSQL)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
 
-> 現代化高併發 B2B 客戶與訂單管理微服務。全面基於 Python 3.11 非同步生態系（Asyncio），採用 **SQLAlchemy 2.0 Declarative ORM**、**Pydantic v2 高速驗證**，並透過 `selectinload` / `joinedload` 徹底杜絕 N+1 查詢效能殺手。提供自動化 Swagger / OpenAPI 互動式文件與 Docker 容器化一鍵部屬。
+> 現代化高併發 B2B 客戶與訂單管理微服務。全面基於 Python 3.13 非同步生態系（Asyncio），採用 **SQLAlchemy 2.0 Declarative ORM**、**Pydantic v2 高速驗證**，並透過 `selectinload` / `joinedload` 徹底杜絕 N+1 查詢效能殺手。提供自動化 Swagger / OpenAPI 互動式文件與 Docker 容器化一鍵部屬。
 
 ---
 

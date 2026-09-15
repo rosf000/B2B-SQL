@@ -1,4 +1,4 @@
-﻿# Month 11｜AI × 資料庫：打造自然語言智慧商業數據助理 (Text-to-SQL)
+# Month 11｜AI × 資料庫：打造自然語言智慧商業數據助理 (Text-to-SQL)
 
 > **本月核心目標**：在具備 Python + SQL + Database + FastAPI + Docker 的紮實工程底子下，切入生成式 AI (LLM) 落地應用。打造一個 **AI Business Data Assistant**，讓非技術業務或高階主管直接用口語提問（如：「今年台北哪 3 個客戶買最多？」），AI 自動將其轉化為安全可執行的 SQL，查詢資料庫後以繁體中文給出清晰的商業洞察。
 
@@ -66,3 +66,12 @@ flowchart TD
 - 🔴 **Level 3 — Bonus (面試溢價線)**：
   - [ ] **Track B 進階**：完成多角色 AI Agent 工作流（生成 ➜ 語法校驗 ➜ 唯讀執行 ➜ 商業圖表報告）。
   - [ ] 撰寫 AI 評測集，計算 Text-to-SQL 的執行準確率與安全性攔截率。
+
+---
+
+## 🔗 章節導航與跨模組串聯
+
+- **前一模組**：[Month 10 容器化與雲端部署](../10_Month10_容器化與部署_Docker/README.md)（Docker Compose 多容器編排與雲端部署）
+- **下一模組**：[Month 12 轉職衝刺與求職寶典](../12_Month12_轉職衝刺與求職寶典/README.md)（中英文履歷打磨、50大核心面試題與求職漏斗看板）
+- **回到總目錄**：[12 個月 IT 轉職實戰教材庫主導航](../README.md)
+

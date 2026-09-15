@@ -1,4 +1,4 @@
-﻿# 🚀 M10 Production Gate：雲端部署與生產級檢核表 (Deployment Gate)
+# 🚀 M10 Production Gate：雲端部署與生產級檢核表 (Deployment Gate)
 
 > **「在本地電腦跑得動叫玩具，能在雲端持續運行、金鑰不洩漏、容器可隨時銷毀重建、面試官點開 Demo URL 就能玩的，才叫 Production 軟體產品。」**
 
@@ -99,3 +99,12 @@ echo "🎉 冒煙測試全數過關，生產就緒！"
 - [ ] 執行 `smoke_test.sh` 冒煙測試 100% 通過
 
 > 通過本關卡，代表你已具備 **Month 10 Production Ready** 的現代雲端工程師部署實力！
+
+---
+
+## 🔗 章節導航
+
+- **前一篇**：[02_雲端部署策略_PaaS與VPS選型實戰.md](./02_雲端部署策略_PaaS與VPS選型實戰.md)（Render/Railway 免費部署、Nginx 反向代理與 HTTPS）
+- **邁向下一月**：[Month 11 現代資料堆疊與AI賦能](../11_Month11_AI賦能_智慧資料助理/README.md)（雙軌分流：Airflow 自動化調度與 Text-to-SQL 智慧助理）
+- **回到目錄**：[Month 10 學習模組主導航](./README.md)
+

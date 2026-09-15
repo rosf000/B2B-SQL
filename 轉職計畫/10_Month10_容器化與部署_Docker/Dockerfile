@@ -1,5 +1,5 @@
 # 使用輕量級官方 Python 基礎映像檔
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # 設定工作目錄
 WORKDIR /app

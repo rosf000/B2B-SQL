@@ -50,7 +50,7 @@ flowchart LR
 
 ---
 
-*(備用進階路徑：若你的電腦已有 Docker，也可以直接在終端機輸入：`docker run --name postgres-dev -e POSTGRES_PASSWORD=postgres123 -p 5432:5432 -d postgres:16`)*
+*(備用進階路徑：若你的電腦已有 Docker，也可以直接在終端機輸入：`docker run --name postgres-dev -e POSTGRES_PASSWORD=postgres123 -p 5432:5432 -d postgres:18`)*
 
 ---
 

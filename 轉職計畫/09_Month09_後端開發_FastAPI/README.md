@@ -1,4 +1,4 @@
-﻿# Month 09｜後端開發：使用 FastAPI 將 B2B 系統 API 化
+# Month 09｜後端開發：使用 FastAPI 將 B2B 系統 API 化
 
 > **本月核心目標**：從單純的資料腳本跨入「現代 Web 後端服務」，使用 Python 當紅的高效能非同步框架 FastAPI，為 Month 8 的 B2B 客戶與訂單數據系統構建標準 RESTful API，並利用自動產生的 Swagger UI 進行互動式測試。
 
@@ -46,3 +46,12 @@ flowchart TD
 - 🔴 **Level 3 — Bonus (面試溢價線)**：
   - [ ] 深刻理解 `async def` 與同步 `def` 的執行緒模型差異與 Event Loop 阻塞避坑。
   - [ ] 實作 JWT Token 認證或 API Key 授權中介軟體 (Middleware)。
+
+---
+
+## 🔗 章節導航與跨模組串聯
+
+- **前一模組**：[Month 08 旗艦主力專案：B2B 客戶數據系統](../08_Month08_旗艦主力專案_B2B客戶數據系統/README.md)（四層分層架構、演算法去重與業務指標引擎）
+- **下一模組**：[Month 10 容器化與雲端部署](../10_Month10_容器化與部署_Docker/README.md)（將 FastAPI 與 PostgreSQL 容器化並一鍵部署雲端）
+- **回到總目錄**：[12 個月 IT 轉職實戰教材庫主導航](../README.md)
+

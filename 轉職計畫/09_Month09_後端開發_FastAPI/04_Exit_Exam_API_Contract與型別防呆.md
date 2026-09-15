@@ -1,4 +1,4 @@
-﻿# 🎓 M9 Exit Exam：API Contract 契約規範與 Pydantic 型別防呆 (API Design Gate)
+# 🎓 M9 Exit Exam：API Contract 契約規範與 Pydantic 型別防呆 (API Design Gate)
 
 > **「新手寫後端：看著教學拼出一個 `@app.get('/')` 就覺得自己會寫 API；工程師寫後端：在敲程式碼前先定義好清晰的 API Contract（輸入、輸出、狀態碼、統一錯誤格式），並以 Pydantic 嚴防任何髒 Payload。」**
 
@@ -127,3 +127,12 @@ def test_create_order_negative_amount():
 - [ ] 能以白話向面試官解釋 Event Loop 與 async 阻塞風險
 
 > 通過本測驗，代表你具備 **Month 09 Job Ready** 的專業 API 設計與後端防禦實力！
+
+---
+
+## 🔗 章節導航
+
+- **前一篇**：[03_FastAPI_Testing與API文件品質.md](./03_FastAPI_Testing與API文件品質.md)（TestClient 自動化單元測試與覆蓋率）
+- **邁向下一月**：[Month 10 容器化與雲端部署](../10_Month10_容器化與部署_Docker/README.md)（Docker Compose 多容器編排與雲端部署）
+- **回到目錄**：[Month 09 學習模組主導航](./README.md)
+

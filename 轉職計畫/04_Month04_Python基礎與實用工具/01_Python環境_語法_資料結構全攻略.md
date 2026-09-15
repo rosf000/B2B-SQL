@@ -1,4 +1,4 @@
-﻿# 01 Python 環境、語法與資料結構全攻略
+# 01 Python 環境、語法與資料結構全攻略
 
 > **寫在前面：Python 是資料工程師的瑞士刀**
 > SQL 讓你能查詢資料，Python 讓你能**自動化**所有事情：
@@ -46,11 +46,11 @@ dataclasses 簡介
 ### 1.1 Python 安裝
 
 ```bash
-# 到 python.org 下載 3.11 或 3.12（推薦）
+# 到 python.org 下載 Python 3.13（或透過 Miniconda 安裝）
 # Windows 安裝時記得勾選「Add Python to PATH」
 
 # 確認安裝成功
-python --version      # Python 3.12.x
+python --version         # Python 3.13.x
 python -m pip --version  # pip 版本
 ```
 

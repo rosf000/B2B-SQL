@@ -41,6 +41,11 @@ pytest 自動跑所有 API 測試（30秒）
 
 API 測試讓你「有信心修改程式碼」，這是工程品質的核心。
 
+> [!TIP]
+> **API 測試是履歷最硬核的加分項**：
+> 面試官看過太多「只會寫 CRUD 但從沒寫過測試」的轉職者。只要在專案中具備 Pytest 自動化整合測試與 Coverage 覆蓋率報告（80%+），就能立刻從 90% 的業餘求職者中脫穎而出。
+
+
 ---
 
 ## 2. FastAPI 測試工具：TestClient + pytest
@@ -377,6 +382,12 @@ class TestSalesAnalytics:
 
 ## 5. 測試資料庫隔離（不污染正式 DB）
 
+> [!IMPORTANT]
+> **測試隔離三大鐵律**：
+> 1. **零污染**：測試環境絕不連線至生產 (Production) 或本機開發 (Dev) 資料庫，一律使用獨立的 SQLite 記憶體資料庫或專用測試容器。
+> 2. **獨立性 (Isolation)**：每個測試案例之間互相獨立，執行順序前後顛倒也不會影響測試結果。
+> 3. **冪等復原**：透過 Pytest fixture 的 setup/teardown 機制，在每個 test 結束後自動清理乾淨。
+
 上面的 `conftest.py` 使用 **SQLite 記憶體資料庫**做測試隔離，這樣：
 - 測試不會碰到正式的 PostgreSQL
 - 每個測試函式都從空資料庫開始
@@ -593,3 +604,28 @@ pytest --cov=app --cov-report=term-missing
 ```
 
 這段文字放進 GitHub README，面試官看到會知道你的 API 是有測試保護的。
+
+---
+
+## 🎯 本章重點彙整 (Key Takeaways)
+
+```text
+┌───────────────────┬──────────────────────────────────────────────────────────┐
+│ 核心維度          │ 工程實踐重點與面試得分點                                 │
+├───────────────────┼──────────────────────────────────────────────────────────┤
+│ TestClient 機制   │ 基於 HTTPX 打造，直接於記憶體觸發 FastAPI 路由無須啟動 Server│
+│ 測試資料庫隔離    │ 透過 conftest.py 建立 SQLite 記憶體資料庫，隔離正式資料庫│
+│ 狀態碼斷言覆蓋    │ 涵蓋 200/201 正常流、422 型別防呆、404 不存在與 409 衝突 │
+│ Coverage 覆蓋率   │ 透過 pytest-cov 產出報表，建立 80%+ 專業工程品質信號     │
+│ Swagger 文件優化  │ 設定 Tags、Summary、Description 與 response_description   │
+└───────────────────┴──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔗 章節導航
+
+- **前一篇**：[02_Pydantic資料驗證與CRUD實作.md](./02_Pydantic資料驗證與CRUD實作.md)（Pydantic V2 強型別契約與防禦性 CRUD）
+- **下一篇**：[04_Exit_Exam_API_Contract與型別防呆.md](./04_Exit_Exam_API_Contract與型別防呆.md)（M09 結業考核：API Contract 實戰防禦）
+- **回到目錄**：[Month 09 學習模組主導航](./README.md)
+

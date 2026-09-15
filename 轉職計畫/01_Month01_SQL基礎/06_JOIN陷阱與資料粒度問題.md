@@ -3,8 +3,8 @@
 > **「JOIN 後資料變兩倍，但你不知道。這是工作中最常見的 SQL 錯誤之一。」**
 
 > [!IMPORTANT]
-> 本篇所有範例均使用 **你的 B2B Canonical 資料庫**（`data/b2b_m1_sample_v2.sql`）。
-> 請在 DBeaver 中執行每段 SQL，對照【預期查詢結果】親身感受 JOIN 爆炸發生的瞬間！
+> 本篇範例均基於 **B2B Canonical 資料庫**（`data/b2b_m1_sample_v2.sql`）。
+> 建議在 DBeaver 中執行每段 SQL，並對照預期查詢結果確認列數與金額變化。
 
 ---
 
@@ -12,9 +12,9 @@
 
 當你 JOIN 兩張表時，如果關聯是「一對多」，結果的列數會膨脹。
 
-### 基本範例（可直接執行）
+### 基本範例
 
-> 💡 讓我們先看 `orders` ×  `order_items` JOIN 後，**同一筆訂單的 `total_amount` 會出現幾次**：
+確認 `orders` 與 `order_items` JOIN 前後的列數變化：
 
 ```sql
 -- 【Step 1】先確認 orders 有幾筆
@@ -61,8 +61,7 @@ ORDER BY o.order_id;
 |    12    | ORD-2024-012 |  290000.00  | **2** ← 出現 2 次！ |
 |    13    | ORD-2024-013 |  120000.00  |        **1**        |
 
-> **這是正確的！** 因為 ORD-2024-002 這筆訂單有 2 個品項（Cloud CRM + 分析套件），
-> JOIN 後它就自然出現 2 列。**問題在於你如果對 `total_amount` 做 SUM，就會把它算兩遍！**
+> ORD-2024-002 包含 2 個品項，關聯後展開為 2 列符合預期；但若在此粒度下對 `orders.total_amount` 做 SUM，該金額就會被重複計算。
 
 ---
 
@@ -92,7 +91,7 @@ GROUP BY c.company_name;
 
 ---
 
-現在，**刻意犯錯**：加入 `order_items` JOIN 後，不假思索地對 `orders.total_amount` 做 SUM：
+若在 JOIN `order_items` 之後，直接對 `orders.total_amount` 進行加總：
 
 ```sql
 -- ⚠️ 這條 SQL 結果是錯的！（Fan-out 陷阱示範）
@@ -107,17 +106,16 @@ WHERE c.company_name = 'BlueSky Cloud Ltd'
 GROUP BY c.company_name;
 ```
 
-##### 📊 預期查詢結果
+##### 📊 預期查詢結果（⚠️ 這是錯誤的答案！）
 
-| company_name      |       total       |
-| :---------------- | :---------------: |
-| BlueSky Cloud Ltd | **=250000** |
+| company_name      |       wrong_total       |
+| :---------------- | :---------------------: |
+| BlueSky Cloud Ltd | **405000.00** ⚠️ 錯誤！ |
 
 > [!CAUTION]
-> **為什麼錯？** ORD-2024-002 這筆訂單有 2 筆紀錄，
-> JOIN 後它的 `total_amount = 155000` 被計算了 **2 次**（155000 × 2 = 310000）。
-> ORD-2024-010 只有 1 個品項，所以 95000 只算 1 次。
-> 最終 SUM = 310000 + 95000 = **405000**（比正確值多了 155000！）
+> **原因分析**：ORD-2024-002 有 2 個品項，JOIN 後其 `total_amount` (155,000) 被重複計算 2 次（計 310,000）。
+> ORD-2024-010 只有 1 個品項（計 95,000）。
+> 加總結果為 405,000，比正確總額 250,000 虛增了 155,000。
 
 ---
 
@@ -159,9 +157,7 @@ LIMIT 10;
 |    7    | ORD-2024-007 |  450000.00  |    9    |     1     | 360000.00 |
 |    7    | ORD-2024-007 |  450000.00  |   10   |     2     | 90000.00 |
 
-> 👆 **一眼就看出問題**：order_id = 2 出現了 **2 列**，
-> 而 `total_amount = 155000` 在兩列中都是一樣的。
-> 如果你對 `total_amount` 做 SUM，155000 就會被算兩次！
+> `order_id = 2` 出現了 2 列，且每列的 `total_amount` 皆為 155,000。若對此欄位直接做 SUM，155,000 就會被計算兩次。
 
 ---
 
@@ -179,7 +175,7 @@ JOIN order_items oi ON o.order_id = oi.order_id
 WHERE c.company_name = 'BlueSky Cloud Ltd'
   AND o.status = 'COMPLETED'
 GROUP BY c.company_name;
--- 預期結果：345000.00 ← 與正確答案一致！
+-- 預期結果：250000.00 ← 與正確答案一致！
 ```
 
 ```sql
@@ -198,7 +194,7 @@ JOIN order_line_totals olt ON o.order_id = olt.order_id
 WHERE c.company_name = 'BlueSky Cloud Ltd'
   AND o.status = 'COMPLETED'
 GROUP BY c.company_name;
--- 預期結果：345000.00 ← 同樣正確！
+-- 預期結果：250000.00 ← 同樣正確！
 ```
 
 ---
@@ -231,7 +227,7 @@ GROUP BY c.customer_id;
 ```
 
 > [!TIP]
-> 💡 在 B2B 資料庫中遇到 Many-to-Many 的最佳預防方式：查詢前先確認每張表的「粒度（Grain）」——這張表的**每一列代表什麼**？`orders` 的粒度是「每筆訂單」，`order_items` 的粒度是「每筆訂單的每個品項」，兩者 JOIN 後的粒度就變成「每個品項」，而非「每筆訂單」。
+> 預防 Many-to-Many 笛卡兒積的關鍵在於確認每張表的粒度（Grain）：`orders` 的粒度是「每筆訂單」，`order_items` 的粒度是「每筆訂單的每個品項」，兩者關聯後的粒度為「每個品項」，而非「每筆訂單」。
 
 ---
 
@@ -259,11 +255,7 @@ ORDER BY order_count DESC;
 |      2      |      2      |
 |      8      |      2      |
 
-> 👆 **這說明什麼？**
->
-> - customer_id = 1（Apex Semi Tech）在 orders 表中出現了 3 次
-> - 如果你以 `customer_id` 做 JOIN key，每個客戶的 orders 會膨脹成 3 列
-> - 這不是 Bug，是 1:N 關係的正常現象——但你必須知道 JOIN 後 SUM 就不能直接用了！
+> `customer_id = 1`（Apex Semi Tech）在 orders 表中有 3 筆資料。以 `customer_id` 關聯時展開為 3 列屬於 1:N 關係的正常結果；此時若要進行聚合，不可直接對屬於 1 的端欄位進行金額加總。
 
 ---
 
@@ -311,7 +303,7 @@ ORDER BY c.customer_id;
 
 ---
 
-## 🔬 實戰練習：完整驗證 JOIN Explosion
+## 🔬 實戰練習：驗證 JOIN 粒度與膨脹
 
 ```sql
 -- 練習 1：驗證你的 JOIN 沒有膨脹
@@ -356,7 +348,7 @@ LIMIT 5;
 
 ## 🔎 快速診斷 SQL：對帳驗證
 
-> 這是你以後工作中懷疑 JOIN 有問題時的「標準驗證模板」：
+比對 `orders.total_amount` 與 `order_items.subtotal` 加總是否一致：
 
 ```sql
 -- 一次性對帳：orders.total_amount 與由 order_items 加總出的值是否一致？
@@ -383,13 +375,13 @@ ORDER BY o.order_id;
 |   ...   | ...          |       ...       |       ...       | **0.00** |
 
 > [!TIP]
-> 💡 **如果 diff 欄位全部是 0.00**，代表你的 B2B 資料庫的 Trigger 運作正常——
-> `order_items` 的小計彙總值與 `orders.total_amount` 完全吻合！
-> 這也是一個很好的「資料品質驗證 SQL」，在業界的對帳報告中天天都會用到。
+> 若 `diff` 均為 0.00，代表明細小計彙總值與主表訂單金額一致。此類對帳語法常用於檢查資料一致性與業務 Trigger 是否正常運作。
 
 ---
 
 ## 📋 診斷 JOIN 結果的 SOP
+
+遇到異常聚合結果時的檢查清單：
 
 ```
 看到 SUM / COUNT 結果時，必問三個問題：
@@ -397,13 +389,13 @@ ORDER BY o.order_id;
 1. JOIN 後，這張查詢的 Grain（粒度）是什麼？
    → 現在每一列代表什麼？（是「每筆訂單」還是「每個訂單品項」？）
 
-2. 我 SUM 的欄位在哪張表？
-   → 這張表在 JOIN 後有沒有被重複？
-   → 用 COUNT(*) vs JOIN 前的 COUNT(*) 比一下！
+2. 我 SUM 的欄位來自哪張表？
+   → 那張表在 JOIN 後有沒有被複製出多列？
+   → 做個簡單驗證：比對 JOIN 前後的 COUNT(*) 是否相同！
 
 3. 結果比預期大很多嗎？
-   → 試著 SELECT 幾列原始資料確認有無重複
-   → 用「快速診斷 SQL」做 diff 對帳
+   → 先 SELECT 幾列原始資料，肉眼確認有無重複列
+   → 再用「快速診斷 SQL」做 diff 對帳，數字差異一目了然
 ```
 
 ---

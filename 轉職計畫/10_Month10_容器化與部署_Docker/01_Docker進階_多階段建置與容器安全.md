@@ -1,4 +1,4 @@
-﻿# 01. Docker 與 Docker Compose 容器化實戰教學
+# 01. Docker 與 Docker Compose 容器化實戰教學
 
 > **模組目標**：掌握現代軟體工程必備的交付標準——**Docker 容器化**。告別「在我電腦上明明可以跑（It works on my machine）」的環境災難；深入理解 Linux 底層隔離機制（Namespaces, Cgroups, UnionFS）；精通多階段建置（Multi-stage Builds）將 Python 映像檔從 1GB 驟降至 100MB；並熟練運用 Docker Compose 編排完整的 B2B 微服務應用棧（FastAPI + PostgreSQL + 自動健康檢查與資料持久化）。
 
@@ -69,7 +69,7 @@ Docker 並非一種全新的作業系統，它巧妙地組合了 Linux 核心的
 ### 1.3 映像檔分層存儲與 Copy-on-Write（CoW）機制
 
 Docker 映像檔是以「**層（Layers）**」為單位堆疊的。Dockerfile 中的每一行指令（如 `RUN`, `COPY`）都會生成一個**只讀層（Read-Only Layer）**：
-- 當多個容器基於同一個 `python:3.11-slim` 啟動時，它們在硬碟中共用相同的底層 Layer，不會重複佔用磁碟。
+- 當多個容器基於同一個 `python:3.13-slim` 啟動時，它們在硬碟中共用相同的底層 Layer，不會重複佔用磁碟。
 - 當容器啟動時，Docker 會在頂層加上一個極薄的「**可寫層（Container R/W Layer）**」。
 - 當應用要修改底層檔案時，Docker 採用 **Copy-on-Write（寫時複製）**：將底層檔案複製一份到頂層可寫層進行修改，底層原始映像檔始終乾淨完好。
 
@@ -99,6 +99,11 @@ RUN pip install -r requirements.txt  # 下方所有步驟快取全爆，每次�
 ```
 
 #### ✅ 資深工程師寫法（分離依賴項與業務程式碼）：
+
+> [!TIP]
+> **Docker Layer Cache 命中聖經**：
+> Dockerfile 每一行指令都會生成一個唯讀層（Layer）。變動頻率越低的指令要放越前面！將 `requirements.txt` 與 `pip install` 獨立拆在前，只要套件清單未改，每次修改業務 Python 程式碼重構映像檔時，就能 100% 命中快取，構建時間從 3 分鐘驟降至 2 秒！
+
 ```dockerfile
 # 1. 優先單獨 COPY 依賴項清單
 COPY requirements.txt /app/
@@ -122,8 +127,9 @@ COPY . /app/
 
 ### 2.4 容器資安防線：以非 root 專屬用戶運行
 
-預設情況下，容器內的進程是以 `root`（UID 0）身份執行的！
-若你的 API 存在遠端程式碼執行（RCE）漏洞，駭客一旦攻破容器，可能利用核心漏洞進一步提權控制整個實體宿主機。
+> [!CAUTION]
+> **資安致命雷區：以 root 運行容器**  
+> 預設情況下，容器內的進程是以 `root`（UID 0）身份執行的！若你的 API 存在依賴套件漏洞或遠端程式碼執行（RCE），攻擊者攻破容器後可能利用 Linux 內核漏洞進行「容器逃逸 (Container Escape)」，直接掌控整台雲端主機。生產環境務必使用 `USER appuser` 降權運行！
 
 **生產級必備準則**：建立並切換為非特權用戶：
 ```dockerfile
@@ -137,13 +143,16 @@ USER appuser
 
 ### 3.1 資料庫持久化首選：Named Volume
 
-容器是短暫無狀態的（Ephemeral）。如果你 `docker rm` 刪除了一個 PostgreSQL 容器，裡面的資料會瞬間煙消雲散！
+> [!IMPORTANT]
+> **資料持久化鐵律**：
+> 容器本質是短暫無狀態的（Ephemeral）。如果你 `docker rm` 刪除了一個 PostgreSQL 容器，若沒有將 `/var/lib/postgresql/data` 掛載至 Named Volume，裡面的全部資料庫數據會瞬間永久滅失！生產環境一律由 Docker Engine 統一託管 Named Volume。
+
 對於資料庫等關鍵資產，**必須使用 Named Volume** 將資料掛載到宿主機受保護的安全區塊：
 
 ```yaml
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     volumes:
       - pgdata:/var/lib/postgresql/data # 具名磁碟區持久化
 
@@ -195,7 +204,7 @@ Docker Compose 用宣告式 YAML 檔案定義多個容器的拓撲關係、連�
 ```yaml
 services:
   postgres_db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 3s
@@ -252,8 +261,8 @@ docker compose down -v
 ### 題目一：撰寫生產級多階段建置 FastAPI Dockerfile
 **業務情境**：
 請為 B2B FastAPI 專案撰寫一個生產級的 `Dockerfile`：
-1. 第一階段（Builder）：基於 `python:3.11-slim`，安裝編譯必備的 gcc 與 libpq-dev，建立虛擬環境 `.venv` 並安裝 `requirements.txt`。
-2. 第二階段（Runner）：同樣基於 `python:3.11-slim`，只安裝執行時必備的 `libpq5`，將 Builder 階段產出的 `.venv` 拷貝過來。
+1. 第一階段（Builder）：基於 `python:3.13-slim`，安裝編譯必備的 gcc 與 libpq-dev，建立虛擬環境 `.venv` 並安裝 `requirements.txt`。
+2. 第二階段（Runner）：同樣基於 `python:3.13-slim`，只安裝執行時必備的 `libpq5`，將 Builder 階段產出的 `.venv` 拷貝過來。
 3. 安全規範：建立系統專用帳戶 `b2buser`（UID 10001），禁止使用 root 運行。
 4. 設定工作目錄為 `/app`，暴露 8000 埠，並以 Uvicorn 啟動。
 
@@ -262,7 +271,7 @@ docker compose down -v
 # ==========================================
 # 階段一：構建階段 (Builder Stage)
 # ==========================================
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 
 WORKDIR /build
 
@@ -284,7 +293,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # ==========================================
 # 階段二：生產運行階段 (Final Runner Stage)
 # ==========================================
-FROM python:3.11-slim AS runner
+FROM python:3.13-slim AS runner
 
 WORKDIR /app
 
@@ -325,7 +334,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--worker
 ### 題目二：設計編排 FastAPI + PostgreSQL 具備 Healthcheck 的 docker-compose.yml
 **業務情境**：
 請撰寫一個標準的 `docker-compose.yml`，協同編排：
-1. `postgres_db`：使用 `postgres:16-alpine`，設定資料庫名稱為 `b2b_erp`、帳號密碼，配置具名磁碟區 `postgres_data` 持久化，並將包含 `customers`、`orders`、`order_items`、`products`、`salespeople` 表綱要的初始化腳本 `./init_b2b_schema.sql` 掛載至容器內的 `/docker-entrypoint-initdb.d/` 目錄以實現初次啟動自動建表；並配置每 3 秒一次的 `pg_isready` 健康檢查。
+1. `postgres_db`：使用 `postgres:18-alpine`，設定資料庫名稱為 `b2b_erp`、帳號密碼，配置具名磁碟區 `postgres_data` 持久化，並將包含 `customers`、`orders`、`order_items`、`products`、`salespeople` 表綱要的初始化腳本 `./init_b2b_schema.sql` 掛載至容器內的 `/docker-entrypoint-initdb.d/` 目錄以實現初次啟動自動建表；並配置每 3 秒一次的 `pg_isready` 健康檢查。
 2. `api_service`：使用當前目錄 Dockerfile 構建，映射埠號 `8000:8000`，環境變數動態注入資料庫連線字串，並設定 `depends_on` 嚴格等待 `postgres_db` 健康檢查通過後方可啟動。
 3. 自定義內部網路 `b2b_network`。
 
@@ -343,7 +352,7 @@ volumes:
 
 services:
   postgres_db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: b2b_postgres
     restart: unless-stopped
     networks:
@@ -419,3 +428,29 @@ docker compose run --rm api_service nc -zv postgres_db 5432
 # 步驟 5：若確認是設定檔打錯名稱，修改 docker-compose.yml 後重新編排啟動
 docker compose up -d --force-recreate
 ```
+
+---
+
+## 🎯 本章重點彙整 (Key Takeaways)
+
+```text
+┌───────────────────┬──────────────────────────────────────────────────────────┐
+│ 核心觀念          │ 工程實踐重點與面試得分點                                 │
+├───────────────────┼──────────────────────────────────────────────────────────┤
+│ 隔離原理          │ Namespaces 隔離資源視圖、Cgroups 限制硬體資源、UnionFS 分層│
+│ 快取優化          │ 先 COPY requirements.txt 再 pip install，最小化構建時間  │
+│ 多階段建置        │ Builder 編譯與 Runner 運行分離，映像檔從 1GB 瘦身至 100MB │
+│ 非 root 資安      │ 生產容器必須宣告 USER appuser 降權，防範容器逃逸 (Escape) │
+│ 持久化與網路      │ 資料庫必掛 Named Volume；微服務依賴 DNS Service Name 互聯 │
+└───────────────────┴──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔗 章節導航
+
+- **前一篇**：[00_本月學習計畫與目標.md](./00_本月學習計畫與目標.md)（Docker 4 週學習排程與交付成果）
+- **下一篇**：[02_雲端部署策略_PaaS與VPS選型實戰.md](./02_雲端部署策略_PaaS與VPS選型實戰.md)（Render/Railway 免費部署、Nginx 反向代理與 HTTPS）
+- **部署檢核**：[03_Production_Gate_生產部署檢核表.md](./03_Production_Gate_生產部署檢核表.md)（10 大生產檢核標準與冒煙測試）
+- **回到目錄**：[Month 10 學習模組主導航](./README.md)
+

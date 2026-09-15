@@ -45,3 +45,11 @@ flowchart TD
 - 🔴 **Level 3 — Bonus (面試溢價線)**：
   - [ ] 針對特定 High-Priority 目標職缺進行客製化 Cover Letter 與專題技術提案。
   - [ ] 掌握多 Offer 比較與工程師薪資談判技巧（Package 結構與股票期權）。
+
+---
+
+## 🔗 章節導航與跨模組串聯
+
+- **前一模組**：[Month 11 現代資料堆疊與 AI 賦能](../11_Month11_AI賦能_智慧資料助理/README.md)（雙軌分流：Airflow 自動化調度與 Text-to-SQL 智慧助理）
+- **回到總目錄**：[12 個月 IT 轉職實戰教材庫主導航](../README.md)（全套轉職架構全景與 12 個月自我檢核表）
+

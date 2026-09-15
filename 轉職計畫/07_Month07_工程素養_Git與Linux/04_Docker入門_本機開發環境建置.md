@@ -30,7 +30,7 @@
 
 **沒有 Docker 的世界：**
 ```
-你的本機 → 手動安裝 PostgreSQL 14.2、Python 3.11、設定環境變數...
+你的本機 → 手動安裝 PostgreSQL 18、Python 3.13、設定環境變數...
 同事的電腦 → 重複一遍，版本不一定一樣 → 出錯
 面試官的伺服器 → 再重複一遍 → 更多出錯
 ```
@@ -58,9 +58,9 @@ Docker 把你的程式和它需要的所有環境（OS、套件、設定）打�
 ```
 Docker Hub（雲端倉庫）
     │
-    │  docker pull postgres:16
+    │  docker pull postgres:18
     ▼
-Image（postgres:16）← 靜態的藍圖，存在你的硬碟
+Image（postgres:18）← 靜態的藍圖，存在你的硬碟
     │
     │  docker run ...
     ▼
@@ -75,12 +75,12 @@ Container（執行中的 PostgreSQL）← 活的實例
 
 ```
 來源 1：Docker Hub（官方/社群 Image）
-  - docker pull postgres:16
-  - docker pull python:3.11-slim
+  - docker pull postgres:18
+  - docker pull python:3.13-slim
   - docker pull nginx:alpine
 
 來源 2：自己的 Dockerfile 建構
-  - 從基底 Image 開始（FROM python:3.11-slim）
+  - 從基底 Image 開始（FROM python:3.13-slim）
   - 加入你的程式碼和設定
   - docker build -t my-app .
 ```
@@ -123,7 +123,7 @@ docker run \
   -e POSTGRES_DB=testdb \
   -p 5432:5432 \
   -d \
-  postgres:16
+  postgres:18
 ```
 
 **參數解釋：**
@@ -134,7 +134,7 @@ docker run \
 | `-e POSTGRES_USER=admin` | 設定環境變數（這是 PostgreSQL 的帳號） |
 | `-p 5432:5432` | 本機 port 5432 → Container 內部 port 5432 |
 | `-d` | Detached mode，在背景執行，不佔用 Terminal |
-| `postgres:16` | 使用的 Image（會自動從 Docker Hub 下載） |
+| `postgres:18` | 使用的 Image（會自動從 Docker Hub 下載） |
 
 ```bash
 # 確認 Container 在執行
@@ -142,7 +142,7 @@ docker ps
 
 # 輸出類似：
 # CONTAINER ID   IMAGE         COMMAND                  CREATED         STATUS         PORTS                    NAMES
-# a1b2c3d4e5f6   postgres:16   "docker-entrypoint.s…"  2 minutes ago   Up 2 minutes   0.0.0.0:5432->5432/tcp   my-first-postgres
+# a1b2c3d4e5f6   postgres:18   "docker-entrypoint.s…"  2 minutes ago   Up 2 minutes   0.0.0.0:5432->5432/tcp   my-first-postgres
 
 # 停止 Container
 docker stop my-first-postgres
@@ -164,7 +164,7 @@ Dockerfile 是建構你自己的 Image 的說明書。
 
 # ── Step 1：選擇基底 Image ─────────────────────────────────────
 # slim 版本比完整版小很多（~40MB vs ~900MB）
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # ── Step 2：設定工作目錄 ──────────────────────────────────────
 WORKDIR /app
@@ -301,7 +301,7 @@ version: "3.9"
 services:
   # ── PostgreSQL 資料庫 ──────────────────────────────────────
   postgres:
-    image: postgres:16-alpine        # alpine 版本更輕量
+    image: postgres:18-alpine        # alpine 版本更輕量
     container_name: b2b_postgres
     restart: unless-stopped          # 電腦重開後自動啟動
     environment:
@@ -351,7 +351,7 @@ docker-compose ps
 # 輸出：
 # NAME            IMAGE                   STATUS          PORTS
 # b2b_pgadmin     dpage/pgadmin4:latest   Up 30 seconds   0.0.0.0:5050->80/tcp
-# b2b_postgres    postgres:16-alpine      Up 35 seconds   0.0.0.0:5432->5432/tcp
+# b2b_postgres    postgres:18-alpine      Up 35 seconds   0.0.0.0:5432->5432/tcp
 
 # 3. 測試 PostgreSQL 連線
 docker-compose exec postgres psql -U b2b_admin -d b2b_platform -c "\l"
@@ -399,7 +399,7 @@ docker exec -it <名稱> bash   # 進入 Container 的 shell
 
 ```bash
 docker images                # 列出本機所有 Image
-docker pull postgres:16      # 下載 Image
+docker pull postgres:18      # 下載 Image
 docker rmi <Image ID>        # 刪除 Image
 docker build -t <名稱> .     # 根據 Dockerfile 建構 Image
 ```

@@ -29,7 +29,7 @@ version: '3.8'
 
 services:
   database:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: secretpassword

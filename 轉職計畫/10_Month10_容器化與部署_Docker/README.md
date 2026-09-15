@@ -1,4 +1,4 @@
-﻿# Month 10｜容器化與雲端部署：讓所有人都能使用你的服務
+# Month 10｜容器化與雲端部署：讓所有人都能使用你的服務
 
 > **本月核心目標**：擺脫「在我電腦上可以跑，在你電腦上會壞掉」的窘境。掌握 Docker 映像檔建置、Docker Compose 多容器編排（FastAPI + PostgreSQL + pgAdmin），並將作品一鍵部署至雲端平台（如 Render / Railway / AWS VPS），產出一個有即時線上網址的 Live Demo。
 
@@ -27,7 +27,7 @@ flowchart TD
 | **02** | [02_雲端部署策略_PaaS與VPS選型實戰.md](./02_雲端部署策略_PaaS與VPS選型實戰.md) | PaaS（Render / Railway）vs 自建 VPS 選型矩陣、Nginx 反向代理、HTTPS 憑證 | 第 3 週 |
 | **03** | [03_Production_Gate_生產部署檢核表.md](./03_Production_Gate_生產部署檢核表.md) | 🚀 **本月結業通關閘門 (Production Gate)**：10 大生產檢核清單、Secrets 審計與自動化冒煙測試 | 第 4 週 |
 | **配置** | [Dockerfile](./Dockerfile) | FastAPI 生產環境輕量化多階段構建檔 | 第 1 週 |
-| **編排** | [docker-compose.yml](./docker-compose.yml) | 一鍵啟動 FastAPI 後端 + PostgreSQL 16 + Adminer GUI 容器編排檔 | 第 2 週 |
+| **編排** | [docker-compose.yml](./docker-compose.yml) | 一鍵啟動 FastAPI 後端 + PostgreSQL 18 + Adminer GUI 容器編排檔 | 第 2 週 |
 
 > **📌 前置知識**：本月的 Docker 內容是 [M7/04_Docker入門_本機開發環境建置.md](../07_Month07_工程素養_Git與Linux/04_Docker入門_本機開發環境建置.md) 的進階延伸，請確認已完成 M7 的 Docker 入門章節。
 
@@ -40,10 +40,19 @@ flowchart TD
   - [ ] 能使用現成的 `Dockerfile` 與 `docker-compose.yml` 在本地啟動應用。
   - [ ] 熟練 `docker logs` 與 `docker compose down` 操作。
 - 🔵 **Level 2 — Job Ready (標準求職線，80分晉級)**：
-  - [ ] 獨立撰寫基於 `python:3.11-slim` 的輕量 Dockerfile 與 Compose 檔案。
+  - [ ] 獨立撰寫基於 `python:3.13-slim` 的輕量 Dockerfile 與 Compose 檔案。
   - [ ] 掌握環境變數安全注入，確保 Secrets 100% 不進入 Git。
   - [ ] 成功將專案部署至雲端（Render / Railway / VPS），取得可公開測試的 URL。
   - [ ] 通過 **[03_Production_Gate_生產部署檢核表.md](./03_Production_Gate_生產部署檢核表.md)**（10大生產檢核與冒煙測試）。
 - 🔴 **Level 3 — Bonus (面試溢價線)**：
   - [ ] 實作 Multi-stage Build 將映像檔壓制在 200MB 以內，並以非 root 用戶運行。
   - [ ] 整合 GitHub Actions 實現 Push 自動建置與自動測試 CI/CD 流水線。
+
+---
+
+## 🔗 章節導航與跨模組串聯
+
+- **前一模組**：[Month 09 後端開發：FastAPI](../09_Month09_後端開發_FastAPI/README.md)（將 B2B 客戶數據系統 API 化與強型別防禦）
+- **下一模組**：[Month 11 現代資料堆疊與 AI 賦能](../11_Month11_AI賦能_智慧資料助理/README.md)（雙軌分流：Airflow 自動化調度與 Text-to-SQL 智慧助理）
+- **回到總目錄**：[12 個月 IT 轉職實戰教材庫主導航](../README.md)
+

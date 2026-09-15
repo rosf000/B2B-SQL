@@ -137,7 +137,7 @@ FROM orders o
 JOIN order_items oi ON o.order_id = oi.order_id
 JOIN salespeople s ON o.salesperson_id = s.salesperson_id
 WHERE s.name = 'Alex Chen'
-  AND EXTRACT(YEAR FROM o.order_date) = 2024
+  AND EXTRACT(YEAR FROM o.order_date) = 2026
   AND EXTRACT(QUARTER FROM o.order_date) IN (1, 2, 3)
   AND o.status != 'CANCELLED'
 GROUP BY s.name;
@@ -207,9 +207,9 @@ GROUP BY s.name;
 
 ---
 
-## 拆解框架快速版（練習時用）
+## 拆解框架快速版
 
-每道題做完前，至少回答這三個問題：
+撰寫查詢前，先確認以下三個問題：
 
 ```
 1. 我需要哪幾張表？為什麼？

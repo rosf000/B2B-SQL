@@ -24,7 +24,7 @@ M8 是整套教材最重要的里程碑。當你完成本專案時，**不要急
   [Data Access Layer (SQLAlchemy 2.0)] ── (Connection Pool)
          │
          ▼
-  [PostgreSQL 15+ Warehouse] (3NF Relational Schema)
+  [PostgreSQL 18+ Warehouse] (3NF Relational Schema)
   ```
 - [ ] **能清楚解釋為什麼這樣分層**：為什麼不能直接在 FastAPI 路由裡面寫生 SQL？分層對未來的單元測試（Unit Test）與維護有什麼好處？
 
