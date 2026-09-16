@@ -35,6 +35,7 @@ flowchart TD
 | **09** | [09_30道B2B商業SQL實戰練習題.md](./09_30道B2B商業SQL實戰練習題.md) | **實戰大練兵**：30 道涵蓋營收、庫存、業務績效與 VIP 顧客的實戰題（折疊解答，先想再看） | 1~2 週 |
 | **10** | [10_Exit_Exam_B2B商業數據偵探考題.md](./10_Exit_Exam_B2B商業數據偵探考題.md) | 🎓 **本月結業測驗**：5大商業實作題、口試題與 AI 除錯挑戰（80分晉級） | 1.5 小時 |
 | **資料** | [data/b2b_m1_sample.sql](./data/b2b_m1_sample.sql) | 一鍵建立 5 張資料表（業務、客戶、產品、訂單、明細）的 SQL 初始化腳本 | - |
+| **考題資料** | [data/b2b_m1_exit_exam.sql](./data/b2b_m1_exit_exam.sql) | M1 Exit Exam 專屬初始化腳本（建立 sales_reps、customers、products、orders、order_items） | - |
 
 ---
 

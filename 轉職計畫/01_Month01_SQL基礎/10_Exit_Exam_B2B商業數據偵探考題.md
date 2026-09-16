@@ -18,15 +18,70 @@
 
 ---
 
-## 🗄️ 測試資料庫結構 (Data Schema)
+## 🗄️ 測試資料庫環境建置指南 (Data Schema & Setup)
 
-測驗基於以下四張 B2B 核心業務表（請在你的 PostgreSQL 建立或對照）：
+> [!IMPORTANT]
+> ### 🚨 為什麼需要建立獨立資料庫？
+> 本結業考備有專屬初始化腳本 [`data/b2b_m1_exit_exam.sql`](./data/b2b_m1_exit_exam.sql)。
+> 由於考題資料包含重置指令（`DROP TABLE IF EXISTS ...`），**強烈建議按照下方「方案 A」在 DBeaver 中新增一個獨立的 `b2b_exit_exam` 資料庫**，這樣既不會洗掉你前面 01~09 關卡的練習成果，也能享有乾淨的獨立測驗環境！
+
+---
+
+### 🛠️ 推薦安裝流程：兩分鐘建立考題環境（方案 A：獨立資料庫）
+
+請開啟 **DBeaver**，按照以下 4 步完成資料庫建立：
+
+```mermaid
+flowchart TD
+    A["1. 右鍵建立新資料庫<br/>名稱: b2b_exit_exam"] --> B["2. 在新資料庫上按右鍵<br/>新增 SQL 腳本（確保綁定連線）"]
+    B --> C["3. 複製並貼上<br/>data/b2b_m1_exit_exam.sql 內容"]
+    C --> D["4. 按下鍵盤 Alt + X<br/>執行整份腳本（雙箭頭 ▶▶）"]
+    D --> E["🎉 重新整理 F5<br/>5 張考題核心業務表就緒！"]
+```
+
+#### 詳細操作步驟：
+
+1. **新增獨立資料庫**：
+   - 在 DBeaver 左側的「資料庫導覽 (Database Navigator)」中，展開你的 PostgreSQL 連線。
+   - 找到 **「資料庫 (Databases)」** 目錄，按 **滑鼠右鍵** ➜ 點選 **「建立新資料庫 (Create New Database)」**。
+   - 在資料庫名稱欄位輸入：`b2b_exit_exam`，點擊 **「確定」**。
+2. **開啟綁定連線的 SQL 編輯器**：
+   - 在剛建好的 **`b2b_exit_exam`** 上按 **滑鼠右鍵** ➜ 點選 **「SQL 編輯器 (SQL Editor)」➜「新增 SQL 腳本 (New SQL Script)」**。
+   - 檢查編輯器分頁右上角的下拉選單，確認顯示為 `... - b2b_exit_exam`（這能 100% 杜絕「No active connection」未綁定連線的錯誤）。
+3. **貼上並執行腳本**：
+   - 開啟本專案的專屬初始化腳本 [`data/b2b_m1_exit_exam.sql`](./data/b2b_m1_exit_exam.sql)。
+   - 按 `Ctrl + A`（全選）➜ `Ctrl + C`（複製），貼回 DBeaver 的 SQL 編輯器。
+   - 按下鍵盤 **`Alt + X`**（或點擊編輯器左側工具列的 **雙箭頭 ▶▶**「執行整份腳本」）。
+4. **驗證建表成果**：
+   - 展開 `b2b_exit_exam` ➜ `綱要群 (Schemas)` ➜ `public` ➜ `表 (Tables)`，按鍵盤 **`F5`** 重新整理。
+   - 確認 5 張資料表與測試資料皆已正確建立！
+
+---
+
+> [!TIP]
+> **懶人備用路徑（方案 B：直接覆蓋現有資料庫）**：
+> 如果你不需要保留 01~09 關卡的練習表，也可以直接在既有的 `postgres` 資料庫上按右鍵 ➜「新增 SQL 腳本」，貼上該腳本並按 `Alt + X` 執行。原有的舊表會被乾淨替換為考題表。
+
+---
+
+### ❓ 常見報錯排除 (Troubleshooting FAQ)
+
+| 常見報錯問題 | 發生原因 | 解決方法 |
+| :--- | :--- | :--- |
+| ❌ **`No active connection for this editor`** | 直接點雙擊打開檔案或點了通用圖示，編輯器沒有連線到任何資料庫。 | 請在編輯器工具列右上角下拉選單選擇連線與資料庫，或依照上方步驟在資料庫上「按右鍵 ➜ 新增 SQL 腳本」。 |
+| ❌ **`CREATE DATABASE cannot run inside a transaction block`** | 在開啟交易模式下用 SQL 語句建立資料庫所引發的 PostgreSQL 語法限制。 | 請直接使用 DBeaver 左側介面的「資料庫 ➜ 右鍵 ➜ 建立新資料庫」建立，最穩定且不會跳錯。 |
+| ❌ **按了執行只跑一行就跳語法錯誤** | 誤按了 `Ctrl + Enter`（單行執行），未執行完整的建表語句。 | 建表腳本包含多張表格與關聯，**務必使用 `Alt + X`（或左側雙箭頭 ▶▶）** 執行整份腳本。 |
+
+---
+
+### 📊 測驗資料庫結構 (Data Schema)
+
 
 ```
 [customers] (客戶主表)
 - customer_id (PK, INT)
 - company_name (VARCHAR)
-- industry (VARCHAR: 'SaaS', 'Manufacturing', 'Retail')
+- industry (VARCHAR: 'SaaS', 'Manufacturing', 'Retail', 'Logistics', 'Healthcare')
 - city (VARCHAR)
 - created_at (TIMESTAMP)
 
@@ -48,6 +103,14 @@
 - order_date (DATE)
 - total_amount (NUMERIC)
 - status (VARCHAR: 'Completed', 'Cancelled', 'Refunded')
+
+[order_items] (訂單明細表)
+- item_id (PK, INT)
+- order_id (FK -> orders.order_id)
+- product_id (FK -> products.product_id)
+- quantity (INT)
+- unit_price (NUMERIC)
+- subtotal (NUMERIC)
 ```
 
 ---
