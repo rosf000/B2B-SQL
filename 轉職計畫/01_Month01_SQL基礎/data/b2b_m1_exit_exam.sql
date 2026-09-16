@@ -57,21 +57,25 @@ CREATE TABLE products (
 -- 5. 建立訂單主表 (orders)
 CREATE TABLE orders (
     order_id SERIAL PRIMARY KEY,
-    customer_id INT NOT NULL REFERENCES customers(customer_id),
-    rep_id INT NOT NULL REFERENCES sales_reps(rep_id),
+    customer_id INT NOT NULL,
+    rep_id INT NOT NULL,
     order_date DATE NOT NULL,
     total_amount NUMERIC(12, 2) NOT NULL,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('Completed', 'Cancelled', 'Refunded'))
+    status VARCHAR(20) NOT NULL CHECK (status IN ('Completed', 'Cancelled', 'Refunded')),
+    CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+    CONSTRAINT fk_orders_rep FOREIGN KEY (rep_id) REFERENCES sales_reps(rep_id)
 );
 
 -- 6. 建立訂單明細表 (order_items)
 CREATE TABLE order_items (
     item_id SERIAL PRIMARY KEY,
-    order_id INT NOT NULL REFERENCES orders(order_id) ON DELETE CASCADE,
-    product_id INT NOT NULL REFERENCES products(product_id),
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
     quantity INT NOT NULL CHECK (quantity > 0),
     unit_price NUMERIC(12, 2) NOT NULL,
-    subtotal NUMERIC(12, 2) NOT NULL
+    subtotal NUMERIC(12, 2) NOT NULL,
+    CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
 -- 建立與 salespeople 的相容視圖 (確保其他講義語法亦可運行)
@@ -196,3 +200,5 @@ SELECT setval(pg_get_serial_sequence('products', 'product_id'), COALESCE((SELECT
 SELECT setval(pg_get_serial_sequence('orders', 'order_id'), COALESCE((SELECT MAX(order_id) FROM orders), 1));
 SELECT setval(pg_get_serial_sequence('order_items', 'item_id'), COALESCE((SELECT MAX(item_id) FROM order_items), 1));
 
+-- 確保變更全部寫入磁碟 (手動交易模式防呆)
+COMMIT;

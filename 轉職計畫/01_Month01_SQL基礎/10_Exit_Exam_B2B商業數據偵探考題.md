@@ -174,7 +174,7 @@ flowchart TD
 1. **WHERE 與 HAVING 的本質差異**：
    - 「為什麼我寫 `WHERE SUM(total_amount) > 50000` 會噴錯？SQL 底層的運算順序（Execution Order）到底是什麼？」
 2. **JOIN 導致的資料膨脹（Fan-out trap）**：
-   - 「如果有一張訂單表 `orders`（1 萬筆）與訂單明細表 `order_items`（5 萬筆），我想要算每個客戶的總消費金額，先 JOIN 再 GROUP BY，跟先在子查詢 GROUP BY 再 JOIN，會有什麼效能與正確性上的區別？」
+   - 「如果有一張訂單表 `orders`（1 萬筆）與訂單明細表 `order_items`（5 萬筆），我想要算每個客戶的總消費金額。如果直接 JOIN 後再 GROUP BY，計算出來的金額會正確嗎？為什麼？應該怎麼避免？」
 3. **三值邏輯與 NULL 陷阱**：
    - 「在 SQL 裡面，為什麼 `WHERE discount_rate <> 0.1` 無法抓出那些 `discount_rate IS NULL` 的資料？身為 Data Engineer，你在實務上會怎麼防呆？」
 
@@ -208,7 +208,7 @@ GROUP BY c.customer_id, c.company_name;
 - [ ] 題目 1~5 皆能獨立寫出，無語法報錯，結果邏輯正確
 - [ ] 每一題都有附上「給主管看的商業結論」
 - [ ] 能在不看答案的情況下，口頭清晰回答口試題 1~3
-- [ ] 正確指出實習生程式碼中的 Multi-JOIN 笛卡兒積/重疊計算錯誤並給予修復
+- [ ] 正確指出實習生程式碼中的 Multi-JOIN Fan-out/重疊計算錯誤（`SUM(o.total_amount)` 被重複加總）並給予修復
 
 **評分結果**：_____ / 100
 > 通過 80 分以上，恭喜你正式具備 **Month 01: Job Ready (SQL 商業數據偵探)** 認證，獲准進入 **Month 02**！
@@ -217,6 +217,7 @@ GROUP BY c.customer_id, c.company_name;
 
 ## 🔗 章節導航
 
+- **結業考詳解手冊**：[10_Exit_Exam_參考解答與詳解.md](./10_Exit_Exam_參考解答與詳解.md)（完成作答後對照驗證）
 - **前一篇（30 題實戰）**：[09_30道B2B商業SQL實戰練習題.md](./09_30道B2B商業SQL實戰練習題.md)
 - **回到目錄**：[Month 01 學習模組主導航](./README.md)
 - **晉級成果檢驗**：[學習驗收 Checkpoints](../../A2_學習驗收Checkpoints/README.md)

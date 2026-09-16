@@ -199,35 +199,129 @@ GROUP BY c.company_name;
 
 ---
 
-### 陷阱 2：Many-to-Many 造成笛卡兒積
+### 陷阱 2：兩邊都是「多筆」，JOIN 後會互相配對
 
-**場景：** 客戶有多個標籤（tags），訂單也有多個標籤（本 B2B 資料庫未建 tags 表，以下為示意）
+> **先體驗現象，再認識術語。**
 
-```sql
--- ⚠️ 示意危險：customers (N tags) JOIN orders (M tags)
--- 結果是 N × M 列！
--- （此為概念示意，customer_tags 表在 B2B 資料庫中不存在）
-SELECT c.customer_id, COUNT(o.order_id) AS order_count
-FROM customers c
-JOIN customer_tags ct ON c.customer_id = ct.customer_id    -- N 倍放大
-JOIN orders o ON c.customer_id = o.customer_id
-GROUP BY c.customer_id;
--- 每個訂單被計算了 N 次（N = 客戶的標籤數）
+#### ① 先複習 1:N — 受控的展開
+
+陷阱 1 示範的 `orders → order_items` 屬於 **一對多（1:N）**：
+
+```text
+1 筆訂單
+   └── 2 個品項（item A、item B）
+
+JOIN 後：1 × 2 = 2 列
+→ 展開幅度 = 那筆訂單的品項數，這叫做 Fan-out（受控展開）
 ```
 
-**修正：**
+只要你清楚 Grain，1:N 的展開是**可預期的、受控的**。
+
+---
+
+#### ② 再看 N:M — 兩個「多」互相放大
+
+現在換個場景：  
+**客戶 1 同時有 3 個標籤（tag）和 2 筆訂單**，  
+我們把兩張表都透過 `customer_id` JOIN 回客戶：
+
+**客戶 1 的標籤表（customer_tags）**
+
+| customer_id | tag        |
+| :---------: | :--------- |
+|      1      | VIP        |
+|      1      | Cloud      |
+|      1      | Enterprise |
+
+**客戶 1 的訂單表（orders）**
+
+| customer_id | order_id |
+| :---------: | :------- |
+|      1      | ORD-101  |
+|      1      | ORD-102  |
+
+問題來了：
+
+> 如果把 `customer_tags` 和 `orders` 都 JOIN 到 `customer_id = 1`，  
+> **一個 tag 會配到幾筆 order？**
+
+答案：**2 筆。** 每一個 tag 都會和每一筆 order 配一次：
+
+```text
+VIP          × ORD-101
+VIP          × ORD-102
+
+Cloud        × ORD-101
+Cloud        × ORD-102
+
+Enterprise   × ORD-101
+Enterprise   × ORD-102
+
+→ 3 個 tag × 2 筆 order = 6 列
+```
+
+這就是「兩個多互相放大」的核心現象。
+
+---
+
+#### ③ 最後才是術語
+
+| 情況         | 左邊 | 右邊 | JOIN 後 | 是否危險           |
+| :----------- | ---: | ---: | ------: | :----------------- |
+| 1:1          |    1 |    1 |       1 | 通常不會           |
+| 1:N          |    1 |    3 |       3 | ⚠️ Fan-out（受控） |
+| N:1          |    3 |    1 |       3 | 通常可預期         |
+| **N:M**  | **3** | **2** | **6** | 🚨 N×M 資料膨脹    |
+| CROSS JOIN   |    3 |    2 |       6 | 🚨 笛卡兒積        |
+
+> **JOIN 不只是「把兩張表接起來」，而是在決定「一列資料會變成幾列」。**
+
+三個關鍵名詞：
+
+- **1:N Fan-out**：有正確 ON 條件，展開幅度 = 每筆主表資料對應的從表列數加總。13 筆訂單展開成 18 筆，**不是 13×18**，是受控的。
+- **N:M 資料膨脹**：兩張表透過同一個 Key 各自對應「多筆」，**兩個「多」互乘**，結果列數 = 左邊 × 右邊，且很難從 SUM 結果察覺。
+- **CROSS JOIN（笛卡兒積）**：SQL 中**沒有 ON 條件**的明確語法；左表每一列都和右表每一列配對，結果必然是 N×M。N:M 資料膨脹和 CROSS JOIN 的**症狀相同，但成因不同**，要分開理解。
+
+---
+
+**場景：** 客戶同時有多個標籤（tags）和多筆訂單，兩者都 JOIN 到客戶表（B2B 資料庫無 tags 表，以下為概念示意）
 
 ```sql
--- 分開處理，或先 DISTINCT 去重
-SELECT c.customer_id, COUNT(DISTINCT o.order_id) AS order_count  -- DISTINCT 去重
+-- ⚠️ 危險示意：customer_tags（N 列）+ orders（M 列）同時 JOIN 到 customers
+-- customer 1 有 3 個 tag、2 筆 orders → 結果：3 × 2 = 6 列
+-- 此時 COUNT(order_id) 會回傳 6，而非正確的 2！
+-- （customer_tags 表在 B2B 資料庫中不存在，此為示意）
+SELECT
+    c.customer_id,
+    COUNT(o.order_id) AS WRONG_order_count   -- ⚠️ 被 tag 數量放大了！
+FROM customers c
+JOIN customer_tags ct ON c.customer_id = ct.customer_id    -- 3 倍放大
+JOIN orders o        ON c.customer_id = o.customer_id      -- 再 × 2 倍
+GROUP BY c.customer_id;
+-- 回傳 6，實際上只有 2 筆訂單
+```
+
+**修正：加 DISTINCT 去重**
+
+```sql
+-- ✅ 用 COUNT(DISTINCT ...) 去除因 tag 展開造成的重複
+SELECT
+    c.customer_id,
+    COUNT(DISTINCT o.order_id) AS correct_order_count   -- DISTINCT 只計唯一值
 FROM customers c
 JOIN customer_tags ct ON c.customer_id = ct.customer_id
-JOIN orders o ON c.customer_id = o.customer_id
+JOIN orders o        ON c.customer_id = o.customer_id
 GROUP BY c.customer_id;
+-- 回傳 2，正確！
 ```
 
 > [!TIP]
-> 預防 Many-to-Many 笛卡兒積的關鍵在於確認每張表的粒度（Grain）：`orders` 的粒度是「每筆訂單」，`order_items` 的粒度是「每筆訂單的每個品項」，兩者關聯後的粒度為「每個品項」，而非「每筆訂單」。
+> 預防 N:M 膨脹的根本方法是**在 JOIN 之前確認每張表的粒度（Grain）**：
+> - `orders` 的粒度是「每筆訂單」
+> - `customer_tags` 的粒度是「每個標籤」
+> - 兩者同時 JOIN 到 `customers` 後，粒度變成「每筆訂單 × 每個標籤」的組合，而非「每筆訂單」。
+>
+> **只要發現兩張「多」的表都以同一個 Key JOIN 到主表，就必須警戒 N×M 膨脹。**
 
 ---
 
@@ -407,7 +501,7 @@ ORDER BY o.order_id;
 - [ ] 為什麼 `JOIN order_items` 後 `SUM(orders.total_amount)` 會變成兩倍？（用 ORD-2024-002 舉例說明）
 - [ ] `COUNT(*)` 和 `COUNT(o.order_id)` 在 LEFT JOIN 後有什麼差別？（用 InnoVibe Studio 舉例）
 - [ ] 如果懷疑 JOIN 有 Explosion，你會怎麼診斷？（說出 3 個步驟）
-- [ ] 什麼情況下 Many-to-Many JOIN 會造成「笛卡兒積」？
+- [ ] 1:N JOIN 的 Fan-out（受控展開）與 Many-to-Many 真正笛卡兒積（N×M 爆炸）有什麼差異？
 
 ---
 
