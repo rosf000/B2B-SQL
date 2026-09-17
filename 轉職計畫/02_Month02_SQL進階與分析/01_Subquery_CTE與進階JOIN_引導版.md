@@ -44,6 +44,7 @@
 2. 再從訂單裡，篩選出金額 > 85,000 的那些
 
 問題是：SQL 的 `WHERE` 只能比較一個固定的數字，你沒辦法直接寫
+
 ```sql
 WHERE total_amount > AVG(total_amount)  -- ❌ 這樣會報錯
 ```
@@ -71,10 +72,12 @@ WHERE total_amount > (SELECT AVG(total_amount) FROM orders);
 **✋ 動手做 1：拆解執行**
 
 請先單獨跑「括號裡的部分」，確認它只回傳一個數字：
+
 ```sql
 -- Step 1：只跑裡面，看它回傳什麼
 SELECT AVG(total_amount) FROM orders;
 ```
+
 記下這個數字，再跑外層整段，確認結果是一致的。
 
 ---
@@ -84,6 +87,7 @@ SELECT AVG(total_amount) FROM orders;
 > **純量** = 只有一個值（一個數字、一個字、一個日期）
 
 這種子查詢的結果只有一個值，所以可以放在：
+
 - `WHERE` 後面：拿來當篩選條件
 - `SELECT` 後面：拿來當顯示欄位
 
@@ -138,9 +142,10 @@ ORDER BY 高於均值多少 DESC;
 > 上一步的子查詢只回傳「一個數字」
 > 這一步的子查詢回傳「一整張表」，然後我們可以 JOIN 它
 
-**情境**：找出「某筆訂單金額超過該客戶自己平均訂單金額 1.5 倍」的大單
+**情境**：找出「某筆訂單金額超過該客戶自己平均訂單金額 1.2 倍」的大單
 
 分析一下這個需求需要哪些資訊：
+
 - 需要**每位客戶的平均訂單金額**（這是一張表，有多列）
 - 再用這張表和 orders 做比較
 
@@ -176,7 +181,7 @@ JOIN (
     GROUP BY customer_id
 ) AS avg_t ON o.customer_id = avg_t.customer_id
 WHERE o.status = 'COMPLETED'
-  AND o.total_amount > avg_t.avg_amt * 1.5
+  AND o.total_amount > avg_t.avg_amt * 1.2
 ORDER BY 超出比例 DESC;
 ```
 
@@ -186,7 +191,7 @@ ORDER BY 超出比例 DESC;
 
 1. 先單獨跑括號內的子查詢，確認它有多列（每位客戶各一列）
 2. 再跑完整版，看看哪些客戶有「異常大單」
-3. 把 `1.5` 改成 `2.0`，找出超出均值兩倍的超大單
+3. 把 `1.2` 改成 `1.5`，找出超出均值兩倍的大單
 
 ---
 
@@ -276,6 +281,7 @@ WHERE total_spent > 1000000;
 ### 第 1 步：基本 CTE 語法
 
 **語法結構：**
+
 ```sql
 WITH cte名稱 AS (
     -- 這裡放你的 SELECT 語句
@@ -373,11 +379,11 @@ ORDER BY 超出百分比 DESC;
 
 **逐步解析：**
 
-| 步驟 | 做什麼 | 結果 |
-|------|--------|------|
-| `customer_spending` | 算每位客戶的總消費 | 多列表格（每客戶一列）|
-| `spending_avg` | 從第一段算出均值 | 只有一列一個數字 |
-| 最終 SELECT | 比較每位客戶 vs 均值 | 篩選出優質客戶 |
+| 步驟                  | 做什麼               | 結果                   |
+| --------------------- | -------------------- | ---------------------- |
+| `customer_spending` | 算每位客戶的總消費   | 多列表格（每客戶一列） |
+| `spending_avg`      | 從第一段算出均值     | 只有一列一個數字       |
+| 最終 SELECT           | 比較每位客戶 vs 均值 | 篩選出優質客戶         |
 
 **✋ 動手做 5**
 
@@ -448,10 +454,10 @@ ORDER BY a.industry;
 
 **使用場景**：對帳、找兩個系統之間的差異
 
-| JOIN 類型 | 保留誰 |
-|----------|--------|
-| LEFT JOIN | 左表全保留，右表配不上的顯示 NULL |
-| RIGHT JOIN | 右表全保留，左表配不上的顯示 NULL |
+| JOIN 類型       | 保留誰                                      |
+| --------------- | ------------------------------------------- |
+| LEFT JOIN       | 左表全保留，右表配不上的顯示 NULL           |
+| RIGHT JOIN      | 右表全保留，左表配不上的顯示 NULL           |
 | FULL OUTER JOIN | **兩邊都保留**，互相沒有的都顯示 NULL |
 
 ```sql
@@ -531,6 +537,7 @@ ORDER BY c.company_name, recent.rank_no;
 ### 🟢 練習 1（純量子查詢）
 
 **需求**：列出所有 COMPLETED 的訂單，並且顯示：
+
 - 訂單金額
 - 全體 COMPLETED 訂單的平均金額
 - 該筆訂單「是否高於平均」（TRUE / FALSE）
@@ -540,6 +547,30 @@ ORDER BY c.company_name, recent.rank_no;
 
 - 純量子查詢放在 SELECT 裡，計算 AVG(total_amount)
 - `total_amount > (SELECT AVG... )` 會回傳 TRUE/FALSE
+
+</details>
+
+<details>
+<summary>🎯 參考解答（點開看）</summary>
+
+```sql
+SELECT
+    order_number                                               AS 訂單編號,
+    total_amount                                               AS 訂單金額,
+    ROUND((
+        SELECT AVG(total_amount) 
+        FROM orders 
+        WHERE status = 'COMPLETED'
+    ), 2)                                                      AS 全體平均金額,
+    (total_amount > (
+        SELECT AVG(total_amount) 
+        FROM orders 
+        WHERE status = 'COMPLETED'
+    ))                                                         AS 是否高於平均
+FROM orders
+WHERE status = 'COMPLETED'
+ORDER BY total_amount DESC;
+```
 
 </details>
 
@@ -553,8 +584,54 @@ ORDER BY c.company_name, recent.rank_no;
 <summary>💡 提示（點開看）</summary>
 
 步驟拆解：
+
 1. 先用子查詢算出「每個產業的最高消費金額」（GROUP BY industry）
 2. 再 JOIN 回去找出是哪家客戶
+
+</details>
+
+<details>
+<summary>🎯 參考解答（點開看）</summary>
+
+```sql
+SELECT
+    cust_total.industry,
+    cust_total.company_name,
+    cust_total.total_spent
+FROM (
+    -- 子查詢 1：計算每位客戶在 COMPLETED 訂單的總消費
+    SELECT
+        c.customer_id,
+        c.company_name,
+        c.industry,
+        SUM(o.total_amount) AS total_spent
+    FROM customers c
+    JOIN orders o ON c.customer_id = o.customer_id
+    WHERE o.status = 'COMPLETED'
+    GROUP BY c.customer_id, c.company_name, c.industry
+) cust_total
+JOIN (
+    -- 子查詢 2：計算各產業別的「最高消費金額」
+    SELECT
+        industry,
+        MAX(total_spent) AS max_spent
+    FROM (
+        SELECT
+            c.industry,
+            SUM(o.total_amount) AS total_spent
+        FROM customers c
+        JOIN orders o ON c.customer_id = o.customer_id
+        WHERE o.status = 'COMPLETED'
+        GROUP BY c.customer_id, c.industry
+    ) t
+    GROUP BY industry
+) ind_max
+  ON cust_total.industry = ind_max.industry
+ AND cust_total.total_spent = ind_max.max_spent
+ORDER BY cust_total.total_spent DESC;
+```
+
+> 💡 *進階提示：這題在學完下一章 [02 Window Functions](./02_Window_Functions全解析.md) 的 `ROW_NUMBER()` 或 `DENSE_RANK()` 後，可以用更簡潔的語法完成！*
 
 </details>
 
@@ -571,11 +648,40 @@ ORDER BY c.company_name, recent.rank_no;
 
 </details>
 
+<details>
+<summary>🎯 參考解答（點開看）</summary>
+
+```sql
+WITH customer_spending AS (
+    SELECT
+        c.customer_id,
+        c.company_name,
+        c.industry,
+        c.credit_limit,
+        SUM(o.total_amount) AS total_spent
+    FROM customers c
+    JOIN orders o ON c.customer_id = o.customer_id
+    WHERE o.status = 'COMPLETED'
+    GROUP BY c.customer_id, c.company_name, c.industry, c.credit_limit
+)
+SELECT
+    company_name AS 客戶名稱,
+    industry     AS 產業,
+    credit_limit AS 信用額度,
+    total_spent  AS 總消費金額
+FROM customer_spending
+WHERE credit_limit > 500000
+ORDER BY total_spent DESC;
+```
+
+</details>
+
 ---
 
 ### 🟡 練習 4（多段 CTE）
 
 **需求**：
+
 - 第一段 CTE：算出每位業務的總業績
 - 第二段 CTE：算出全體業務的平均業績
 - 最終查詢：列出高於平均業績的業務，並顯示「超出均值百分比」
@@ -584,6 +690,7 @@ ORDER BY c.company_name, recent.rank_no;
 <summary>💡 提示（點開看）</summary>
 
 結構：
+
 ```sql
 WITH
 salesperson_revenue AS (...),   -- 每位業務的業績
@@ -591,6 +698,41 @@ avg_revenue AS (                -- 從第一段算均值
     SELECT AVG(total) FROM salesperson_revenue
 )
 SELECT ... FROM salesperson_revenue, avg_revenue ...
+```
+
+</details>
+
+<details>
+<summary>🎯 參考解答（點開看）</summary>
+
+```sql
+WITH
+-- 第 1 段：每位業務員的總業績
+salesperson_revenue AS (
+    SELECT
+        s.salesperson_id,
+        s.name              AS salesperson_name,
+        SUM(o.total_amount) AS total_revenue
+    FROM salespeople s
+    JOIN orders o ON s.salesperson_id = o.salesperson_id
+    WHERE o.status = 'COMPLETED'
+    GROUP BY s.salesperson_id, s.name
+),
+-- 第 2 段：全體業務的平均業績（以第 1 段為基礎）
+avg_revenue AS (
+    SELECT AVG(total_revenue) AS avg_sales
+    FROM salesperson_revenue
+)
+-- 最終查詢：篩選高於平均者並計算百分比
+SELECT
+    sr.salesperson_name                                                AS 業務員,
+    sr.total_revenue                                                   AS 總業績,
+    ROUND(ar.avg_sales, 2)                                            AS 全體平均業績,
+    ROUND(((sr.total_revenue - ar.avg_sales) / ar.avg_sales) * 100, 2) AS 超出均值百分比
+FROM salesperson_revenue sr
+CROSS JOIN avg_revenue ar
+WHERE sr.total_revenue > ar.avg_sales
+ORDER BY sr.total_revenue DESC;
 ```
 
 </details>
@@ -609,27 +751,52 @@ SELECT ... FROM salesperson_revenue, avg_revenue ...
 
 </details>
 
+<details>
+<summary>🎯 參考解答（點開看）</summary>
+
+```sql
+SELECT
+    c.customer_id   AS 客戶ID,
+    c.company_name  AS 客戶名稱,
+    c.industry      AS 產業
+FROM customers c
+WHERE c.status = 'ACTIVE'
+  AND NOT EXISTS (
+      -- 檢查該客戶是否存在任何一筆購買 Hardware 類別的 COMPLETED 訂單明細
+      SELECT 1
+      FROM orders o
+      JOIN order_items oi ON o.order_id = oi.order_id
+      JOIN products p ON oi.product_id = p.product_id
+      WHERE o.customer_id = c.customer_id
+        AND o.status = 'COMPLETED'
+        AND p.category = 'Hardware'
+  )
+ORDER BY c.company_name;
+```
+
+</details>
+
 ---
 
 ## 重點速查卡
 
 ### 什麼時候用哪種？
 
-| 需求 | 用什麼 |
-|------|--------|
+| 需求                                     | 用什麼                                |
+| ---------------------------------------- | ------------------------------------- |
 | 先算一個基準值（平均、最大），再拿來篩選 | **純量子查詢** 或 **CTE** |
-| 要先整理一張表，再拿來 JOIN | **表格子查詢** 或 **CTE** |
-| 邏輯複雜，超過兩層 | **多段 CTE**（強烈推薦）|
-| 找「存在 / 不存在」的關係 | **EXISTS / NOT EXISTS** |
-| 每列要取 Top N | **LATERAL JOIN** |
+| 要先整理一張表，再拿來 JOIN              | **表格子查詢** 或 **CTE** |
+| 邏輯複雜，超過兩層                       | **多段 CTE**（強烈推薦）        |
+| 找「存在 / 不存在」的關係                | **EXISTS / NOT EXISTS**         |
+| 每列要取 Top N                           | **LATERAL JOIN**                |
 
 ### EXISTS vs IN vs JOIN
 
-| | EXISTS | IN | JOIN |
-|---|--------|-----|------|
-| 適用 | 找「有沒有」 | 比對小清單 | 需要右表欄位 |
-| NULL 安全 | ✅ 安全 | ⚠️ NOT IN 有坑 | 需加 DISTINCT |
-| 效能 | ⭐⭐⭐ 最好 | ⭐⭐ 普通 | ⭐⭐ 視情況 |
+|           | EXISTS       | IN               | JOIN          |
+| --------- | ------------ | ---------------- | ------------- |
+| 適用      | 找「有沒有」 | 比對小清單       | 需要右表欄位  |
+| NULL 安全 | ✅ 安全      | ⚠️ NOT IN 有坑 | 需加 DISTINCT |
+| 效能      | ⭐⭐⭐ 最好  | ⭐⭐ 普通        | ⭐⭐ 視情況   |
 
 ---
 
