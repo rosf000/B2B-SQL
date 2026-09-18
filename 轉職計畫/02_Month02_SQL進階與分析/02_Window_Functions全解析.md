@@ -319,9 +319,52 @@ ORDER BY month;
 
 ---
 
-### 3.2 LAG 搭配 PARTITION BY — 各業務環比
+### 3.2 LAG 搭配 PARTITION BY — 各業務環比分析
+
+#### ① 先說這一段最重要的事（核心結論）
+> **當計算對象包含「多個業務員、多家分店或多種產品」時，視窗函數中必須加上 `PARTITION BY` 做分區隔離。**  
+> 漏掉 `PARTITION BY` 時，在「第一位業務員」內部看似完全正常，但一跨到「第二位業務員的首月」就會發生嚴重的**跨人資料污染（上一人的尾月業績偷渡為下一人的上月業績）**！
+
+---
+
+#### ② 告訴學生為什麼重要（踩坑實錄：為什麼你實作時會覺得「根本沒差」？）
+
+很多同學在 DBeaver 照著範例實作拿掉 `PARTITION BY` 測試時，常會產生兩個巨大的困惑：
+> ❓ **困惑 1**：「老師，我在外層把 `PARTITION BY salesperson_id` 拿掉，為什麼前幾十列算出來的環比成長率**真的一模一樣、完全沒差**？」  
+> ❓ **困惑 2**：「為什麼有時候我改了 `上月業績` 那行，執行結果的 `上月業績` 明明變了，但後面的 `環比成長率` 卻**依然紋風不動**？」
+
+這背後隱藏了兩個極易迷惑工程師的**「視覺盲點」**與**「語法陷阱」**：
+
+1. **視覺盲點（第一位業務員 Alex Chen 的假象）**：  
+   在我們的資料庫中，按 `salesperson_id, month` 排序時，前 24 筆資料全部都是 `Alex Chen`（2023-01 至 2024-12）。  
+   在 `Alex Chen` 個人內部，2 月的上月本來就是 1 月、3 月的上月本來就是 2 月。因此，無論你有沒有寫 `PARTITION BY`，**Alex Chen 內部 24 個月的環比成長率確實 100% 完全一模一樣**！  
+   💥 **真正的重大災難，只發生在交接點：第 25 列（Alex Chen 結束，Betty Lin 剛開始的第 1 個月）！**
+2. **語法陷阱（重複寫 3 次 OVER 導致修改脫鉤）**：  
+   如果你在同一個 `SELECT` 裡面寫了 3 次 `LAG(...) OVER (...)`：
+   - 1 次給 `上月業績`
+   - 1 次給 `環比成長率` 的分子 `(revenue - LAG(...))`
+   - 1 次給 `環比成長率` 的分母 `NULLIF(LAG(...), 0)`  
+   當你做實驗想拿掉 `PARTITION BY` 時，往往只隨手改了第 1 個 `上月業績`，**卻漏改了分子與分母**！這就是為什麼你會看到「上月業績變了，成長率卻沒變」——因為分子分母依然偷偷在跑原本的 `PARTITION BY`！
+
+---
+
+#### ③ 解釋原理：兩層 CTE 職責分離（最佳工程實務）
+
+為了徹底根除「重複複製 3 次視窗代碼」與「改了分子漏了分母」的軟體工程大忌，實務上**強烈推薦拆分兩層 CTE**：
+- **第一層 CTE (`sp_monthly`)**：負責聚合（`GROUP BY`），把每天零散的訂單壓縮為「每人每月一筆」。
+- **第二層 CTE (`sp_with_lag`)**：專門開窗位移，全查詢**只寫唯一一次** `LAG(revenue) OVER (PARTITION BY salesperson_id ORDER BY month)`，產出 `prev_revenue`。
+- **第三層 主查詢 (`SELECT`)**：專心做數學除法 `(revenue - prev_revenue) / prev_revenue * 100`。
+
+> 🌟 **好處**：全查詢只有一個 `prev_revenue` 變數，分子分母直接引用，乾淨俐落，絕不可能發生脫鉤！
+
+---
+
+#### ④ 給例子：完整示範代碼（精準鎖定交接點驗證）
+
+為了讓你在 DBeaver 螢幕上不用翻 24 列就能親眼見證「交接點車禍」，我們在第一層 CTE 篩選 **Alex Chen (id: 1)** 與 **Betty Lin (id: 2)** 在 2023 年前 3 個月的業績：
 
 ```sql
+-- 第一層：按業務與月份彙總當月業績（篩選 Alex 與 Betty 驗證交接點）
 WITH sp_monthly AS (
     SELECT
         s.salesperson_id,
@@ -332,28 +375,106 @@ WITH sp_monthly AS (
     FROM salespeople s
     JOIN orders o ON s.salesperson_id = o.salesperson_id
     WHERE o.status = 'COMPLETED'
+      AND s.salesperson_id IN (1, 2)
+      AND o.order_date >= '2023-01-01' AND o.order_date < '2023-04-01'
     GROUP BY s.salesperson_id, s.name, s.region, DATE_TRUNC('month', o.order_date)
+),
+-- 第二層：只寫一次 LAG，為每位業務建立獨立隔離視窗
+sp_with_lag AS (
+    SELECT
+        salesperson_id,
+        業務姓名,
+        地區,
+        month,
+        revenue,
+        LAG(revenue) OVER (
+            PARTITION BY salesperson_id    -- 關鍵：換業務時強制清空重置為 NULL
+            ORDER BY month
+        ) AS prev_revenue
+    FROM sp_monthly
 )
+-- 第三層：直接引用 prev_revenue 算成長率，零重複、不脫鉤！
 SELECT
     業務姓名,
     地區,
     month                                                         AS 月份,
     revenue                                                       AS 當月業績,
-    LAG(revenue) OVER (
-        PARTITION BY salesperson_id    -- 每位業務獨立計算，不混到別人
-        ORDER BY month
-    )                                                             AS 上月業績,
+    prev_revenue                                                  AS 上月業績,
     ROUND(
-        (revenue - LAG(revenue) OVER (PARTITION BY salesperson_id ORDER BY month))
-        / NULLIF(LAG(revenue) OVER (PARTITION BY salesperson_id ORDER BY month), 0)
-        * 100,
+        (revenue - prev_revenue) / NULLIF(prev_revenue, 0) * 100,
         1
-    )                                                             AS 環比成長率
-FROM sp_monthly
-ORDER BY 業務姓名, month;
+    )                                                             AS 環比成長率_百分比
+FROM sp_with_lag
+ORDER BY salesperson_id, month;
 ```
 
-> 💡 **NULLIF 的妙用**：`NULLIF(值, 0)` 當值為 0 時回傳 NULL，避免除以零的錯誤。
+> 💡 **進階技巧：PostgreSQL 命名視窗語法 (`WINDOW w AS (...)`)**  
+> 若不想多寫一層 CTE，可使用 SQL 標準的 `WINDOW` 關鍵字將視窗命名固化，避免重複複製：
+> ```sql
+> SELECT
+>     業務姓名,
+>     month,
+>     revenue,
+>     LAG(revenue) OVER w AS 上月業績,
+>     ROUND((revenue - LAG(revenue) OVER w) / NULLIF(LAG(revenue) OVER w, 0) * 100, 1) AS 環比成長率
+> FROM sp_monthly
+> WINDOW w AS (PARTITION BY salesperson_id ORDER BY month)
+> ORDER BY salesperson_id, month;
+> ```
+
+---
+
+#### 📊 現場實驗：拿掉 `PARTITION BY` 會發生什麼事？
+
+請在 DBeaver 中將第二層 CTE 的 `PARTITION BY salesperson_id` 拿掉，直接對比兩者在「業務交界處」的輸出結果：
+
+**✅ 正確輸出：有 `PARTITION BY salesperson_id`（各自獨立包廂）**
+
+| salesperson_id | 業務姓名 | 月份 | 當月業績 | 上月業績 (`prev_revenue`) | 環比成長率 | 說明 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | **Alex Chen** | 2023-01-01 | 850,000 | `NULL` | `NULL` | Alex 首月，無歷史數據 |
+| 1 | **Alex Chen** | 2023-02-01 | 1,120,000 | 850,000 | +31.8% | 正常計算 |
+| 1 | **Alex Chen** | 2023-03-01 | 980,000 | 1,120,000 | -12.5% | 正常計算 |
+| 2 | **Betty Lin** | 2023-01-01 | 920,000 | **`NULL`** | **`NULL`** | ✅ **獨立包廂！Betty 首月乾淨為 NULL** |
+| 2 | **Betty Lin** | 2023-02-01 | 1,050,000 | 920,000 | +14.1% | 正常計算 |
+
+---
+
+**❌ 錯誤輸出：拿掉 `PARTITION BY`，只寫 `OVER (ORDER BY salesperson_id, month)`**
+
+| salesperson_id | 業務姓名 | 月份 | 當月業績 | 上月業績 (`prev_revenue`) | 環比成長率 | 說明 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | **Alex Chen** | 2023-01-01 | 850,000 | `NULL` | `NULL` | Alex 完全不受影響 |
+| 1 | **Alex Chen** | 2023-02-01 | 1,120,000 | 850,000 | +31.8% | Alex 依然完全不受影響 |
+| 1 | **Alex Chen** | 2023-03-01 | 980,000 | 1,120,000 | -12.5% | Alex 依然完全不受影響（**這就是你覺得沒差的原因！**） |
+| 2 | **Betty Lin** | 2023-01-01 | 920,000 | **980,000** | **-6.1%** | 💥 **重大車禍！Betty 1 月竟然吃到 Alex 3 月的業績！** |
+| 2 | **Betty Lin** | 2023-02-01 | 1,050,000 | 920,000 | +14.1% | 正常計算 |
+
+> [!CAUTION]
+> ### 💣 結論：CTE 裡的 `GROUP BY` 與視窗函數的 `PARTITION BY` 職責完全不同！
+> 1. **CTE 裡的 `GROUP BY`**：負責把「每天」的多筆訂單**聚合壓縮成每人每月一筆**，產出的是一張包含全公司所有業務的大平表。
+> 2. **外層的 `PARTITION BY`**：負責在大平表裡為每位業務**拉起獨立隔離的計算視窗**。若沒有它，SQL 的視窗就是整張大平表，當指針從「Alex Chen」交棒到「Betty Lin」時，`LAG()` 就會直接盲目抓取上一行——把 Alex Chen 的業績當作 Betty Lin 的上期業績！
+
+---
+
+#### ⑤ 讓學生自己做（課堂即時思考驗證）
+
+<details>
+<summary>🎯 思考題：如果拿掉 PARTITION BY 時，視窗排序只寫 <code>OVER (ORDER BY month)</code>（漏掉了 salesperson_id），結果又會發生什麼更詭異的現象？（點擊展開分析）</summary>
+
+**分析**：  
+如果只依 `month` 排序，那麼在 2023-01 這個月份裡，Alex Chen 和 Betty Lin 會排在一起！  
+- Alex Chen (2023-01): `prev_revenue = NULL`
+- Betty Lin (2023-01): `prev_revenue` 竟然直接抓到 **Alex Chen 同一個月份 (2023-01)** 的業績！  
+這代表 Betty 1 月的環比成長率，竟然是拿自己的 1 月跟 Alex 的 1 月比，完全失去時間軸環比（MoM）的意義！  
+👉 **結論：多實體計算位移時，`PARTITION BY` 絕對不能省！**
+</details>
+
+---
+
+#### ⑥ 最後再次收斂成一句話
+> 💡 **業務環比核心金句**：  
+> **GROUP BY 壓平明細，PARTITION BY 隔離個體；二層 CTE 抽離 LAG，從此告別脫鉤與漏改！**
 
 ---
 
