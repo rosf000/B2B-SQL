@@ -1,6 +1,14 @@
 # 01. SQLAlchemy 與 psycopg2 實務指南
 
-> **模組目標**：掌握 Python 與關聯式資料庫（PostgreSQL）溝通的核心技術。從底層 DBAPI 原生驅動 `psycopg2` 的高可用連線管理與高效能批次寫入，跨越到現代 `SQLAlchemy 2.0` 的 Core 與 ORM 物件關聯對映。學會企業級連線池配置、防範 SQL Injection、解決 N+1 查詢效能殺手，並能設計具備交易安全性的 B2B 業務資料存取層。
+> **📌 本章定位**：Python 連接關聯式資料庫的「雙引擎」：
+> - **psycopg2** 是「底層原生高吞吐馬達」，適合百萬級 ETL 批次寫入（`execute_values`）。
+> - **SQLAlchemy 2.0** 是「生產級企業業務架構」，提供連線池管理、ORM 關聯導航、Unit of Work 交易邊界與防 SQL Injection。
+>
+> **⚠️ 痛點場景（資料庫兩大血淚事故）**：
+> 1. **SQL 注入攻擊（SQL Injection）**：用 f-string 拼接 `f"SELECT * FROM users WHERE name = '{user_input}'"`，駭客輸入 `' OR '1'='1` 直接拖庫，甚至 `'; DROP TABLE orders; --` 讓整間公司倒閉。
+> 2. **N+1 查詢連線池打爆**：使用 ORM 查 1,000 筆訂單，在 for 迴圈中隨手存取 `order.customer.name`，背後默默向資料庫連發 1,001 條 SQL，資料庫連線瞬間打滿，其他微服務集體逾時掛掉。
+>
+> **💡 學習策略**：先定位（原生驅動 vs ORM 選型）➔ 再理解（連線池、交易 Context Manager 與 N+1 根源）➔ 再操作（批次 UPSERT 與防超賣悲觀鎖）➔ 再回收（生產級防坑清單）。
 
 ---
 
@@ -513,16 +521,28 @@ alembic downgrade -1
 
 ---
 
-## 6. 商業情境綜合練習題（含詳解）
+## 6. 商業情境綜合練習題（實戰動腦自測）
+
+> 💡 **自我檢驗規範**：請先不要展開解答，在你的 Python 檔案中寫出骨架與語法，再點開參考擬答對照！
 
 ### 題目一：psycopg2 高效批次匯入並支援冪等性更新（Upsert）
 **業務情境**：
-外部 ERP 系統每小時會導出一批產品庫存最新盤點清單（CSV/列表），清單包含 `product_id`, `product_name`, `category`, `stock_quantity`, `cost_price`, `selling_price`。請撰寫一個 Python 函式 `sync_product_inventory(records)`：
+外部 ERP 系統每小時會導出一批產品庫存最新盤點清單（CSV/列表），清單包含 `product_id`, `product_name`, `category`, `stock_quantity`, `cost_price`, `selling_price`。請撰寫一個 Python 函式 `sync_product_inventory(conn, records)`：
 - 使用 `psycopg2.extras.execute_values` 批次寫入。
 - 若產品已存在（`product_id` 衝突），則更新其庫存數量 `stock_quantity`、成本價與售價；若不存在則插入。
 - 必須包含異常回滾機制。
 
-#### 【題目一解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- SQL 使用 `INSERT INTO ... ON CONFLICT (product_id) DO UPDATE SET ...`。
+- 批次操作使用 `execute_values(cur, sql, records, page_size=...)` 比一般的 `execute_batch` 效能高出數倍。
+- 交易邊界使用 `with conn:` 包覆，自動處理 commit 與 rollback。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目一參考擬答」</summary>
+
 ```python
 import psycopg2
 from psycopg2.extras import execute_values
@@ -554,6 +574,7 @@ def sync_product_inventory(conn, records: List[Tuple]):
         print(f"資料庫同步失敗，交易已安全回滾: {e}")
         raise e
 ```
+</details>
 
 ---
 
@@ -567,14 +588,23 @@ def sync_product_inventory(conn, records: List[Tuple]):
 4. 該訂單底下的所有產品明細（品名、數量、銷售單價）
 **技術要求**：必須使用 SQLAlchemy 2.0 現代語法，並完全杜絕 N+1 查詢（嚴格限制 SQL 發送次數不超過 2 次）。
 
-#### 【題目二解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 對多對一（Many-to-One）關係（Customer, Salesperson）：使用 `joinedload` 透過 SQL JOIN 一次載入。
+- 對一對多（One-to-Many）關係（Items）：使用 `selectinload` 發送一條 `IN (...)` 批次查詢載入明細，並將明細中的 Product 再次 `joinedload`。
+- 查詢必須調用 `.unique()` 防止因 JOIN 產生重複的根物件。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目二參考擬答」</summary>
+
 ```python
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, selectinload
 from decimal import Decimal
 
 def generate_vip_order_report(session):
-    # 建立最佳化的複合預載入查詢
     stmt = (
         select(Order)
         .where(
@@ -604,9 +634,8 @@ def generate_vip_order_report(session):
         for item in o.items:
             subtotal = item.quantity * item.unit_price
             print(f"    * {item.product.product_name:25} x {item.quantity:3} @ ${item.unit_price:,.2f} = ${subtotal:,.2f}")
-
-# 執行驗證（只需傳入已管理的 session 即可）
 ```
+</details>
 
 ---
 
@@ -619,7 +648,17 @@ def generate_vip_order_report(session):
 4. 建立 `Order` 紀錄與對應的 `OrderItem` 明細。
 5. 若過程中任一步驟出錯，資料庫必須回滾至下單前的原始狀態。
 
-#### 【題目三解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 悲觀鎖定：在查詢產品庫存時，加上 `.with_for_update()` 鎖定該列，避免並發連線超賣。
+- 信用額度檢查：計算新訂單總金額與客戶額度比對，超標則主動拋出自訂例外。
+- 交易管理：函式內部不手動呼叫 `session.commit()`，交由調用方的 `with Session(engine) as session, session.begin():` 統一管理。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目三參考擬答」</summary>
+
 ```python
 from decimal import Decimal
 from typing import List, Dict
@@ -686,6 +725,13 @@ def create_b2b_order(session, customer_id: str, salesperson_id: str, order_id: s
     )
     
     session.add(new_order)
-    # 不需手動 session.commit()，由外層 Context Manager 統一管理
     print(f"訂單 {order_id} 驗證通過，總金額: ${total_order_amount:,.2f}，準備提交交易。")
 ```
+</details>
+
+---
+
+## 🎯 本章收斂總結
+> **💡 核心金句**：
+> 「批次匯入走原生，參數防範 SQL 坑；ORM 善用預載入，悲觀鎖定保庫存。」
+

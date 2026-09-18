@@ -1,6 +1,8 @@
 # 01. RESTful API 設計與 FastAPI 快速上手指南
 
-> **模組目標**：掌握現代 Python 後端開發之王——**FastAPI**。深入剖析 ASGI 與非同步（Asyncio）底層運行機制，打破「`async def` 一律比較快」的迷思；熟練運用 FastAPI 強大的依賴注入系統（Dependency Injection / `Depends`）實現資料庫連線生命週期管理與安全認證；掌握模組化 `APIRouter` 設計原則與全域統一例外處理器（Global Exception Handler），打造具備高併發、自帶 Swagger 文件的企業級 B2B 微服務。
+> 💡 **核心定位**：掌握現代 Python 後端之王——**FastAPI**。深入剖析 ASGI 與非同步（Asyncio）底層運行機制，掌握依賴注入（Depends）生命週期管理與模組化 APIRouter，打造具備高併發、自動化文件的企業級微服務。  
+> ⚠️ **新手常見痛點**：盲目追求「`async def`」卻在內部呼叫阻塞式代碼（如原生 psycopg2、time.sleep），導致單一長請求瞬間凍結伺服器 Event Loop 讓全公司連線卡死；或是忘記使用依賴注入管理 Session 導致資料庫連線洩漏（Connection Leak）被 DBA 痛罵。  
+> 📌 **收斂口訣**：「**純非同步 await 走 async def，傳統阻塞 ORM 放心交給一般 def，資源管理一律交給 Depends！**」
 
 ---
 
@@ -339,7 +341,17 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 3. 注入資料庫 Session 依賴項 `get_db`。
 4. 返回結果必須包含總筆數 `total`、當前頁碼 `page`、以及資料列表 `items`。
 
-#### 【題目一解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **參數宣告與邊界驗證**：利用 `Query(..., ge=1, le=50)` 限制數值範圍，利用 `regex` 約束枚舉字串。
+2. **動態過濾列表**：在 Python 端維護一個 `filters = []` 列表，有傳入參數才 `append` 條件，最後透過 `and_(*filters)` 組合。
+3. **分頁計算公式**：`offset = (page - 1) * limit`，總頁數計算為 `(total_count + limit - 1) // limit`。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 from typing import Optional, List
 from fastapi import APIRouter, Depends, Query, HTTPException, status
@@ -395,6 +407,7 @@ def search_orders(
         "data": orders
     }
 ```
+</details>
 
 ---
 
@@ -405,13 +418,22 @@ def search_orders(
 - 從請求 Header `X-User-Role` 讀取發起者的角色。
 - 若角色不在 `allowed_roles` 之中，立即拋出 `403 Forbidden`。
 
-#### 【題目二解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **依賴項工廠（Closure）**：`require_role` 本身接收 `allowed_roles` 列表，內部返回一個接受 `Header` 的 `role_checker` 函式。
+2. **拋出異常**：若角色不在白名單內，立即拋出 `HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=...)`。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 from typing import List
 from fastapi import Header, HTTPException, status, Depends
 
 def require_role(allowed_roles: List[str]):
-    """角色彩工廠依賴項 (Role-Based Access Control)"""
+    """角色工廠依賴項 (Role-Based Access Control)"""
     def role_checker(x_user_role: str = Header(..., description="操作者角色")) -> str:
         if x_user_role not in allowed_roles:
             raise HTTPException(
@@ -426,6 +448,7 @@ def require_role(allowed_roles: List[str]):
 def purge_customer(customer_id: str, db: Session = Depends(get_db)):
     return {"message": f"客戶 {customer_id} 已由管理員永久自系統移除。"}
 ```
+</details>
 
 ---
 
@@ -435,11 +458,21 @@ def purge_customer(customer_id: str, db: Session = Depends(get_db)):
 若資料庫斷線，健康檢查端點必須返回 HTTP 503 Service Unavailable，通知負載平衡器暫停將流量分發至該實例。
 請撰寫一個標準的 `/healthz` 端點。
 
-#### 【題目三解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **探活原則**：執行極輕量的 `SELECT 1;` 驗證連線池是否健全。
+2. **狀態碼切換**：成功回傳 200，若捕獲例外則設定 `response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE`，並記錄斷線原因。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from datetime import datetime
 
 router = APIRouter(tags=["系統探活監控"])
 
@@ -466,6 +499,7 @@ def health_check(response: Response, db: Session = Depends(get_db)):
         
     return health_status
 ```
+</details>
 
 ---
 

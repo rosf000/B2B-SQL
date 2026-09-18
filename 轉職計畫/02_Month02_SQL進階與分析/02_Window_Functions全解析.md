@@ -8,7 +8,12 @@
 >
 > 這三類問題都能用視窗函數優雅解決——不需要複雜的自關聯，不需要子查詢，一行函數搞定。
 >
-> 📌 請搭配 DBeaver 連線到 B2B 資料庫，邊讀邊跑。
+> 📌 **環境準備（必做！升級真實大數據）**：
+> 視窗函數的威力在於「**從數百數千筆高頻交易中，跨列與分組即時運算**」。先前的基礎資料庫僅 13 筆訂單，容易導致業務員每人每月只有 1 筆單，造成「CTE 聚合前是一筆、聚合後還是一筆，結果看起來都一樣」的無感狀況，且 2023 年無資料導致 YoY 出現 NULL。
+> 
+> 請先在 DBeaver 開啟並執行 Month 02 專用擴充資料庫腳本：
+> 📁 **腳本路徑**：[b2b_m2_window_seed.sql](./data/b2b_m2_window_seed.sql)
+> 內含 **2023～2024 年整整 24 個月、1,200+ 筆訂單、3,000+ 筆明細**，並特別埋設了「業務同分驗證」、「連續2月下滑預警」、「黑馬逆襲大躍進」等真實商業分析特徵點，邊讀邊跑保證刀刀見血！
 
 ---
 
@@ -42,6 +47,12 @@
 
 ## 一、視窗函數基礎語法
 
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> 視窗函數的本質，是在「不折疊原始資料列」的前提下，為每筆資料開一扇窗，讓它能「轉頭偷看」群體統計值。
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> 主管要看「每筆訂單佔該客戶總消費的比例」或「連續兩月業績下滑預警」，如果用傳統 GROUP BY，資料列數會被強制壓縮，你只能被迫做痛苦的多層自關聯（Self-Join），代碼冗長且執行極慢！
+
 所有視窗函數都遵循相同的語法骨架：
 
 ```sql
@@ -59,6 +70,45 @@
 | 資料列數 | **折疊**：5 列 → 1 列 | **保留**：5 列還是 5 列 |
 | 用途 | 聚合計算 | 計算後保留明細 |
 | 可否同時看明細和彙總 | 否 | **是** |
+
+---
+
+### 1.2 💡 深度解密：視窗函數在 SQL 執行順序中的真正位置
+
+很多工程師會疑惑：「視窗函數算是一個獨立的執行階段嗎？為什麼它不能寫在 `WHERE` 裡？」
+
+> 📌 **核心本質**：
+> **視窗函數並不是獨立的頂層子句，它在語法上附屬於 `SELECT` 清單中；而在資料庫的底層邏輯執行順序中，它是 `SELECT` 階段內部「投影前先完成」的第一道計算。**
+
+回顧 SQL 的經典邏輯執行順序（Logical Query Processing）：
+
+```text
+1. FROM & JOIN     — 抓取基表與關聯
+2. WHERE           — 單筆資料列過濾
+3. GROUP BY        — 分組折疊
+4. HAVING          — 分組後聚合篩選
+═════════════════════════════════════════════════════════════
+5. SELECT 階段（內部包含 3 個微步驟 Micro-steps）：
+   ├─ Step 5.1【視窗計算 (Window Evaluation)】
+   │           資料庫在此時依據 PARTITION BY 切割視窗、
+   │           依據 ORDER BY 排序，並計算出 RANK、LAG、SUM OVER 等數值。
+   ├─ Step 5.2【欄位投影 (Projection) & 別名賦予】
+   │           選取最終要呈現的欄位，將剛算好的視窗數值賦予別名。
+   └─ Step 5.3【去重 (DISTINCT)】
+               若有 DISTINCT，是在視窗函數算完之後才進行資料去重。
+═════════════════════════════════════════════════════════════
+6. ORDER BY        — 最終結果排序
+7. LIMIT / OFFSET  — 截取特定筆數
+```
+
+#### 🧠 這個「底層順序」為我們解答了 3 個實務大疑惑：
+
+1. **疑惑一：為什麼視窗函數絕對不能寫在 `WHERE` 裡面？**
+   * 因為 `WHERE`（Step 2）在 `SELECT`（Step 5）之前就執行完了！資料庫在過濾每一列時，視窗函數根本**還沒開始計算**，所以引擎會直接報錯：`ERROR: window functions are not allowed in WHERE`。
+2. **疑惑二：為什麼視窗函數內部可以包含聚合函數？**
+   * 例如 `RANK() OVER (ORDER BY SUM(total_amount) DESC)`。因為 `GROUP BY` 與聚合計算（Step 3 & 4）早在進入 `SELECT` 之前就已經完成，所以視窗函數計算時，能順利取到聚合後的 `SUM()` 數值！
+3. **疑惑三：為什麼一定要用 CTE（或子查詢）才能做 Top N 篩選？**
+   * 因為同一層查詢的 `WHERE` 無法讀取同一層 `SELECT` 產出的視窗結果。**唯一的解法就是透過 CTE，把算好視窗值的 `SELECT` 封裝成一張「下游虛擬表」**，外層的 `WHERE` 才能順理成章地把它當成普通欄位進行過濾！
 
 ---
 
@@ -88,7 +138,8 @@ SELECT
 FROM salespeople s
 JOIN orders o ON s.salesperson_id = o.salesperson_id
 WHERE o.status = 'COMPLETED'
-  AND DATE_TRUNC('month', o.order_date) = DATE_TRUNC('month', CURRENT_DATE)
+  -- 以 2024 年 11 月為例驗證同分場景（實務生產環境中可改為 CURRENT_DATE）
+  AND DATE_TRUNC('month', o.order_date) = '2024-11-01'::date
 GROUP BY s.salesperson_id, s.name
 ORDER BY 月業績 DESC;
 ```
@@ -111,17 +162,38 @@ ORDER BY 月業績 DESC;
 
 ### 2.2 用 ROW_NUMBER 取每組 Top N
 
-最常見的應用：每個地區（PARTITION BY）取業績前 3 名（ROW_NUMBER <= 3）
+#### 🎯 核心痛點：為什麼一定要用 CTE？
+很多初學者學到這裡會想偷懶，直接這樣寫：
+```sql
+-- ❌ 語法錯誤！PostgreSQL 會直接報錯：
+-- ERROR: window functions are not allowed in WHERE
+SELECT name, region, ROW_NUMBER() OVER (...) AS 排名
+FROM salespeople
+WHERE ROW_NUMBER() OVER (...) <= 3; -- 絕對不行！
+```
+> ⚠️ **關鍵原理（SQL 執行順序）**：
+> 如 1.2 節所解密，SQL 執行順序是：`FROM` → `JOIN` → `WHERE` → `GROUP BY` → `HAVING` → **`SELECT（內含：視窗計算 ➜ 欄位投影）`** → `ORDER BY`。
+> 因為 `WHERE` 遠比 `SELECT` 內部的視窗函數更早執行，資料庫在過濾每一列時「視窗名次根本還沒算出來」！
+> **這正是為什麼一定要用 CTE（或子查詢）**：先在 CTE 內把排名算好（封裝成欄位），外層查詢才能在它自己的 `WHERE` 階段用 `WHERE 區內排名 <= 3` 來過濾！
+
+---
+
+#### 💼 實戰範例：每個地區（PARTITION BY）取業績前 3 名
+
+在擴充資料庫中，全公司共有 18 位業務員（北中南各 6 位）：
+* **CTE 內層**：計算 18 位業務員各自在該區的排名（1 ~ 6 名，共 18 列）。
+* **外層篩選**：`WHERE 區內排名 <= 3`，各區 4、5、6 名**確實被過濾淘汰（淘汰 9 人）**，最終只精準產出 9 列！
 
 ```sql
 WITH ranked_sales AS (
+    -- 【CTE 內層】：完成聚合並計算分區排名（共 18 列，北中南各 6 名）
     SELECT
-        s.name                                                   AS 業務姓名,
         s.region                                                 AS 地區,
+        s.name                                                   AS 業務姓名,
         SUM(o.total_amount)                                      AS 總業績,
         ROW_NUMBER() OVER (
-            PARTITION BY s.region          -- 按地區分組
-            ORDER BY SUM(o.total_amount) DESC  -- 每組內按業績倒序
+            PARTITION BY s.region              -- 按地區獨立分組
+            ORDER BY SUM(o.total_amount) DESC  -- 各區內依業績由高到低排名
         )                                                        AS 區內排名
     FROM salespeople s
     LEFT JOIN orders o
@@ -129,15 +201,37 @@ WITH ranked_sales AS (
         AND o.status = 'COMPLETED'
     GROUP BY s.salesperson_id, s.name, s.region
 )
+-- 【CTE 外層】：過濾淘汰後半段（各區只留 Top 3，4~6名全數被篩除）
 SELECT
     地區,
+    區內排名,
     業務姓名,
-    總業績,
-    區內排名
+    總業績
 FROM ranked_sales
-WHERE 區內排名 <= 3    -- 只保留每區前三名
+WHERE 區內排名 <= 3    -- 核心過濾：精確篩掉 9 人，只留 9 人
 ORDER BY 地區, 區內排名;
 ```
+
+**📊 預期輸出（CTE 前後對比立竿見影）：**
+
+| 地區 | 區內排名 | 業務姓名 | 總業績 (約) | 狀態說明 |
+|:---|:---:|:---|:---|:---|
+| **Central** | 1 | Charlie Wang | $4,820,000 | 晉級 Top 3 |
+| Central | 2 | Frank Liu | $3,950,000 | 晉級 Top 3 |
+| Central | 3 | Leo Huang | $3,210,000 | 晉級 Top 3 |
+| *(Central)* | *(4~6)* | *(Mandy, Nathan, Oscar)* | *($2M以下)* | **❌ 被 WHERE 篩除** |
+| **North** | 1 | Alex Chen | $5,600,000 | 晉級 Top 3 |
+| North | 2 | Betty Lin | $5,240,000 | 晉級 Top 3 |
+| North | 3 | Grace Wu | $3,800,000 | 晉級 Top 3 |
+| *(North)* | *(4~6)* | *(Ian, Judy, Kevin)* | *($2M以下)* | **❌ 被 WHERE 篩除** |
+| **South** | 1 | David Ho | $4,980,000 | 晉級 Top 3 |
+| South | 2 | Eva Chang | $3,760,000 | 晉級 Top 3 |
+| South | 3 | Henry Kao | $3,450,000 | 晉級 Top 3 |
+| *(South)* | *(4~6)* | *(Olivia, Peter, Queenie)*| *($2M以下)* | **❌ 被 WHERE 篩除** |
+
+> 💡 **自我檢驗**：
+> 試著把外層的 `WHERE 區內排名 <= 3` 註解掉，跑一次看看（會跑出 18 列）；再把條件加上（只剩 9 列）。
+> 這一拿一放之間，你就能深刻體會到 **CTE 封裝視窗欄位 + 外層條件過濾** 的標準架構！
 
 ---
 
@@ -177,6 +271,9 @@ SELECT
 FROM customer_total
 ORDER BY total_spent DESC;
 ```
+
+> 💡 **排名函數核心收斂**：
+> **ROW_NUMBER 唯一不重複，RANK 同分跳號佔位，DENSE_RANK 緊密不跳號；Top N 篩選必包 CTE。**
 
 ---
 
@@ -280,6 +377,9 @@ JOIN customers c ON o.customer_id = c.customer_id
 WHERE o.status = 'COMPLETED'
 ORDER BY c.company_name, o.order_date;
 ```
+
+> 💡 **位移函數核心收斂**：
+> **LAG 往前偷看環比差，LEAD 往後預覽下一期；首期缺失為 NULL，COALESCE 補零免報錯。**
 
 ---
 
@@ -467,6 +567,9 @@ FROM sp_sales
 ORDER BY 地區, 地區排名;
 ```
 
+> 💡 **視窗框架核心收斂**：
+> **ORDER BY 預設累積到當前，加 UNBOUNDED FOLLOWING 算全域；ROWS 限定實體列，滑動均值消波動。**
+
 ---
 
 ## 六、同比分析（Year-over-Year）
@@ -507,7 +610,10 @@ ORDER BY m1.year, m1.month;
 
 ---
 
-## 七、商業情境練習題（8 題）
+## 七、商業情境練習題（8 題・主動回想與防暴雷版）
+
+> ⚠️ **刻意練習指引**：
+> 視窗函數是面試現場白板題的重災區。請務必在 DBeaver 空白頁先自己寫出查詢，跑出結果後再點開解答對照！
 
 ---
 
@@ -515,8 +621,18 @@ ORDER BY m1.year, m1.month;
 
 **需求**：產出每個月的業務員業績排名，同分時並列，不跳號。顯示：月份、業務姓名、月業績、月排名。
 
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
+
+1. 先用 CTE 按月份（`DATE_TRUNC('month', order_date)`）與業務員分組加總業績。
+2. 同分並列且「不跳號」應使用 `DENSE_RANK()`。
+3. 視窗分區依據為月份（`PARTITION BY month`），排序為業績降冪（`ORDER BY revenue DESC`）。
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看參考解答與詳解</summary>
+
 ```sql
--- 解答
 WITH monthly_sp AS (
     SELECT
         DATE_TRUNC('month', o.order_date)::date AS month,
@@ -535,6 +651,7 @@ SELECT
 FROM monthly_sp
 ORDER BY month, 月排名;
 ```
+</details>
 
 ---
 
@@ -542,8 +659,18 @@ ORDER BY month, 月排名;
 
 **需求**：找出「連續 2 個月業績下滑」的業務員，提供主管早期預警。
 
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
+
+1. 第一層 CTE 計算每人每月業績。
+2. 第二層 CTE 使用 `LAG(revenue, 1)` 取上月業績，`LAG(revenue, 2)` 取上上月業績（皆按 `salesperson_id` 分區）。
+3. 主查詢過濾：`當月 < 上月 AND 上月 < 上上月`，注意排除包含 NULL 的前兩月。
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看參考解答與詳解</summary>
+
 ```sql
--- 解答
 WITH monthly_sp AS (
     SELECT
         s.salesperson_id,
@@ -573,6 +700,7 @@ WHERE revenue < prev1
   AND prev2 IS NOT NULL
 ORDER BY month DESC, name;
 ```
+</details>
 
 ---
 
@@ -580,8 +708,18 @@ ORDER BY month DESC, name;
 
 **需求**：將所有 ACTIVE 客戶按照年度消費額切為四等份，輸出每個客戶的等級與評分。
 
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
+
+1. 第一段 CTE 聚合每家客戶 2024 年度的累計消費額。
+2. 使用 `NTILE(4) OVER (ORDER BY annual_spending DESC)` 將客戶分成 4 等份。
+3. 搭配 `CASE WHEN` 賦予商業標籤（黃金、白銀、銅牌、一般）。
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看參考解答與詳解</summary>
+
 ```sql
--- 解答
 WITH customer_annual AS (
     SELECT
         c.customer_id,
@@ -610,6 +748,7 @@ SELECT
 FROM customer_annual
 ORDER BY annual_spending DESC;
 ```
+</details>
 
 ---
 
@@ -617,8 +756,18 @@ ORDER BY annual_spending DESC;
 
 **需求**：假設年度目標為 6,000 萬，顯示 2024 年每月的累積業績與達成率。
 
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
+
+1. 先用 CTE 計算每月的業績總和。
+2. 累積業績使用 `SUM(revenue) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)`。
+3. 達成率為 `累積業績 / 60,000,000.0 * 100`。
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看參考解答與詳解</summary>
+
 ```sql
--- 解答
 WITH monthly AS (
     SELECT
         DATE_TRUNC('month', order_date)::date AS month,
@@ -640,6 +789,7 @@ SELECT
 FROM monthly
 ORDER BY month;
 ```
+</details>
 
 ---
 
@@ -647,8 +797,17 @@ ORDER BY month;
 
 **需求**：消除季節性波動，計算各產品類別的 3 個月滑動平均銷售額。
 
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
+
+1. CTE 先計算各產品類別按月彙總的銷售額。
+2. 3 個月滑動平均使用：`AVG(revenue) OVER (PARTITION BY category ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)`。
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看參考解答與詳解</summary>
+
 ```sql
--- 解答
 WITH monthly_cat AS (
     SELECT
         p.category,
@@ -674,6 +833,7 @@ SELECT
 FROM monthly_cat
 ORDER BY category, month;
 ```
+</details>
 
 ---
 
@@ -681,8 +841,19 @@ ORDER BY category, month;
 
 **需求**：識別哪些客戶的消費高度集中在單筆大訂單（風險：大客戶可能因一筆訂單取消而損失慘重）。
 
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
+
+1. 不需要 GROUP BY 折疊列！直接在每筆訂單上開窗。
+2. `SUM(total_amount) OVER (PARTITION BY customer_id)` 取得該客戶總消費。
+3. `MAX(total_amount) OVER (PARTITION BY customer_id)` 取得該客戶最高單筆。
+4. 單筆金額除以總消費，搭配 `NULLIF(..., 0)` 計算佔比。
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看參考解答與詳解</summary>
+
 ```sql
--- 解答
 SELECT
     c.company_name,
     o.order_number,
@@ -702,6 +873,7 @@ JOIN customers c ON o.customer_id = c.customer_id
 WHERE o.status = 'COMPLETED'
 ORDER BY 佔總消費比例 DESC;
 ```
+</details>
 
 ---
 
@@ -709,8 +881,18 @@ ORDER BY 佔總消費比例 DESC;
 
 **需求**：產出 2024 年每個月的業績與 2023 年同期的比較，並標示成長或衰退。
 
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
+
+1. 先按年份（yr）與月份（mo）分組計算月度營收。
+2. 自關聯（LEFT JOIN）前一年的同月份：`curr.mo = prev.mo AND curr.yr = prev.yr + 1`。
+3. 計算成長率 `(本期 - 上期) / 上期 * 100`，配合 CASE WHEN 標註趨勢。
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看參考解答與詳解</summary>
+
 ```sql
--- 解答
 WITH yearly_monthly AS (
     SELECT
         EXTRACT(YEAR FROM order_date)::int    AS yr,
@@ -740,6 +922,7 @@ LEFT JOIN yearly_monthly prev
 WHERE curr.yr = 2024
 ORDER BY curr.mo;
 ```
+</details>
 
 ---
 
@@ -747,8 +930,18 @@ ORDER BY curr.mo;
 
 **需求**：在每個地區中，找出「本月業績排名比上月排名進步最多」的業務員。
 
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
+
+1. 第一層 CTE 計算每人每月業績，並用 `DENSE_RANK() OVER (PARTITION BY region, month ...)` 算當月排名。
+2. 第二層 CTE 用 `LAG(monthly_rank)` 取上月排名，並計算 `上月排名 - 本月排名`（正數代表名次進步）。
+3. 主查詢找出各地區當月進步幅度等於最大值（`MAX()`）的人選。
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看參考解答與詳解</summary>
+
 ```sql
--- 解答
 WITH monthly_ranked AS (
     SELECT
         s.salesperson_id,
@@ -791,6 +984,12 @@ WHERE rank_improvement = (
 )
 ORDER BY month DESC, region;
 ```
+</details>
+
+> 💡 **視窗函數綜合實戰核心收斂**：
+> **明細保留不壓縮，開窗計算偷看周邊；排名位移加框架，複雜分析降維打擊。**
+
+---
 
 ---
 

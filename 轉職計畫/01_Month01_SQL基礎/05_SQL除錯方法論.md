@@ -1,19 +1,22 @@
 # 05 — SQL 除錯方法論（初學報錯自救 SOP）
 
-> **AI 時代，寫 SQL 越來越容易；但判斷 SQL 是否正確，越來越重要。**
-> 這是你不能外包給 AI 的核心能力。
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> 寫 SQL 不難，能精準除錯才是資深工程師的護城河；報錯訊息不是懲罰，而是資料庫給你的診斷心電圖。
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> AI 工具可以一秒生成 SQL，但生成出來的 SQL 往往語意正確卻邏輯致命（例如忘記考慮 NULL、或者偷偷把未成交客戶吃掉）。如果你沒有自救與審查能力，把錯誤數據交給主管，後果就是嚴重的商業誤判！
 
 ---
 
 ## 一、SQL 錯誤的三種類型
 
 ```
-Type 1：Syntax Error   → SQL 跑不起來（語法錯誤）
-Type 2：Logic Error    → SQL 跑得起來，但結果是錯的（邏輯錯誤）
-Type 3：Data Error     → SQL 和邏輯都對，但資料本身有問題（資料品質問題）
+Type 1：Syntax Error   → SQL 跑不起來（語法錯誤，最容易修）
+Type 2：Logic Error    → SQL 跑得起來，但結果是錯的（邏輯錯誤，極度危險！）
+Type 3：Data Error     → SQL 和邏輯都對，但底層資料有髒數據（資料品質問題，最難抓）
 ```
 
-> ⚠️ **Type 2 和 Type 3 比 Type 1 危險 10 倍**，因為你不知道結果是錯的，還可能拿去做決策。
+> ⚠️ **Type 2 和 Type 3 比 Type 1 危險 10 倍**，因為資料庫不會噴紅字報錯，你以為查詢成功，其實正拿著錯誤數據去做百萬級商業決策！
 
 ---
 
@@ -190,9 +193,12 @@ Step 5：用「已知答案」驗證
   → 用 SQL 算出來，對比，找出差異點
 ```
 
+> 💡 **SQL 除錯核心收斂金句**：
+> **報錯往前看標點，邏輯錯誤查 Grain 與 NULL；切莫盲目改全域，縮小樣本驗單行。**
+
 ---
 
-## 六、Debug 題庫（3 題）
+## 六、Debug 實戰演練（3 道經典地雷）
 
 ### 題目 1：JOIN 方向問題
 
@@ -208,11 +214,28 @@ GROUP BY s.salesperson_id;
 ```
 
 <details>
-<summary>提示（先自己想再看）</summary>
+<summary>💡 需要思考提示嗎？（點擊展開診斷思路）</summary>
 
-`JOIN` 預設是 `INNER JOIN`，沒有客戶的業務員不會出現。應改為 `LEFT JOIN`。
-同時 `GROUP BY` 要包含 `s.name`，改為 `GROUP BY s.salesperson_id, s.name`。
+1. 預設的 `JOIN` 是 `INNER JOIN`，只會留下雙邊都有對應的資料列。
+2. 剛報到還沒有開發出客戶的業務員，在 `customers` 表裡沒有任何記錄。
+3. `SELECT` 中有 `s.name`，但在 `GROUP BY` 中只寫了 `s.salesperson_id`。
+</details>
 
+<details>
+<summary>✅ 寫完了？點擊查看修復解答與解析</summary>
+
+```sql
+SELECT 
+    s.name, 
+    COUNT(c.customer_id) AS customer_count
+FROM salespeople s
+LEFT JOIN customers c ON s.salesperson_id = c.salesperson_id
+GROUP BY s.salesperson_id, s.name;
+```
+
+**解析**：
+- 改用 `LEFT JOIN` 保留業務員主表全體人員。
+- `GROUP BY` 必須包含 `s.name`，才能符合 SQL 標準規範。
 </details>
 
 ---
@@ -228,21 +251,31 @@ SELECT * FROM customers WHERE status != 'VIP';
 ```
 
 <details>
-<summary>提示（先自己想再看）</summary>
+<summary>💡 需要思考提示嗎？（點擊展開診斷思路）</summary>
 
-`status IS NULL` 的客戶被排除了。`NULL != 'VIP'` 結果是 `NULL`，不是 `TRUE`。
+1. 在三值邏輯（Three-Valued Logic）中，`NULL != 'VIP'` 的結果不是 `TRUE`，而是 `UNKNOWN/NULL`。
+2. 資料庫中 `status` 尚未填寫（為 `NULL`）的潛在客戶，會被 `!= 'VIP'` 靜悄悄地全部過濾掉！
+</details>
 
-正確寫法：
+<details>
+<summary>✅ 寫完了？點擊查看修復解答與解析</summary>
+
 ```sql
-SELECT * FROM customers
+SELECT * 
+FROM customers 
 WHERE status != 'VIP' OR status IS NULL;
 ```
-
+或使用 `COALESCE` 轉換後比較：
+```sql
+SELECT * 
+FROM customers 
+WHERE COALESCE(status, '') != 'VIP';
+```
 </details>
 
 ---
 
-### 題目 3：HAVING vs WHERE
+### 題目 3：HAVING vs WHERE 執行順序
 
 ```sql
 -- 題目：找出下單金額總和超過 50,000 的客戶
@@ -256,16 +289,26 @@ GROUP BY customer_id;
 ```
 
 <details>
-<summary>提示（先自己想再看）</summary>
+<summary>💡 需要思考提示嗎？（點擊展開診斷思路）</summary>
 
-`WHERE` 在 `GROUP BY` 之前執行，不能使用聚合函數。應改用 `HAVING`：
+1. 記住大廚做菜模型：`WHERE` 是在下鍋切丁前洗菜，此時根本還沒執行 `GROUP BY`，資料庫不知道總和是多少。
+2. 針對聚合統計值（`SUM`, `COUNT`）的過濾，必須由哪一個關鍵字負責？
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看修復解答與解析</summary>
+
 ```sql
-SELECT customer_id, SUM(total_amount) AS total
+SELECT 
+    customer_id, 
+    SUM(total_amount) AS total
 FROM orders
 GROUP BY customer_id
 HAVING SUM(total_amount) > 50000;
 ```
 
+**解析**：
+- `HAVING` 發生在 `GROUP BY` 之後，專門用於過濾聚合結果。
 </details>
 
 

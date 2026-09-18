@@ -1,15 +1,13 @@
 # 03 PostgreSQL DDL、DML 與資料庫管理實務
 
-> **寫在前面：從「查資料」到「管理資料庫」**
-> 前兩個月你學的 SELECT、JOIN、Window Function 都屬於 **DML（資料操作語言）**。
-> 本篇補齊另一個重要的技能層次：**DDL（資料定義語言）**——建立、修改、刪除資料表的能力。
+> **📌 本章定位**：前兩個月你學的 `SELECT` 是「讀取與消費資料」（DML）。本篇帶你跨入工程師必備的「**資料結構定義與維運守門員**」（DDL + 約束 + 物化視圖）。
 >
-> 在實際工作中，以下場景都需要 DDL：
-> - 新功能上線，需要新增一張表或增加一個欄位
-> - 系統重構，需要安全地遷移資料
-> - 建立 View 讓 BI 工具直接使用，不暴露底層資料表結構
+> **⚠️ 痛點場景（沒有約束的災難）**：
+> - 沒設 `CHECK (amount >= 0)`：前端出 Bug 傳了 `-500`，資料庫照單全收，財務結帳憑空蒸發 500 元。
+> - 沒設 `FOREIGN KEY ON DELETE`：刪除客戶時留下 300 筆沒有歸屬的「孤兒訂單」，報表系統 JOIN 不到業務直接崩潰拋 Exception。
+> - 線上大表隨意執行 `ALTER TABLE ADD COLUMN NOT NULL`：觸發全表重寫並長時間持有限制鎖（Access Exclusive Lock），導致整個網站連線池耗盡當機 15 分鐘。
 >
-> 📌 本篇所有指令都可以在 DBeaver 的 SQL 編輯器中直接執行。
+> **💡 學習策略**：先定位（約束即防呆守門員）➔ 再理解（View vs Materialized View 的效能權衡）➔ 再操作（動手寫 UPSERT 與無痛 DDL）➔ 再回收（資料庫檢查清單）。
 
 ---
 
@@ -704,7 +702,78 @@ ORDER BY reltuples DESC;
 
 ---
 
-## 十一、本章重點彙整
+## 十一、✋ 空白頁挑戰：生產級 DDL 與 DML 實戰
+
+> 💡 **自我檢驗規範**：請先不要展開解答，在紙上或編輯器寫出你的方案！
+
+### 題目 1：生產環境千萬級大表「無痛安全遷移」
+
+**情境**：線上 `orders` 表有 2,000 萬筆資料，業務需要新增一個 `payment_status VARCHAR(20) DEFAULT 'UNPAID' NOT NULL`。若直接執行 `ALTER TABLE orders ADD COLUMN payment_status VARCHAR(20) NOT NULL;` 會發生什麼事？如何優雅且安全地執行遷移？
+
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 在舊版 PostgreSQL（11 以前），直接加帶 DEFAULT 的 NOT NULL 欄位會觸發全表重寫（Rewrite Table），持有限制鎖長達數分鐘，導致線上業務癱瘓。
+- PostgreSQL 11+ 對非 VOLATILE 預設值已經優化為常數時間 O(1)，但如果沒有 DEFAULT，直接加 NOT NULL 仍會報錯（因為舊資料是 NULL）。
+- 正確工程 SOP：
+  1. 允許 NULL 新增欄位（極快）
+  2. 設定 DEFAULT（極快）
+  3. 批次回填歷史舊資料
+  4. 加上 NOT NULL 約束
+</details>
+
+<details>
+<summary>🔑 點擊展開「參考解答（三步安全遷移）」</summary>
+
+```sql
+-- Step 1: 新增欄位（允許 NULL，瞬間完成，僅修改元數據）
+ALTER TABLE orders ADD COLUMN payment_status VARCHAR(20);
+
+-- Step 2: 設定預設值（未來新寫入的資料自動帶入，PG 11+ 不會重寫表）
+ALTER TABLE orders ALTER COLUMN payment_status SET DEFAULT 'UNPAID';
+
+-- Step 3: 分批更新歷史資料為 'UNPAID'（若資料量超大，應分批跑避免長交易鎖）
+UPDATE orders SET payment_status = 'UNPAID' WHERE payment_status IS NULL;
+
+-- Step 4: 補上 NOT NULL 約束（此時已無 NULL 資料，驗證極快）
+ALTER TABLE orders ALTER COLUMN payment_status SET NOT NULL;
+```
+</details>
+
+---
+
+### 題目 2：防衝突 UPSERT 批次同步實戰
+
+**情境**：第三方 CRM 系統每小時會同步一批客戶名單至 `customers` 表。如果客戶的 `tax_id`（統一編號）已存在，則更新其 `company_name` 與 `status`，並刷新 `updated_at`；如果不存在則正常新增。請寫出這條防重複的 SQL 語句。
+
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 衝突目標（Conflict Target）：必須基於 UNIQUE 索引或 PRIMARY KEY，這裡是 `tax_id`。
+- 使用 `EXCLUDED` 關鍵字引用原本試圖插入的新數值。
+</details>
+
+<details>
+<summary>🔑 點擊展開「參考解答」</summary>
+
+```sql
+INSERT INTO customers (company_name, tax_id, industry, salesperson_id, status, updated_at)
+VALUES 
+    ('聯發半導體股份有限公司', '12345678', 'Semiconductor', 3, 'ACTIVE', NOW()),
+    ('創新軟體實驗室', '87654321', 'Software', 5, 'ACTIVE', NOW())
+ON CONFLICT (tax_id) 
+DO UPDATE SET
+    company_name = EXCLUDED.company_name,
+    industry     = EXCLUDED.industry,
+    salesperson_id = EXCLUDED.salesperson_id,
+    status       = EXCLUDED.status,
+    updated_at   = NOW();
+```
+</details>
+
+---
+
+## 十二、本章重點彙整
 
 ```
 DDL 指令

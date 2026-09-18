@@ -111,11 +111,57 @@ def test_create_order_negative_amount():
 
 ---
 
-## 🗣️ 口試題 (Interview Ready)
+## 🗣️ 口試題 (Interview Ready - Flashcard 模式)
 
-1. 「在 FastAPI 裡面，`async def` 跟一般 `def` 路由有什麼本質區別？如果你在一個 `async def` 路由裡面寫了一個耗時 10 秒的純同步阻塞操作（例如 `time.sleep(10)` 或 Pandas 巨量計算），會發生什麼災難？」
-   - *答題要點*：FastAPI 的 `async def` 運行在主 Event Loop 上。若在其中執行同步阻塞程式碼，會直接卡死整個伺服器的 Event Loop，導致所有其他用戶的並發請求全部排隊卡死！純計算或同步 I/O 應宣告為普通 `def`（FastAPI 會自動丟進外部 Threadpool 執行）或使用 Background Tasks / Celery。
-2. 「RESTful API 中，`PUT` 與 `PATCH` 的差異是什麼？在資料冪等性（Idempotency）上有什麼不同？」
+### Q1：「在 FastAPI 裡面，`async def` 跟一般 `def` 路由有什麼本質區別？如果你在一個 `async def` 路由裡面寫了一個耗時 10 秒的純同步阻塞操作（例如 `time.sleep(10)` 或 Pandas 巨量計算），會發生什麼災難？」
+
+<details>
+<summary>🧠 自我挑戰回想清單（先在腦中整理 15 秒）</summary>
+
+- [ ] FastAPI 主執行緒的 Event Loop 運作原理是什麼？
+- [ ] 宣告為一般 `def` 時，FastAPI 會如何處理？
+- [ ] 若在 `async def` 裡面呼叫同步阻塞代碼，對其他使用者連線的影響為何？
+- [ ] 正確的處理解法有哪三種？
+</details>
+
+<details>
+<summary>🎯 專家級標準答題話術（點擊展開）</summary>
+
+> **面試官答題話術**：  
+> 「在 FastAPI 中，`async def` 與一般 `def` 的執行環境有根本上的架構差異：  
+> 1. **`async def`**：直接運行在主執行緒的 **Event Loop（事件循環）** 上。它適用於支援非同步 non-blocking 的操作（如 `await httpx.AsyncClient` 或 `await asyncpg`）。如果我們在 `async def` 內呼叫了耗時 10 秒的同步阻塞操作（如 `time.sleep(10)`、`requests.get` 或 Pandas 運算），這行代碼會**完全凍結主 Event Loop**，導致整個應用程式在此 10 秒內無法切換處理任何其他使用者的連線請求，造成全站併發崩潰！  
+> 2. **一般 `def`**：FastAPI 會自動將它派發到外部的 **ThreadPoolExecutor（執行緒池）** 中執行。即使執行了阻塞代碼，也只會佔用執行緒池的一個 Worker，完全不影響主 Event Loop 處理其他請求。  
+> 
+> **解法標準實務**：  
+> - 若使用傳統同步庫或密集 CPU 運算，直接使用一般 `def`；  
+> - 若堅持使用 `async def`，則阻塞操作必須透過 `anyio.to_thread.run_sync()` 轉移至執行緒；  
+> - 若是超長耗時任務，應交由 Background Tasks 或 Celery/Redis Queue 非同步背景佇列處理。」
+</details>
+
+---
+
+### Q2：「RESTful API 中，`PUT` 與 `PATCH` 的差異是什麼？在資料冪等性（Idempotency）上有什麼不同？」
+
+<details>
+<summary>🧠 自我挑戰回想清單（先在腦中整理 15 秒）</summary>
+
+- [ ] PUT 與 PATCH 的語意分別代表全量替換還是局部增量？
+- [ ] 什麼是冪等性（Idempotence）？
+- [ ] 在 FastAPI + Pydantic 中，實作 PATCH 時最關鍵的參數是什麼？
+</details>
+
+<details>
+<summary>🎯 專家級標準答題話術（點擊展開）</summary>
+
+> **面試官答題話術**：  
+> 「1. **語意差異**：  
+> - **PUT** 是『**全量替換（Full Replacement）**』。客戶端必須傳遞資源的完整欄位。若某個欄位未傳遞，服務端通常會將其重置為預設值或 null。  
+> - **PATCH** 是『**局部更新（Partial Update）**』。客戶端僅需傳遞欲修改的異動欄位，未傳遞的欄位在資料庫中保持原值不變。在 FastAPI 中，通常搭配 Pydantic 的 `payload.model_dump(exclude_unset=True)` 來安全過濾出真正有傳遞的增量欄位。  
+> 
+> 2. **冪等性（Idempotency）差異**：  
+> - **PUT 本質上是冪等的（Idempotent）**：連續發送 1 次與 10 次相同的 PUT 請求，系統的終態完全一致。  
+> - **PATCH 規範上不一定是冪等的**：雖然常見的局部賦值（如 `{"status": "PAID"}`）具備冪等性，但若 PATCH 操作為增量指令（例如 `{"stock": "+5"}`），重複執行會導致庫存不斷累加，因此依 RFC 規範 PATCH 不保證冪等。」
+</details>
 
 ---
 

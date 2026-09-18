@@ -28,6 +28,12 @@
 
 ## 第一關：子查詢（Subquery）
 
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> 子查詢是「把一個查詢的輸出，當作另一個查詢的輸入」的運算嵌套，核心在於括號先跑。
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> 在商業分析中，比較標準往往是動態變化的（例如高於平均客單價、高於當月指標）。沒有子查詢，你就必須先手動算一次寫死固定數字，下個月數據一變報表就徹底失效！
+
 ---
 
 ### 關卡說明：為什麼需要子查詢？
@@ -220,9 +226,51 @@ WHERE o.order_date = (
 
 > ⚠️ **記住這一句就夠了**：相關子查詢效能差，遇到這種需求，**優先用 CTE + Window Function 取代**。第三篇 Window Functions 教材會教你更好的方法。
 
+#### ✋ 第一關空白頁挑戰（不看上方範例）
+
+> **採購主管提問**：
+> 「請找出所有售價（`unit_price`）高於『全體產品平均售價』的商品，輸出商品名稱（`product_name`）、類別（`category`）與售價（`unit_price`），並依售價由大到小排序。」
+>
+> ⚠️ **請在 DBeaver 打開空白頁手寫完成，再展開對照！**
+
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開解題思路）</summary>
+
+1. 外層查詢：從 `products` 表選取 `product_name`, `category`, `unit_price`。
+2. 過濾條件：`WHERE unit_price > (純量子查詢)`。
+3. 純量子查詢：`SELECT AVG(unit_price) FROM products`。
+4. 排序：`ORDER BY unit_price DESC`。
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看標準解答與解析</summary>
+
+```sql
+SELECT 
+    product_name,
+    category,
+    unit_price
+FROM products
+WHERE unit_price > (
+    SELECT AVG(unit_price) 
+    FROM products
+)
+ORDER BY unit_price DESC;
+```
+</details>
+
+> 💡 **第一關核心收斂**：
+> **括號裡先跑出基準，純量當常數、表格當視圖；動態指標免寫死，子查詢來牽線。**
+
 ---
 
 ## 第二關：CTE（WITH...AS）
+
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> CTE 是把巢狀難讀的子查詢「取名並拉到最上方先算」，讓 SQL 像寫文章一樣由上往下、線性推進。
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> 當 SQL 巢狀嵌套超過 3 層時，就像俄羅斯套娃一樣讓人頭皮發麻，連原作者隔天都看不懂，更無法通過團隊 Code Review；CTE 將複雜管線模組化，是現代企業可維護代碼的必備標準。
 
 ---
 
@@ -416,9 +464,65 @@ SELECT * FROM customer_spending LIMIT 10;
 
 把「動手做 5」的完整 SQL，改成只看 `customer_spending` 的前 10 筆，確認資料正確後，再換回最終查詢。
 
+#### ✋ 第二關空白頁挑戰（不看上方範例）
+
+> **營運長提問**：
+> 「請用 CTE 撰寫兩階段分析：
+> 第一段 CTE `customer_revenue`：先計算每家客戶已完成訂單的總消費金額 `total_spent`。
+> 第二段主查詢：篩選出累計消費金額**大於或等於 50 萬**的大客戶，列出客戶名稱 `company_name` 與 `total_spent`，並依金額由大到小排序。」
+>
+> ⚠️ **請在 DBeaver 打開空白頁手寫完成，再展開對照！**
+
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開解題思路）</summary>
+
+1. 第一段 CTE：
+   ```sql
+   WITH customer_revenue AS (
+       SELECT c.company_name, SUM(o.total_amount) AS total_spent
+       FROM customers c
+       JOIN orders o ON c.customer_id = o.customer_id
+       WHERE o.status = 'COMPLETED'
+       GROUP BY c.company_name
+   )
+   ```
+2. 主查詢直接從 `customer_revenue` 選取，並加上 `WHERE total_spent >= 500000`。
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看標準解答與解析</summary>
+
+```sql
+WITH customer_revenue AS (
+    SELECT 
+        c.company_name, 
+        SUM(o.total_amount) AS total_spent
+    FROM customers c
+    JOIN orders o ON c.customer_id = o.customer_id
+    WHERE o.status = 'COMPLETED'
+    GROUP BY c.company_name
+)
+SELECT 
+    company_name,
+    total_spent
+FROM customer_revenue
+WHERE total_spent >= 500000
+ORDER BY total_spent DESC;
+```
+</details>
+
+> 💡 **第二關核心收斂**：
+> **WITH AS 先起頭，逗號串聯多段流；由上而下好維護，單段除錯最順手。**
+
 ---
 
 ## 第三關：進階 JOIN（選讀，遇到需求再回來看）
+
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> 進階 JOIN（SELF / FULL OUTER / CROSS / LATERAL）是處理層級結構、雙向對帳與網格矩陣運算的特種部隊。
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> 遇到「兩個資料庫系統月底雙向對帳」或「同一表中的員工與主管關係」，一般的 INNER/LEFT JOIN 會遺漏一側資料或語意不清，進階 JOIN 能精確掌控兩側資料流向。
 
 > 以下的 JOIN 類型在日常查詢中比較少見，但在特定場景非常有用。
 > 建議先把第一、二關練熟，再來看這一部分。
@@ -775,6 +879,9 @@ ORDER BY c.company_name;
 ```
 
 </details>
+
+> 💡 **第三關核心收斂**：
+> **SELF JOIN 查同表層級，FULL OUTER 做雙向對帳；CROSS 生成全網格矩陣，NOT EXISTS 防 NULL 刺客。**
 
 ---
 

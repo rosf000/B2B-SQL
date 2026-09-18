@@ -128,10 +128,28 @@ def test_auto_limit_injection():
 
 ---
 
-## 🗣️ 口試題 (Interview Ready)
+## 🗣️ 口試題 (Interview Ready - Flashcard 模式)
 
-1. **「既然你在 Python 裡面寫了 AST Validator 攔截 DROP/DELETE，為什麼資料庫層面還必須建立一個唯讀帳號（Defense in Depth）？」**
-   - *答題要點*：縱深防禦（Defense in Depth）原則。永遠不要依賴單一防線！應用層的 Validator 可能會因為 SQL 解析器的語法漏洞或新語法而存在繞過（Bypass）的可能；若資料庫使用者本身就沒有寫入權限，哪怕駭客成功繞過 Python 驗證，資料庫層面依然會直接噴 `Permission Denied`，徹底保證企業資料安全。
+### Q1：「既然你在 Python 裡面寫了 AST Validator 攔截 DROP/DELETE，為什麼資料庫層面還必須建立一個唯讀帳號（Defense in Depth）？」
+
+<details>
+<summary>🧠 自我挑戰回想清單（先在腦中整理 15 秒）</summary>
+
+- [ ] 什麼是「縱深防禦（Defense in Depth）」原則？
+- [ ] 為什麼應用層的 AST 解析器不能保證 100% 無懈可擊？（解析差異、語法怪癖、Zero-day 繞過）
+- [ ] 資料庫層的角色權限（PostgreSQL REVOKE/GRANT）扮演什麼終極角色？
+- [ ] 發生災難時，雙層防禦如何阻止資料被清空？
+</details>
+
+<details>
+<summary>🎯 專家級標準答題話術（點擊展開）</summary>
+
+> **面試官答題話術**：  
+> 「這是軟體安全領域最核心的『**縱深防禦（Defense in Depth）**』原則——永遠不要將系統的命運賭在單一防線上：  
+> 1. **應用層 AST Validator 是第一道智慧篩子**：它能在請求發往資料庫前，於記憶體內快速阻斷 99.9% 顯而易見的注入與危險語句，並自動補上 LIMIT 保底，減輕資料庫的無謂負載與解析開銷。  
+> 2. **但第三方語法解析庫難免有盲點**：SQL 語法極為龐大且各資料庫方言眾多（包含特殊註解、轉義字元或尚未被 parser 支援的邊界語法），歷史上多次出現過利用編碼或語法樹結構繞過（Parser Differential Bypass）的真實案例。  
+> 3. **資料庫層唯讀帳號（Least Privilege）是絕對物理底線**：我們在 PostgreSQL 建立了僅授予 `SELECT` 權限的專用帳戶（如 `b2b_readonly`）。即便攻擊者憑藉高超的 Zero-day 技巧騙過 Python AST Validator，當帶有 `DELETE` 或 `DROP` 的語句真正抵達資料庫引擎時，PostgreSQL 內核權限檢查會毫不猶豫地直接返回 `ERROR: permission denied for table ...`，交易瞬間被拒絕回滾。雙層防禦相互兜底，才能在商業生產環境中保證 100% 的資料不滅！」
+</details>
 
 ---
 

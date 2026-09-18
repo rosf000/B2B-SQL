@@ -1,6 +1,13 @@
-﻿# 02. ETL 自動化管線與企業日誌系統設計
+# 02. ETL 自動化管線與企業日誌系統設計
 
-> **模組目標**：打造工業級的資料處理管線（Data Pipeline）。深入理解 Extract（萃取）、Transform（清洗與轉換）、Load（載入）的核心設計原則，掌握髒資料隔離（Dead Letter Queue / Quarantine）、管線冪等性（Idempotency）、高效暫存表（Staging Table）載入架構，並建立具備日誌滾動（Rotating Log）與即時通訊告警（Webhook）的自動化排程系統。
+> **📌 本章定位**：ETL（Extract, Transform, Load）是資料工程師最核心的本領。本篇的核心心智模型是：**「管線必須具備冪等性（Idempotency）、髒資料隔離性（Quarantine）與全鏈路可觀測性（Logging）」**。
+>
+> **⚠️ 痛點場景（生產管線三大事故）**：
+> 1. **記憶體巨獸 OOM（Out of Memory）**：直接用 `pd.read_csv("10GB.csv")` 一次性載入，導致雲端伺服器記憶體瞬間耗盡被 Linux Kernel OOM Killer 砍死。
+> 2. **一粒老鼠屎壞了一鍋粥**：10 萬筆交易資料跑到第 99,999 筆時，因某客戶統編填了 "N/A" 導致轉型崩潰，整個交易全盤回滾，業務主管一早看不到任何數據。
+> 3. **補跑重跑導致營收翻倍**：半夜排程失敗，工程師早上手動補跑，因未設計「冪等載入（Staging + UPSERT）」，昨天所有金額被重複加總兩次，財務報表嚴重失真。
+>
+> **💡 學習策略**：先定位（ETL 核心架構）➔ 再理解（生成器串流讀取、Quarantine 模式與 Staging Table）➔ 再操作（動手寫具備 Webhook 告警的 ETL 控制器）➔ 再回收（生產級管線防護清單）。
 
 ---
 
@@ -452,7 +459,9 @@ def send_slack_alert(webhook_url: str, error_title: str, details: str):
 
 ---
 
-## 7. 商業情境綜合練習題（含詳解）
+## 7. 商業情境綜合練習題（實戰動腦自測）
+
+> 💡 **自我檢驗規範**：請先不要展開解答，在你的 Python 檔案中寫出清洗驗證邏輯與 Staging 流程，再點開參考擬答對照！
 
 ### 題目一：設計具備 Quarantine 隔離機制的 Excel 訂單匯入管線
 **業務情境**：
@@ -466,7 +475,17 @@ def send_slack_alert(webhook_url: str, error_title: str, details: str):
 3. 驗證通過的列，透過 `psycopg2` 批次寫入資料庫 `staging_orders`。
 4. 返回成功筆數與失敗筆數字典。
 
-#### 【題目一解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 遍歷每筆資料時，建立 `errors = []` 清單收集所有校驗失敗原因。
+- 若 `errors` 不為空，將原始行紀錄附加 `_file_line` 與 `_error_reason`，加入 `quarantined_records`。
+- 若全數通過，才將清洗後的數值型態打包為 tuple 加入 `valid_records`，並使用 `execute_values` 批次寫入。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目一參考擬答」</summary>
+
 ```python
 import os
 import csv
@@ -551,6 +570,7 @@ def process_distributor_orders(file_path: str, conn) -> dict:
         "quarantine_file": quarantine_path if quarantined_records else None
     }
 ```
+</details>
 
 ---
 
@@ -563,7 +583,17 @@ def process_distributor_orders(file_path: str, conn) -> dict:
 - 主鍵約束：`PRIMARY KEY (summary_date, salesperson_id)`。
 - 無論同一個 `summary_date` 執行多少次，都不會造成數據加倍累加。
 
-#### 【題目二解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 彙總結果表必須有唯一的複合主鍵 `(summary_date, salesperson_id)`。
+- 使用 `INSERT INTO ... ON CONFLICT (summary_date, salesperson_id) DO UPDATE SET ...`。
+- 無論該函式對同一個 `target_date` 執行 1 次還是 10 次，資料庫中的統計數字保證完全一致。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目二參考擬答」</summary>
+
 ```python
 from datetime import date
 import psycopg2
@@ -603,6 +633,7 @@ def run_daily_sales_summary(conn, target_date: date):
         print(f"彙總計算失敗: {e}")
         raise e
 ```
+</details>
 
 ---
 
@@ -613,7 +644,17 @@ def run_daily_sales_summary(conn, target_date: date):
 2. 在每個關鍵步驟使用 logger 記錄耗時與筆數。
 3. 若發生未捕捉的異常，自動擷取完整的 Traceback，記錄至 CRITICAL 日誌，並觸發 Webhook 告警通知。
 
-#### 【題目三解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 接收自定義的 step 函式作為參數（Higher-Order Function）。
+- 使用 `time.time()` 測量整體執行時間。
+- 使用 `traceback.format_exc()` 抓取錯誤字串，並在捕捉例外後主動 re-raise，確保呼叫端知曉失敗。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目三參考擬答」</summary>
+
 ```python
 import time
 import traceback
@@ -653,8 +694,12 @@ class ETLRunner:
                     self.logger.error(f"告警發送機制本身失敗: {alert_err}")
                     
             raise err
-
-# 測試呼叫範例：
-# runner = ETLRunner("B2B_Weekly_Sync", webhook_url="https://hooks.slack.com/services/...")
-# runner.execute(process_distributor_orders, "distributor_data.csv", conn)
 ```
+</details>
+
+---
+
+## 🎯 本章收斂總結
+> **💡 核心金句**：
+> 「串流讀檔防記憶，髒污隔離莫全棄；暫存切換保原子，冪等重跑無所懼。」
+

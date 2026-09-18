@@ -1,6 +1,8 @@
 # 01. LLM API、Prompt 工程與結構化輸出（Structured Output）指南
 
-> **模組目標**：打破「只在聊天網頁輸入 Prompt」的普通使用者思維，晉升為能將大語言模型（LLM）無縫整合進企業生產系統的 AI 應用工程師。深入剖析 Token 計費、Context Window 管理與超參數（Temperature / Top_p）數學原理；精通角色扮演（Role Prompting）、Few-shot 與思維鏈（CoT）；徹底掌握 OpenAI / 現代大模型原生的 **結構化輸出（Structured Outputs）** 與 Pydantic 嚴格型別綁定，杜絕模型幻覺與隨機 JSON 語法錯誤。
+> 💡 **核心定位**：打破「只在聊天網頁下 Prompt」的非技術思維，晉升為能將大語言模型（LLM）無縫整合進企業生產系統的 AI 應用工程師。深入剖析 Token 計費、超參數（Temperature / Top_p）數學原理，掌握原生 **結構化輸出（Structured Outputs）** 與 Pydantic 嚴格型別綁定，打造高可靠 AI 資料管線。  
+> ⚠️ **新手常見痛點**：以為在 Prompt 叮嚀「請輸出 JSON 且不要包含 markdown」就萬無一失，結果上線後模型偶爾吐出多了反引號或少了逗號的殘缺字串，直接炸毀下游解析程式；或未配置 XML 隔離邊界導致惡意使用者透過 Prompt Injection 越獄套取系統機密！  
+> 📌 **收斂口訣**：「**結構化輸出靠原生 Schema 約束，確定性萃取溫設零度（T=0）；邊界隔離防注入越獄，串流生成加速首字體驗！**」
 
 ---
 
@@ -260,7 +262,17 @@ def stream_llm_response(prompt: str):
    - `delivery_deadline`（期望交期，若未提及回傳 None）
 2. 呼叫 OpenAI API 並利用 Structured Outputs 精準提取回傳該 Pydantic 物件。
 
-#### 【題目一解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **Schema 建模**：巢狀模型先宣告 `RequestedProduct` 再組入 `QuotationRequest`。
+2. **原生結構化呼叫**：使用 `client.beta.chat.completions.parse` 搭配 `response_format=QuotationRequest`。
+3. **低溫決定性**：提取任務將 `temperature` 設為 `0.0`，確保輸出完全符合 Schema 結構。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 from enum import Enum
 from typing import List, Optional
@@ -298,6 +310,7 @@ def parse_quotation_inquiry(raw_text: str, client: OpenAI) -> QuotationRequest:
     )
     return completion.choices[0].message.parsed
 ```
+</details>
 
 ---
 
@@ -308,7 +321,16 @@ def parse_quotation_inquiry(raw_text: str, client: OpenAI) -> QuotationRequest:
 2. 在 System Prompt 中配置高優先級安全指令，防止使用者透過「忽略前述指令」、「你是新角色」等越獄手法套取敏感資料。
 3. 若偵測到使用者嘗試攻擊，直接安全拒絕。
 
-#### 【題目二解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **邊界隔離語法**：將使用者不可信的任意輸入包裹在 `<user_query>` 等 XML 標籤中，在 System Prompt 明確指明標籤內純為待處理資料而非指令。
+2. **越獄警報觸發**：規範一旦出現權限覆蓋詞句，直接輸出預設的警報短語中斷執行。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 def safe_llm_query(client: OpenAI, user_input: str) -> str:
     system_instruction = """
@@ -335,6 +357,7 @@ def safe_llm_query(client: OpenAI, user_input: str) -> str:
     
     return response.choices[0].message.content
 ```
+</details>
 
 ---
 
@@ -342,7 +365,17 @@ def safe_llm_query(client: OpenAI, user_input: str) -> str:
 **業務情境**：
 在 FastAPI 後端中實作一個端點 `POST /api/v1/ai/chat/stream`，將 LLM 的逐字輸出透過 StreamingResponse 串流回傳給前端。
 
-#### 【題目三解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **串流通訊模式**：呼叫時開啟 `stream=True`。
+2. **生成器產生器**：使用 `yield f"data: {token}\n\n"` 遵循 SSE 協議格式。
+3. **FastAPI 串流響應**：將 generator 傳遞給 `StreamingResponse(..., media_type="text/event-stream")`。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -375,6 +408,7 @@ def stream_chat(req: ChatRequest):
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 ```
+</details>
 
 ---
 

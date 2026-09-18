@@ -76,6 +76,12 @@ erDiagram
 
 ### 關卡 1：最單純的問與答 —— SELECT 欄位與 WHERE 條件過濾
 
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> SELECT 與 WHERE 是資料庫檢索的「投影（選欄）」與「過濾（挑列）」，決定了你調取數據的視野與邊界。
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> 不懂精確過濾，就只能把幾十萬筆原始資料全倒出來手動找，不僅拖垮伺服器記憶體，更極易把客戶統編、薪資等敏感資料意外洩漏。
+
 這是 SQL 最基礎的本質：**「我想看什麼（SELECT）？從哪張表看（FROM）？只要符合什麼條件的列（WHERE）？」**
 
 #### 商業需求情境
@@ -126,9 +132,47 @@ WHERE city = 'Taipei'
 >
 > ✅ 請從第一天就養成「**明確列出需要的欄位**」的職業習慣！
 
+#### ✋ 關卡 1 空白頁挑戰（不看上方範例）
+
+> **業務助理提問**：
+> 「請幫我找出所有產業類別（`industry`）為 `'Semiconductor'` 且所在城市**不是** `'Taipei'` 的客戶，只需顯示客戶編號（`customer_id`）、公司名稱（`company_name`）與所在城市（`city`）。」
+>
+> ⚠️ **請在 DBeaver 空白編輯器中手寫出你的答案，不要偷看下方！**
+
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開解題思路）</summary>
+
+1. 資料來源表：`customers`
+2. 投影欄位：`customer_id`, `company_name`, `city`
+3. 過濾條件：`industry = 'Semiconductor'` 搭配 `city != 'Taipei'`（或 `<>`）
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊對照標準解答</summary>
+
+```sql
+SELECT 
+    customer_id,
+    company_name,
+    city
+FROM customers
+WHERE industry = 'Semiconductor' 
+  AND city != 'Taipei';
+```
+</details>
+
+> 💡 **關卡 1 核心收斂**：
+> **投影選欄、過濾挑列；字串單引號，堅決不寫 SELECT *。**
+
 ---
 
 ### 關卡 2：資料排版、去重與模糊搜尋 —— ORDER BY, LIMIT, DISTINCT, LIKE
+
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> ORDER BY, LIMIT, DISTINCT 是資料的「排版儀容師」，將雜亂無章的流水帳梳理成高層決策榜單與乾淨的統計母體。
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> 主管要看 Top 3 高單價產品，若你丟出 100 筆亂序清單就是不及格的商業溝通；忘記用 `DISTINCT` 去重更會讓客戶數統計虛胖翻倍。
 
 在實際商業分析中，主管通常不會想看未經整理的原始流水帳。本關卡掌握三個最高頻的資料處理技巧：排序截取（排行榜）、關鍵字匹配與重複資料清理。
 
@@ -248,9 +292,48 @@ ORDER BY city ASC;                  -- 依字母排序，更利於主管閱讀
 >
 > 這樣無論欄位是 DATE 或 TIMESTAMP 都安全！
 
+#### ✋ 關卡 2 空白頁挑戰（不看上方範例）
+
+> **風控主管提問**：
+> 「請找出所有未填寫統一編號（`tax_id IS NULL`）的客戶名單，依照其信用額度（`credit_limit`）由大到小排序，只取額度最高的前 2 名客戶，顯示其 `company_name` 與 `credit_limit`。」
+>
+> ⚠️ **請在 DBeaver 空白編輯器中手寫完成，再展開對照！**
+
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開解題思路）</summary>
+
+1. 資料來源表：`customers`
+2. 過濾條件：`tax_id IS NULL`（切記不能寫 `= NULL`）
+3. 排序：`ORDER BY credit_limit DESC`
+4. 截取筆數：`LIMIT 2`
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊對照標準解答</summary>
+
+```sql
+SELECT 
+    company_name,
+    credit_limit
+FROM customers
+WHERE tax_id IS NULL
+ORDER BY credit_limit DESC
+LIMIT 2;
+```
+</details>
+
+> 💡 **關卡 2 核心收斂**：
+> **排序看 DESC/ASC，去重用 DISTINCT；NULL 比較必用 IS，半開區間防邊界。**
+
 ---
 
 ### 關卡 3：資料總結與群組分析 —— 聚合函數、GROUP BY 與 HAVING
+
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> GROUP BY 的本質是「資料降維與壓縮」，將千萬筆明細折疊成具有商業維度的統計指標。
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> 如果不分組，你就無法回答「哪區客戶最多」、「各類別平均單價」等宏觀指標；若在 WHERE 裡誤寫聚合函數（如 `WHERE COUNT(*) >= 2`），資料庫會直接噴錯中斷！
 
 當主管不再問「單一筆資料」，而是問「總計」、「平均」、「分組表現」時，就是聚合函數登場的時機。
 
@@ -339,9 +422,50 @@ ORDER BY total_customers DESC;
 - **`WHERE` 不能用欄位別名**：因為 `WHERE`執行時，`SELECT`還沒執行，你在後面取的別名，前面根本還不認識！
 - **`ORDER BY` 可以用欄位別名**：因為 `ORDER BY`執行時，`SELECT`已經執行完畢，你在前面取的別名，此時已經可以直接拿來排序！
 
+#### ✋ 關卡 3 空白頁挑戰（不看上方範例）
+
+> **產品主管提問**：
+> 「請按產品類別（`category`）分組，計算各類別的產品品項總數，以及該類別的平均售價（`unit_price`，四捨五入取 2 位小數）。我們只想看**平均售價大於或等於 30,000 元**的高價值產品類別，並依照平均售價由高到低排序。」
+>
+> ⚠️ **請在 DBeaver 空白頁手寫代碼，不要偷看下方！**
+
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開解題思路）</summary>
+
+1. 資料來源表：`products`
+2. 分組維度：`GROUP BY category`
+3. 聚合計算：`COUNT(*) AS total_items`，`ROUND(AVG(unit_price), 2) AS avg_price`
+4. 分組後篩選：`HAVING AVG(unit_price) >= 30000`（切記不能在 WHERE 寫 AVG）
+5. 排序：`ORDER BY avg_price DESC`
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊對照標準解答</summary>
+
+```sql
+SELECT 
+    category,
+    COUNT(*) AS total_items,
+    ROUND(AVG(unit_price), 2) AS avg_price
+FROM products
+GROUP BY category
+HAVING AVG(unit_price) >= 30000
+ORDER BY avg_price DESC;
+```
+</details>
+
+> 💡 **關卡 3 核心收斂**：
+> **WHERE 挑原始單列，HAVING 篩分組聚合；SELECT 未被聚合的純量，必須全數列入 GROUP BY。**
+
 ---
 
 ### 關卡 4：商業標籤與分類指標 —— CASE WHEN
+
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> CASE WHEN 是 SQL 裡的「智慧分流標籤機」，將冰冷的連續數值轉換為具備業務戰略意義的離散分級標籤。
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> 商業主管與行銷人員不看 29 萬、45 萬這種碎散數字，需要的是『Enterprise 大客戶』或『流失風險』等清晰分類；條件缺少 ELSE 兜底時極易產生意外的 NULL 破壞後續統計。
 
 在商業報表中，我們經常需要依據數據將對象進行「分級」（例如高資產客戶、風險評級）。
 
@@ -376,6 +500,44 @@ ORDER BY total_amount DESC;
 |    3    | ORD-2024-003 |  240000.00  | Tier 2 (Mid-Market) |
 |    6    | ORD-2024-006 |  190000.00  | Tier 2 (Mid-Market) |
 
+#### ✋ 關卡 4 空白頁挑戰（不看上方範例）
+
+> **客戶成功主管提問**：
+> 「請查詢 `customers` 表中的所有客戶，依其信用額度（`credit_limit`）進行標籤分級：額度大於或等於 50 萬為 `'VIP'`，20 萬至 50 萬（含 20 萬）為 `'Standard'`，低於 20 萬為 `'Basic'`。請顯示 `company_name`, `credit_limit` 與自訂標籤欄位 `customer_level`。」
+>
+> ⚠️ **請在 DBeaver 空白頁手寫完成，再展開對照！**
+
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開解題思路）</summary>
+
+1. 資料來源表：`customers`
+2. 標籤邏輯：
+   - `WHEN credit_limit >= 500000 THEN 'VIP'`
+   - `WHEN credit_limit >= 200000 THEN 'Standard'`
+   - `ELSE 'Basic'`
+3. 切記以 `END AS customer_level` 結尾！
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊對照標準解答</summary>
+
+```sql
+SELECT 
+    company_name,
+    credit_limit,
+    CASE 
+        WHEN credit_limit >= 500000 THEN 'VIP'
+        WHEN credit_limit >= 200000 THEN 'Standard'
+        ELSE 'Basic'
+    END AS customer_level
+FROM customers
+ORDER BY credit_limit DESC;
+```
+</details>
+
+> 💡 **關卡 4 核心收斂**：
+> **CASE 開頭 END 結尾，WHEN 設條件 THEN 給值；由嚴苛條件往寬鬆寫，ELSE 兜底免生 NULL。**
+
 ---
 
 ### 🧰 跨表前的必備工具箱：NULL 處理三劍客
@@ -405,6 +567,12 @@ GROUP BY city;
 ---
 
 ### 關卡 5：跨表格資料拼圖 —— INNER JOIN 與 LEFT JOIN
+
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> JOIN 是關聯式資料庫的拼圖引擎，把拆散在各個正規化表中的業務碎片無縫拼回完整的商業故事。
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> 誤把 INNER JOIN 當 LEFT JOIN，會讓「未開單客戶」或「新進業務」在報表中人間蒸發，導致全公司客單價與留存率全數算錯；忘記用 COALESCE 轉零更會讓計算直接變為 NULL。
 
 單一資料表通常只儲存局部資訊。例如 `orders` 表只有 `customer_id: 1`，但報表必須顯示「客戶公司全名」，這時候就需要用 `JOIN` 像拼圖一樣將表串連起來！
 
@@ -520,6 +688,41 @@ ORDER BY total_spent DESC;
 > 💡 **一眼看出 LEFT JOIN 的商業威力**：
 > 請特別看結果最下方的第 9 號客戶（InnoVibe Studio）與第 10 號客戶（Jovial Media Group）。
 > 如果使用 `INNER JOIN`，這兩家從未成交的客戶就會**直接消失**；但透過 `LEFT JOIN` 搭配 `COALESCE`，他們會完整保留並顯示為「0 筆訂單、0 元」。這正是業務主管在「盤點沉睡客戶」或「計算全客戶平均客單價」時必備的神器！
+
+#### ✋ 關卡 5 空白頁挑戰（不看上方範例）
+
+> **業務副總提問**：
+> 「請幫我清點『所有業務員（`salespeople`）』的名單（包含尚未簽約成交的新進人員），並計算每位業務目前經手『已完成（`COMPLETED`）訂單』的成交總金額。若尚未開單，金額請顯示為 `0`。請顯示業務姓名（`name`）、所屬地區（`region`）與累計業績（`total_sales`），並依累計業績由高到低排序。」
+>
+> ⚠️ **請在 DBeaver 打開空白頁手寫完成，再展開對照！**
+
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開解題思路）</summary>
+
+1. 主表是誰？「所有業務員名單」，所以主表是 `salespeople`（左表）。
+2. 副表是誰？訂單表 `orders`（右表），使用 `LEFT JOIN`。
+3. 訂單過濾條件：必須在 JOIN 條件中指定 `AND o.status = 'COMPLETED'`，避免未成交訂單把業務員過濾掉。
+4. 聚合分組：`GROUP BY s.salesperson_id, s.name, s.region`
+5. NULL 轉零：`COALESCE(SUM(o.total_amount), 0) AS total_sales`
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊對照標準解答</summary>
+
+```sql
+SELECT 
+    s.name,
+    s.region,
+    COALESCE(SUM(o.total_amount), 0) AS total_sales
+FROM salespeople s
+LEFT JOIN orders o ON s.salesperson_id = o.salesperson_id AND o.status = 'COMPLETED'
+GROUP BY s.salesperson_id, s.name, s.region
+ORDER BY total_sales DESC;
+```
+</details>
+
+> 💡 **關卡 5 核心收斂**：
+> **INNER 找交集雙方皆有，LEFT 保左表全數留存；右表缺失必補 NULL，COALESCE 轉零免出包。**
 
 ---
 

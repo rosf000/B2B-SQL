@@ -1,4 +1,4 @@
-﻿# 🎓 M4 Exit Exam：Python 除錯與防禦性編程實戰 (Debug Lab)
+# 🎓 M4 Exit Exam：Python 除錯與防禦性編程實戰 (Debug Lab)
 
 > **「初學者寫 Python 只要跑出結果就覺得大功告成；工程師寫 Python 第一眼看的是：空值會不會崩？型態錯了會不會 Crash？出錯時有沒有乾淨的 Traceback 與日誌？」**
 
@@ -93,6 +93,87 @@ dirty_data = [
 5. **隔離區機制 (Quarantine Pattern)**：
    - 若資料損毀嚴重（例如缺少關鍵識別項），將該筆紀錄放入 `rejected_records` 並註明原因，**絕不能讓整批資料中斷！**
 
+<details>
+<summary>🔑 點擊展開「safe_pipeline.py 參考重構解答」</summary>
+
+```python
+import re
+import logging
+from typing import List, Dict, Tuple, Any
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
+
+def safe_float(value: Any, default: float = 0.0) -> float:
+    """清理貨幣符號、逗號並轉為浮點數，異常時回傳 default。"""
+    if value is None:
+        return default
+    try:
+        # 去除 $, 空格與千分位逗號
+        cleaned_str = re.sub(r"[^\d.-]", "", str(value))
+        return float(cleaned_str) if cleaned_str else default
+    except (ValueError, TypeError) as e:
+        logger.warning(f"無法解析為數值: {value} -> 回傳預設值 {default}")
+        return default
+
+def safe_division(numerator: float, denominator: float) -> float:
+    """安全除法，防範 ZeroDivisionError。"""
+    if denominator == 0:
+        return 0.0
+    return numerator / denominator
+
+def safe_process_orders(raw_orders: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """具備隔離區 (Quarantine) 的生產級訂單清洗管線。"""
+    valid_records = []
+    rejected_records = []
+
+    for idx, order in enumerate(raw_orders):
+        try:
+            # 1. 必填識別項檢查
+            tax_id = order.get("tax_id")
+            if not tax_id:
+                rejected_records.append({
+                    "raw_order": order,
+                    "error_reason": "缺少關鍵識別項 tax_id",
+                    "row_index": idx
+                })
+                logger.warning(f"第 {idx} 筆紀錄因缺少 tax_id 進入隔離區")
+                continue
+
+            company = str(order.get("company_name", "未知企業")).strip()
+
+            # 2. 安全數值解析與計算
+            revenue = safe_float(order.get("revenue"))
+            cost = safe_float(order.get("cost"))
+            profit = revenue - cost
+            margin_pct = round(safe_division(profit, revenue) * 100, 2)
+
+            # 3. 字串安全格式化
+            raw_discount = order.get("discount_code")
+            discount = str(raw_discount).upper() if raw_discount is not None else "NONE"
+
+            valid_records.append({
+                "tax_id": str(tax_id).strip(),
+                "company": company,
+                "revenue": revenue,
+                "cost": cost,
+                "profit": profit,
+                "margin_pct": margin_pct,
+                "discount": discount
+            })
+        except Exception as e:
+            # 意外未捕捉異常進入隔離區，保證整個批次不中斷
+            logger.error(f"處理第 {idx} 筆訂單發生未預期異常: {e}", exc_info=True)
+            rejected_records.append({
+                "raw_order": order,
+                "error_reason": f"未預期例外: {str(e)}",
+                "row_index": idx
+            })
+
+    return valid_records, rejected_records
+```
+</details>
+
 ---
 
 ## 🧪 任務二：單元測試防禦 (Testing Mindset)
@@ -130,6 +211,19 @@ if __name__ == "__main__":
 
 1. 「在 Python 中，`try...except` 效能很差嗎？為什麼業界常說『Python 鼓勵使用 try...except 而不是一堆 if...else（EAFP 原則）』？」
 2. 「在資料工程批次處理時，遇到髒資料應該直接 raise Error 讓整個流程死掉，還是偷偷跳過（pass）？你在實務上會怎麼設計？」
+
+<details>
+<summary>🔑 點擊展開「口試題深度擬答（EAFP 與隔離區架構）」</summary>
+
+1. **EAFP（Easier to Ask for Forgiveness than Permission）哲學**：
+   - 在 Python 中，如果沒有拋出例外，`try` 區塊的執行開銷幾乎為零（Python 3.11+ 的 Zero-cost exception handling）。
+   - 相比於在每次操作前使用大量 `if hasattr(...)`、`if key in dict`（LBYL 風格，會造成兩次尋找開銷），直接 `try` 執行並在失敗時捕捉更為 Pythonic 且具備原子性（防止 Race Condition）。
+2. **生產資料管線的三態設計**：
+   - 既不能「直接 Crash 導致全公司管線癱瘓」，更絕對不能「用 `pass` 靜默吞掉造成幽靈遺失」。
+   - **實務標準架構**：
+     - **隔離區（Quarantine Table / Dead Letter Queue, DLQ）**：將損毀資料連同時間、錯誤原因寫入隔離表或專屬 JSON 檔案。
+     - **健康度度量（Data Quality Metric）**：計算「髒資料比例」；若髒資料率 < 1%，告警並繼續下游；若髒資料率 > 10%（代表上游 Schema 變更或 API 故障），觸發熔斷機制（Circuit Breaker）中斷管線並發送 P1 告警至 Slack/PagerDuty。
+</details>
 
 ---
 

@@ -1,6 +1,13 @@
 # 02. Linux 常用指令與伺服器維運實務
 
-> **模組目標**：消除對 Linux 終端機與黑底白字命令列的恐懼，具備身為後端與資料工程師不可或缺的伺服器維運基本功。深入理解 Linux 檔案階層標準（FHS）、權限機制（chmod / chown）；精通日誌排障三劍客（grep / awk / sed）與串流管線（Pipe）；掌握系統行程監控（ps / top / kill）、生產級服務守護程式（systemd unit 配置），以及安全 SSH 免密金鑰連線與網路連線排障。
+> **📌 本章定位**：Linux 是所有資料庫、容器（Docker）、Kubernetes 與雲端伺服器的**「作業系統地基」**。本篇的核心心智模型是：掌握「萬物皆檔案」與「文字串流管線（Pipe）」，讓你脫離對 GUI 圖形介面的依賴，在黑底白字的終端機中自信排障。
+>
+> **⚠️ 痛點場景（伺服器維運三大血淚事故）**：
+> 1. **Cat 巨大檔案終端機假死**：想排查錯誤，隨手打了 `cat production_access.log`（檔案有 80GB），終端機瘋狂刷屏把本機 SSH 卡死，伺服器 CPU 瞬間飆高。
+> 2. **幽靈佔用空間未釋放**：磁碟 100% 爆滿，工程師手滑執行 `rm big.log`，結果因為後台 Python 程序仍抓著檔案句柄，檔案在目錄消失但磁區**完全沒有釋放**，資料庫依然處於唯讀狀態無法重啟。
+> 3. **隨手 chmod 777 引狼入室**：遇到「Permission Denied」圖省事直接 `sudo chmod -R 777 /opt`，讓伺服器上的任何惡意進程甚至 Web 漏洞能隨意覆蓋二進位檔，遭到勒索軟體全盤加密。
+>
+> **💡 學習策略**：先定位（目錄樹與權限機制）➔ 再理解（管線串流、信號與 systemd）➔ 再操作（一行 Shell 析日誌與空間搶救 SOP）➔ 再回收（伺服器排障指令清單）。
 
 ---
 
@@ -306,7 +313,9 @@ curl -Iv https://api.b2b-gateway.example.com/health
 
 ---
 
-## 7. 商業情境綜合練習題（含詳解）
+## 7. 商業情境綜合練習題（實戰動腦自測）
+
+> 💡 **自我檢驗規範**：請先不要展開解答，在 Linux 終端機（或 WSL / 雲端 VM）中親自測試管線指令與 Shell 腳本，再點開參考擬答對照！
 
 ### 題目一：使用 Shell 指令分析 Nginx 訪問日誌 Top 5 異常 IP
 **業務情境**：
@@ -317,18 +326,30 @@ curl -Iv https://api.b2b-gateway.example.com/health
 3. 統計每個異常 IP 出現的次數，依出現次數由大到小排序。
 4. 僅印出前 5 名惡意攻擊 IP 與其發動請求的總次數。
 
-#### 【題目一解答指令】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- `grep -E` 正則匹配狀態碼 `' "(4[0-9]{2}|5[0-9]{2}) '`。
+- `awk '{print $1}'` 取出 IP。
+- 注意：使用 `uniq -c` 之前**必須先執行 `sort`**，否則不相鄰的相同 IP 無法被歸併計數。
+- 最後使用 `sort -nr | head -n 5` 取前五大。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目一參考擬答」</summary>
+
 ```bash
 grep -E ' "(4[0-9]{2}|5[0-9]{2}) ' /var/log/nginx/access.log | awk '{print $1}' | sort | uniq -c | sort -nr | head -n 5
 ```
 
-**指令解析說明**：
+**步驟解析說明**：
 1. `grep -E ' "(4[0-9]{2}|5[0-9]{2}) '`：正則比對 HTTP 狀態碼為 400~599 的列。
 2. `awk '{print $1}'`：取出日誌列的第一個欄位（即訪客 Client IP）。
-3. `sort`：將 IP 排序（因為 `uniq` 只能統計相鄰的重複行，故統計前必須先 `sort`）。
-4. `uniq -c`：計算相鄰重複 IP 的出現次數，並在左側附加統計筆數。
-5. `sort -nr`：以「數值大小（-n）」由大至小「倒序（-r）」排序。
-6. `head -n 5`：僅擷取排名前 5 大的 IP。
+3. `sort`：將 IP 排序（使相鄰列相同）。
+4. `uniq -c`：計算相鄰重複 IP 的出現次數。
+5. `sort -nr`：以數值大小倒序排序。
+6. `head -n 5`：僅擷取前 5 名。
+</details>
 
 ---
 
@@ -337,33 +358,38 @@ grep -E ' "(4[0-9]{2}|5[0-9]{2}) ' /var/log/nginx/access.log | awk '{print $1}' 
 週日清晨系統發出 CRITICAL 告警：`Filesystem /dev/sda1 is 100% full`，導致 PostgreSQL 資料庫無法寫入 WAL 日誌而崩潰。
 請寫出排查出罪魁禍首目錄、找出大型垃圾檔案並安全釋放空間的完整指令步驟。
 
-#### 【題目二解答與維運 SOP】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- `df -h` 看分區，`du -h --max-depth=1` 往下鑽取。
+- `find /var/log -type f -size +500M` 揪出大檔。
+- **核心避坑**：不要直接 `rm` 正在被寫入的日誌檔（會造成空間不釋放的幽靈佔用），應使用 `truncate -s 0 file.log` 或 `> file.log` 清空。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目二參考擬答」</summary>
+
 ```bash
-# 步驟 1：確認各分割區使用狀況，確認是哪顆掛載點爆滿
+# 步驟 1：確認掛載點使用狀況
 df -h
 
-# 步驟 2：從根目錄開始，由淺入深找出佔用容量最大的前 5 大目錄 (排除虛擬檔案系統 proc, sys)
+# 步驟 2：由淺入深找出佔用容量最大的前 5 大目錄
 sudo du -h --max-depth=1 /var | sort -hr | head -n 5
-# 假設發現是 /var/log 佔用了 80GB！
 
-# 步驟 3：進入該目錄，找出超過 500MB 的巨大日誌檔
+# 步驟 3：進入目錄，找出超過 500MB 的巨大日誌檔
 find /var/log -type f -size +500M -exec ls -lh {} \;
-# 發現是有個舊的 app_debug.log 膨脹到了 60GB！
 
-# 步驟 4：【安全清空】大型日誌檔
-# ⚠️ 注意：千萬不要直接 rm app_debug.log！因為若有正在執行的程序仍抓著該檔案的 File Descriptor，
-# 檔案從磁碟目錄中消失，但硬碟空間不會釋放（形成 deleted 狀態的幽靈佔用）！
-# 正確作法：將空內容重定向寫入原檔案，瞬間釋放磁區且不中斷寫入句柄：
+# 步驟 4：【安全清空】大型日誌檔（避免 rm 造成 File Descriptor 殘留無法釋放）
 sudo truncate -s 0 /var/log/app_debug.log
-# 或使用: sudo > /var/log/app_debug.log
 
-# 步驟 5：若檔案已被誤 rm 但空間未釋放，找出殘留行程並重啟釋放
+# 步驟 5：若檔案已被誤 rm，找出抓著 deleted 句柄的 PID 並重啟
 sudo lsof | grep deleted
-# 找到 PID 後優雅重啟該服務: sudo systemctl restart <service_name>
+# 找到 PID 後重啟該服務: sudo systemctl restart <service_name>
 
-# 步驟 6：驗證磁碟空間已恢復
+# 步驟 6：確認磁碟空間恢復
 df -h
 ```
+</details>
 
 ---
 
@@ -375,7 +401,17 @@ df -h
 3. 備份完成後，自動掃描並刪除超過 14 天的歷史舊備份檔，避免磁碟空間被撐爆。
 4. 整個備份過程記錄執行時間與結果到 `/var/log/db_backup.log`。
 
-#### 【題目三解答 Shell 腳本】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 腳本開頭加上 `set -euo pipefail` 嚴格防呆。
+- 使用 `pg_dump | gzip > backup.sql.gz` 管線串流。
+- 使用 `find ... -mtime +14 -delete` 自動清理 14 天前舊檔。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目三參考擬答」</summary>
+
 ```bash
 #!/usr/bin/env bash
 # /opt/scripts/backup_b2b_db.sh
@@ -389,7 +425,6 @@ LOG_FILE="/var/log/db_backup.log"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FILE="${BACKUP_DIR}/${DB_NAME}_${TIMESTAMP}.sql.gz"
 
-# 確保目錄存在
 mkdir -p "${BACKUP_DIR}"
 
 log_msg() {
@@ -398,19 +433,25 @@ log_msg() {
 
 log_msg "===== 開始資料庫備份任務: ${DB_NAME} ====="
 
-# 執行 pg_dump 並透過 gzip 壓縮
 if PGPASSWORD="your_db_password" pg_dump -U "${DB_USER}" -h "localhost" "${DB_NAME}" | gzip > "${BACKUP_FILE}"; then
     BACKUP_SIZE=$(ls -lh "${BACKUP_FILE}" | awk '{print $5}')
-    log_msg "備份成功生成: ${BACKUP_FILE} (檔案大小: ${BACKUP_SIZE})"
+    log_msg "備份成功生成: ${BACKUP_FILE} (大小: ${BACKUP_SIZE})"
 else
     log_msg "❌ 資料庫備份失敗！"
     exit 1
 fi
 
-# 清理 14 天以前的舊備份檔案
 log_msg "正在清理超過 14 天之過期歷史備份檔..."
 DELETED_COUNT=$(find "${BACKUP_DIR}" -name "${DB_NAME}_*.sql.gz" -type f -mtime +14 -delete -print | wc -l)
 log_msg "過期清理完成，共刪除 ${DELETED_COUNT} 個歷史備份。"
 
 log_msg "===== 資料庫備份任務圓滿結束 ====="
 ```
+</details>
+
+---
+
+## 🎯 本章收斂總結
+> **💡 核心金句**：
+> 「管線組合三劍客，排查日誌快如飛；清空大檔用截斷，服務守護靠 systemd。」
+

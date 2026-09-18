@@ -1,6 +1,8 @@
 # 02. Pydantic 資料驗證與企業級 CRUD 實戰
 
-> **模組目標**：掌握 FastAPI 最核心的資料防護門神——**Pydantic v2**。深入理解宣告式型別校驗、欄位約束、自定義驗證器（`@field_validator`）與跨欄位連動驗證（`@model_validator`）；精通 Schema 職責分離模式（Create / Update / Response），杜絕敏感欄位洩漏；熟練運用 `ConfigDict(from_attributes=True)` 與 SQLAlchemy 2.0 ORM 無縫整合；並實作包含部分欄位更新（PATCH）、防超賣並發鎖定與軟刪除的企業級 CRUD 業務架構。
+> 💡 **核心定位**：掌握 FastAPI 最核心的資料防護門神——**Pydantic v2**。深入理解資料解析（Parsing）而非單純型別檢查的心智模型，精通 Base / Create / Update / Response 的 Schema 職責分層模式與 ORM 序列化，打造堅不可摧的企業級 CRUD。  
+> ⚠️ **新手常見痛點**：以為「一個 Model 能打天下」，結果在 API Response 直接吐出密碼雜湊或成本價造成重大資安洩漏；或是在實作 PATCH 部分更新時未搭配 `model_dump(exclude_unset=True)`，導致沒傳的欄位被暴力覆蓋為 null 摧毀資料庫歷史紀錄！  
+> 📌 **收斂口訣**：「**輸入校驗嚴格限制，輸出隔離杜絕洩漏；局部更新排除未傳（exclude_unset），金融數值一律 Decimal！**」
 
 ---
 
@@ -385,7 +387,16 @@ def soft_delete_order(order_id: str, db: Session = Depends(get_db)):
    - 購物車內的 `product_id` 不能重複出現（若有重複品項，要求前端先合併數量）。
    - 購物車內單項商品的數量上限不得超過 1,000 件。
 
-#### 【題目一解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **嵌套校驗結構**：主 Schema 內嵌明細 Schema 的 List（`items: List[OrderItemCreate]`）。
+2. **跨物件去重**：使用 `set()` 收集已遍歷的 `product_id`，若再次出現則拋出 `ValueError`（FastAPI 會自動轉譯為 HTTP 422 Unprocessable Entity）。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 from typing import List
 from pydantic import BaseModel, Field, model_validator
@@ -409,6 +420,7 @@ class OrderCreateRequest(BaseModel):
             seen_products.add(item.product_id)
         return self
 ```
+</details>
 
 ---
 
@@ -421,7 +433,16 @@ class OrderCreateRequest(BaseModel):
   2. 若調整後的新額度超過原有額度的 2 倍，`approval_token` 必須為 `"CFO_APPROVED_SECRET"`，否則拋出 `403 Forbidden`。
   3. 成功更新後返回 `CustomerResponse`。
 
-#### 【題目二解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **Decimal 精度運算**：額度倍率計算使用 `Decimal("2.0")` 保證金融級精度。
+2. **安全核准碼攔截**：在 DB commit 前先驗證門檻與 token，不符條件立即拋出 `403 Forbidden` 中斷交易。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -458,6 +479,7 @@ def adjust_credit_limit(
     db.refresh(customer)
     return customer
 ```
+</details>
 
 ---
 
@@ -465,11 +487,23 @@ def adjust_credit_limit(
 **業務情境**：
 為了讓前端團隊在串接所有清單 API 時擁有統一的資料格式，請設計一個支援泛型（Generic）的 `PaginatedResponse[T]` Pydantic 容器模型，並實作於產品清單端點。
 
-#### 【題目三解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **泛型型別宣告**：使用 `typing.Generic` 與 `TypeVar("T")`，讓容器模型動態裝載不同的資料 Schema。
+2. **ORM 序列化**：在子 Schema 中配置 `model_config = ConfigDict(from_attributes=True)`，讓 SQLAlchemy 查詢結果直接對齊 Schema 屬性。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 from typing import Generic, TypeVar, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from fastapi import Query
+from decimal import Decimal
+from sqlalchemy.orm import Session
+from sqlalchemy import select, func
 
 # 定義泛型變數
 T = TypeVar("T")
@@ -507,6 +541,7 @@ def list_products(
         items=products
     )
 ```
+</details>
 
 ---
 

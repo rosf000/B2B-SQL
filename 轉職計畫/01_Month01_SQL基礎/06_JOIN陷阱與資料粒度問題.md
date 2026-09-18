@@ -1,6 +1,10 @@
 # 06 — JOIN 陷阱與資料粒度問題（Fan-out 深度防坑指南）
 
-> **「JOIN 後資料變兩倍，但你不知道。這是工作中最常見的 SQL 錯誤之一。」**
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> 跨表 JOIN 是一對多（1:N）的維度展開；一旦在明細粒度上對主表金額執行 SUM，就會產生致命的 Fan-out 乘數膨脹！
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> 某家客戶實際只買了 25 萬，因為 JOIN 了訂單明細，金額瞬間虛胖變成 50 萬。如果你拿著膨脹兩倍的虛假業績報給總經理與財務長，就是嚴重的商業舞弊與誠信事故！
 
 > [!IMPORTANT]
 > 本篇範例均基於 **B2B Canonical 資料庫**（`data/b2b_m1_sample_v2.sql`）。
@@ -491,6 +495,50 @@ ORDER BY o.order_id;
    → 先 SELECT 幾列原始資料，肉眼確認有無重複列
    → 再用「快速診斷 SQL」做 diff 對帳，數字差異一目了然
 ```
+
+> 💡 **資料粒度與 JOIN 防坑核心收斂**：
+> **多表關聯看基數，1:N 展開必控度；明細表裡算細項，主表總額絕不重 SUM。**
+
+---
+
+### ✋ 粒度防坑空白頁挑戰（不看範例自主對帳）
+
+> **稽核主管抽查**：
+> 「請寫一段安全的 SQL，統計 **Apex Semi Tech（`customer_id = 1`）** 的已完成（`COMPLETED`）訂單總額。請分別輸出：
+> 1. 直接從 `orders` 表加總的正確總金額 `orders_total`
+> 2. JOIN 到 `order_items` 後，加總 `oi.subtotal` 的金額 `items_total`
+> 3. 計算兩者的差額 `diff`，以證明你的查詢沒有發生 Fan-out 膨脹。」
+>
+> ⚠️ **請在 DBeaver 打開空白頁手寫完成，再展開對照！**
+
+<details>
+<summary>💡 需要思考提示嗎？（點擊展開解題思路）</summary>
+
+1. 你可以直接在一個查詢中計算，或者使用子查詢 / CTE 分別計算兩表總額再相減。
+2. 最簡單的方式：直接對 `orders` 串 `order_items`，但千萬不要對 `o.total_amount` 做 SUM，而是對 `oi.subtotal` 做 SUM！
+3. 也可以透過對帳模式，按訂單驗證每筆訂單的 `diff = o.total_amount - SUM(oi.subtotal)` 是否為 0。
+</details>
+
+<details>
+<summary>✅ 寫完了？點擊查看標準對帳代碼與解析</summary>
+
+```sql
+-- 方式 A：訂單層級逐筆對帳（最推薦）
+SELECT 
+    o.order_id,
+    o.order_number,
+    o.total_amount AS orders_recorded,
+    SUM(oi.subtotal) AS items_calculated,
+    o.total_amount - SUM(oi.subtotal) AS diff
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+WHERE o.customer_id = 1 AND o.status = 'COMPLETED'
+GROUP BY o.order_id, o.order_number, o.total_amount;
+```
+
+**解析**：
+- 如果 `diff` 全為 0，代表明細的小計總和與主表記錄的訂單金額完全一致，沒有發生漏算或重複計算。
+</details>
 
 ---
 

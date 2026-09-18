@@ -1,6 +1,13 @@
-﻿# 01. 工程師必備 Git 與 GitHub 企業級工作流
+# 01. 工程師必備 Git 與 GitHub 企業級工作流
 
-> **模組目標**：建立堅不可摧的軟體版本控制心智模型。從 Git 底層物件（Blob、Tree、Commit）與 DAG（有向無環圖）架構出發，徹底理解「工作區、暫存區、本地庫、遠端庫」四層流轉；精通分支策略（Git Flow vs GitHub Flow）、Merge vs Rebase 核心抉擇、衝突現場拆彈技巧；熟練使用 `git reflog`、`reset`、`revert` 救回誤刪程式碼；並掌握企業級 Pull Request（PR）程式碼審查與分支保護機制。
+> **📌 本章定位**：Git 不僅僅是「備份代碼的工具」，而是現代軟體工程協作的**「時光機、分支平行宇宙與信任契約」**。其核心心智模型是「內容尋址鍵值快照（DAG）」，讓你隨心所欲穿梭於歷史節點。
+>
+> **⚠️ 痛點場景（職場三大 Git 職涯危機）**：
+> 1. **洩漏金鑰傾家蕩產**：手滑把含有正式環境資料庫密碼的 `.env` 提交並 push 到公開 GitHub Repo，半小時內被黑客爬蟲掃描，雲端伺服器被用來挖礦，收到百萬帳單。
+> 2. **強制覆蓋同事心血**：多人協作時遇到 rejection，無腦執行 `git push --force`，直接把同事花了三天辛苦寫好的程式碼抹殺消失。
+> 3. **衝突排解現場癱瘓**：遇到 Merge Conflict 不懂原理，隨便在 VS Code 點 Accept Current Change，把主幹修好的重大 Hotfix 覆蓋掉，造成線上再次崩潰。
+>
+> **💡 學習策略**：先定位（DAG 與四區流轉）➔ 再理解（Merge vs Rebase 與分支保護）➔ 再操作（互動式 Rebase 壓縮與衝突排障）➔ 再回收（救命 reflog 與防坑清單）。
 
 ---
 
@@ -285,7 +292,9 @@ Code Review 討論與修改 (Review Comments)
 
 ---
 
-## 6. 商業情境綜合練習題（含詳解）
+## 6. 商業情境綜合練習題（實戰動腦自測）
+
+> 💡 **自我檢驗規範**：請先不要展開解答，在你的本機 Git Repo 中動手操作指令，再點開參考擬答對照！
 
 ### 題目一：使用 Interactive Rebase 整理零散的 WIP 提交
 **業務情境**：
@@ -299,25 +308,34 @@ Code Review 討論與修改 (Review Comments)
 `feat(quote): 支援 B2B 報價單 PDF 匯出與格式校驗`。
 請寫出完整的命令與互動式 Rebase 操作步驟。
 
-#### 【題目一解答】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 使用 `git rebase -i HEAD~4`。
+- 保留第一筆為 `pick`，後續三筆標記為 `squash` (或 `s`)。
+- 儲存後在跳出的 Commit Message 編輯器中修改為合規的提交訊息。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目一參考擬答」</summary>
+
 ```bash
 # 1. 針對最近 4 筆 Commit 啟動互動式 Rebase
 git rebase -i HEAD~4
 
-# 2. 編輯器會開啟如下畫面，將後續三筆的 command 改為 squash (或 s)：
+# 2. 編輯器中將後續三筆指令改為 squash：
 # pick 8a12b3c feat: 增加報價單 PDF 產生基礎框架
 # squash 7b23c4d fix: 修復 typo
 # squash 6c34d5e wip: 調整樣式到一半
 # squash 5d45e6f feat: 完成報價單 PDF 樣式與金額校驗
 
-# 3. 儲存關閉編輯器後，Git 會提示編輯合併後的 Commit Message：
-# 清空或註解所有原訊息，輸入合規的訊息：
+# 3. 儲存關閉編輯器後，輸入合併後的最終 Commit Message：
 # feat(quote): 支援 B2B 報價單 PDF 匯出與格式校驗
 
-# 4. 儲存關閉，完成壓縮！
-# 檢查歷史紀錄
+# 4. 檢查歷史紀錄
 git log --oneline -n 2
 ```
+</details>
 
 ---
 
@@ -329,7 +347,16 @@ git log --oneline -n 2
 終端機印出：`Deleted branch feat/vip-tier-algorithm (was d8e9f01).`
 該分支從未 `git push` 到遠端。請描述搶救該分支的詳細步驟。
 
-#### 【題目二解答】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 分支名稱被刪除，但指向的 Commit 物件依然存在於 Git 的底層資料庫中！
+- 若終端機仍在，直接用印出的 SHA-1 Hash 重新建分支；若終端機已被清空，使用 `git reflog` 查詢 HEAD 移動日誌。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目二參考擬答」</summary>
+
 ```bash
 # 方法一：終端機若尚未關閉，剛剛的訊息已經明確印出 Hash 值: d8e9f01
 git checkout -b feat/vip-tier-algorithm d8e9f01
@@ -348,6 +375,7 @@ git status
 git log -n 1
 # 所有 800 行程式碼毫髮無傷，搶救成功！
 ```
+</details>
 
 ---
 
@@ -358,18 +386,27 @@ git log -n 1
 3. 當你在本地執行 `git checkout feat/discount` 並嘗試 `git rebase main` 時，發生了 Merge Conflict。
 請列出在終端機中解決衝突、驗證程式碼並成功完成 Rebase 的完整工作流。
 
-#### 【題目三解答】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- `git rebase main` 遇衝突會暫停。
+- 手動編輯衝突檔案，保留雙方需要的變更。
+- 解決後 `git add order.py`，接著執行 `git rebase --continue`（切記不要執行 `git commit`）。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目三參考擬答」</summary>
+
 ```bash
 # 1. 執行 rebase 觸發衝突
 git checkout feat/discount
 git rebase main
 # 終端機提示: CONFLICT (content): Merge conflict in order.py
-# Failed to merge in the changes.
 
 # 2. 查看衝突狀態
 git status
 
-# 3. 打開 order.py 找到衝突區塊：
+# 3. 打開 order.py 找到衝突區塊並融合兩者邏輯：
 # <<<<<<< HEAD (來自 main 的 Hotfix)
 #     tax_amount = total * Decimal('0.05')
 # =======
@@ -377,17 +414,24 @@ git status
 #     tax_amount = (total - discount) * 0.05
 # >>>>>>> feat/discount
 
-# 4. 融合兩者邏輯修改為：
+# 融合修改為：
 #     discount = Decimal('0.10') if total > Decimal('10000') else Decimal('0.00')
 #     tax_amount = (total - discount) * Decimal('0.05')
 
-# 5. 將修復好的檔案標記為解決
+# 4. 標記解決
 git add order.py
 
-# 6. 繼續執行 Rebase (注意：此時千萬不要執行 git commit！)
+# 5. 繼續執行 Rebase (注意：此時千萬不要執行 git commit！)
 git rebase --continue
 
-# 7. 若無後續衝突，終端機提示: Successfully rebased and updated refs/heads/feat/discount.
-# 8. 執行單元測試驗證功能正常
+# 6. 跑測試驗證
 pytest tests/test_orders.py
 ```
+</details>
+
+---
+
+## 🎯 本章收斂總結
+> **💡 核心金句**：
+> 「提交講究語意化，互動變基整歷史；衝突冷靜看兩端，死者甦醒靠 reflog。」
+

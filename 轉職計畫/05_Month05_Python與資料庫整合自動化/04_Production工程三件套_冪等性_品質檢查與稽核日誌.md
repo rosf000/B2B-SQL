@@ -1,11 +1,13 @@
 # 04 Production 工程三件套：冪等性 (Idempotency)、資料品質檢查 (Data Quality) 與稽核日誌 (Audit Log)
 
-> **「初學者寫的 ETL：能跑通一次就算成功；資深工程師寫的 ETL：跑十次結果依然一致、資料有髒污立即攔截、每一次執行都有完整歷史審計。」**
-
-在面試 Data Engineer 職位時，面試官一定會問你這個致命問題：
-> *「如果你的 ETL 排程因為網路中斷失敗，維運人員手動重跑了一次，你的資料庫會不會產生重複資料？你怎麼知道今天進來的資料量有沒有異常暴跌？」*
-
-如果你回答「我用 `df.to_sql(if_exists='append')`」，你在面試官心中立刻被歸類為非工程背景的新手。本篇將手把手帶你為 Project 2 注入真正的 **Production 三件套**。
+> **📌 本章定位**：這是「業餘寫腳本玩票」與「百萬年薪生產級資料工程師」的**分水嶺**。本篇的核心心智模型是：任何資料管線都必須假設「隨時會中途斷線」、「來源隨時會送來劇毒資料」、「隨時會有人在半夜手動補跑」。管線必須具備自癒防禦能力。
+>
+> **⚠️ 痛點場景（讓工程師被開除的三大災難）**：
+> 1. **非冪等重複寫入**：用 `df.to_sql(if_exists='append')`，半夜網路不穩重跑 3 次，所有客戶帳單重複計算 3 次，客戶收到百萬帳單引發公關危機。
+> 2. **毒資料污染整個資料倉儲**：上游第三方 API 出錯，傳入了全為 NULL 的訂單金額或全為 0 的匯率，管線不加防範直接灌入正式表，導致全公司儀表板與財務報表全數失真。
+> 3. **無審計追蹤死無對證**：業務主管詢問「上週五為什麼少算 500 萬營收」，工程師沒有稽核表（Audit Log），完全無法回溯當天究竟是沒收到檔案、收到髒資料被丟棄、還是寫入失敗。
+>
+> **💡 學習策略**：先定位（三件套防護網）➔ 再理解（PostgreSQL UPSERT、DQ Rule 引擎與 Audit Schema）➔ 再操作（用 Context Manager 裝飾管線）➔ 再回收（考核驗收清單）。
 
 ---
 
@@ -235,6 +237,59 @@ def track_pipeline_run(engine, pipeline_name: str):
 
 ---
 
+## ✋ 空白頁挑戰：打造堅不可摧的生產管線函式
+
+> 🎯 **實戰任務**：
+> 請在空白編輯器中，寫出一個完整的 ETL 入口函式 `load_daily_finance_data(engine, df_raw, date_str)`：
+> 1. 套用 `@track_pipeline_run` 裝飾器記錄審計日誌。
+> 2. 執行 DQ 檢查：若 `amount` 有任何 NULL 或小於等於 0，或是 `transaction_id` 有重複，立即拋出 `DataQualityError` 終止。
+> 3. 採用「分區冪等性覆蓋（Transaction 內先 DELETE 當日舊資料再 INSERT）」寫入正式表 `finance_transactions`。
+
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 將 DQ 檢查放在寫入交易之前，避免髒資料觸碰到資料庫。
+- 在 `with engine.begin() as conn:` 交易區塊內，依序執行 `DELETE FROM finance_transactions WHERE tx_date = :p_date` 與 `df.to_sql(..., if_exists="append")`。
+</details>
+
+<details>
+<summary>🔑 點擊展開「參考擬答代碼」</summary>
+
+```python
+from sqlalchemy import text
+import pandas as pd
+
+class DataQualityError(Exception):
+    pass
+
+def load_daily_finance_data(engine, df_raw: pd.DataFrame, date_str: str):
+    """具備 DQ 防衛與分區冪等覆蓋的生產入庫函式"""
+    with track_pipeline_run(engine, f"Finance_Load_{date_str}") as (run_id, metrics):
+        metrics["rows_extracted"] = len(df_raw)
+        
+        # 1. Data Quality 防衛閘門
+        if df_raw["amount"].isnull().any():
+            raise DataQualityError("DQ 失敗: amount 欄位存在 NULL 空值！")
+        if (df_raw["amount"] <= 0).any():
+            raise DataQualityError("DQ 失敗: amount 欄位存在小於或等於 0 的異常數值！")
+        if df_raw["transaction_id"].duplicated().any():
+            raise DataQualityError("DQ 失敗: transaction_id 發現重複業務鍵！")
+            
+        # 2. 交易內分區冪等覆蓋寫入
+        with engine.begin() as conn:
+            conn.execute(
+                text("DELETE FROM finance_transactions WHERE tx_date = :target_date"),
+                {"target_date": date_str}
+            )
+            df_raw.to_sql("finance_transactions", con=conn, if_exists="append", index=False)
+            
+        metrics["rows_loaded"] = len(df_raw)
+        print(f"[{date_str}] 財務數據冪等載入成功，共寫入 {len(df_raw)} 筆！")
+```
+</details>
+
+---
+
 ## 🎓 M5 Exit Exam：Production Reality 考核
 
 在結業 M5 時，你必須向面試官展示你的 Project 2 具備以下能力：
@@ -242,4 +297,9 @@ def track_pipeline_run(engine, pipeline_name: str):
 - [ ] **品質攔截驗證**：故意在來源 Excel 注入帶有 NULL 的訂單金額或重複的 Order ID，管線能在 3 秒內攔截報錯、終止載入並記錄到日誌。
 - [ ] **稽核查詢**：能在 DBeaver 中打開 `pipeline_execution_logs`，清楚指認每一筆執行的耗時與筆數。
 
-> 當你的 Project 2 具備這三件套，面試官立刻會知道你不是一個只會寫爬蟲的半吊子，而是一個理解**企業級資料一致性與維運成本**的合格工程師！
+---
+
+## 🎯 本章收斂總結
+> **💡 核心金句**：
+> 「排程隨時會失敗，重跑萬不可加倍；品質攔截在門外，稽核審計白紙黑。」
+

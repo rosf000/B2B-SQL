@@ -1,6 +1,13 @@
-﻿# 02. REST API 原理與 Python Requests 企業實戰
+# 02. REST API 原理與 Python Requests 企業實戰
 
-> **模組目標**：掌握現代分散式系統中不可或缺的通訊協定 **HTTP / RESTful API**。深入剖析 HTTP 請求結構、狀態碼語意、冪等性設計；熟練運用 Python 業界標準庫 `requests` 串接第三方企業服務（如 ERP、金流閘道、電子發票、外幣匯率平台）。建立包含 TCP 連線複用（Session）、指數退避自動重試（Exponential Backoff Retry）、API 速率限制（Rate Limiting）應對、以及將複雜巢狀 JSON 展平為關聯式表格的工業級資料擷取管線。
+> **📌 本章定位**：現代資料工程鮮少只面對單一本機資料庫，絕大多數業務數據來自跨組織的 **HTTP / RESTful API**。本篇的核心心智模型是：**「把網路通訊視為隨時會斷線、超時與限流的不可靠環境」**，學會以 Session 連線複用、指數退避重試與 HMAC 數位簽章建立企業級 API 整合客戶端。
+>
+> **⚠️ 痛點場景（生產環境三大 API 慘案）**：
+> 1. **未設 Timeout 導致整個服務凍結**：呼叫第三方金流 API 時寫 `requests.get(url)` 沒設 timeout，對方伺服器當機不回傳，Python 執行緒無上限永久掛死，Web 伺服器 Worker 全數耗盡。
+> 2. **遭遇 429 瘋狂重試被封鎖 IP**：觸發第三方 API 限流（Rate Limit）時，使用無延遲 while 迴圈硬打，直接被對方的 Cloudflare 判定為 DDoS 攻擊並永久拉黑 IP，導致整條業務線癱瘓。
+> 3. **每次請求重新握手慢如牛步**：在迴圈內反覆呼叫 `requests.get()`，每一筆都要重新經歷 DNS 解析與 TCP 三次交握，1,000 次請求耗時 50 秒（改用 `requests.Session()` 僅需 4 秒）。
+>
+> **💡 學習策略**：先定位（HTTP 動詞與狀態碼語意）➔ 再理解（Session 複用、指數退避與 Cursor 分頁）➔ 再操作（手寫帶快取與 HMAC 簽章的 API 客戶端）➔ 再回收（高可用 API 串接檢核清單）。
 
 ---
 
@@ -324,7 +331,9 @@ if not API_KEY:
 
 ---
 
-## 6. 商業情境綜合練習題（含詳解）
+## 6. 商業情境綜合練習題（實戰動腦自測）
+
+> 💡 **自我檢驗規範**：請先不要展開解答，在 Python 檔案中建立 Session、重試機制與簽章邏輯，再點開參考擬答對照！
 
 ### 題目一：高可用匯率即時轉換與快取機制
 **業務情境**：
@@ -334,7 +343,17 @@ if not API_KEY:
 2. 支援獲取指定幣別的最新匯率。
 3. 具備記憶體快取（TTL 60 分鐘）：在 60 分鐘內重複查詢相同幣別時，直接從記憶體返回，禁止重複發送網路請求浪費額度。
 
-#### 【題目一解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 使用 `urllib3.util.retry.Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])` 掛載至 `requests.Session()`。
+- 使用字典 `self._cache` 儲存幣別、過期時間戳（`now + ttl`）與資料。
+- 若網路臨時中斷且有舊快取，可實作 Stale-While-Revalidate 降級容災返回過期資料。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目一參考擬答」</summary>
+
 ```python
 import time
 import requests
@@ -346,7 +365,7 @@ class ExchangeRateClient:
     def __init__(self, api_base_url: str = "https://api.exchangerate-api.com/v4/latest", ttl_seconds: int = 3600):
         self.base_url = api_base_url
         self.ttl = ttl_seconds
-        self._cache: Dict[str, Dict[str, Any]] = {} # 格式: {base_curr: {"data": {...}, "expire_at": timestamp}}
+        self._cache: Dict[str, Dict[str, Any]] = {}
         
         # 建立高可用 Session
         self.session = requests.Session()
@@ -370,7 +389,6 @@ class ExchangeRateClient:
             if now < cache_entry["expire_at"]:
                 rates = cache_entry["data"].get("rates", {})
                 if target_currency in rates:
-                    # 快取命中！
                     return float(rates[target_currency])
 
         # 2. 快取未命中或已過期，發送 API 請求
@@ -393,12 +411,13 @@ class ExchangeRateClient:
             return float(rates[target_currency])
             
         except requests.exceptions.RequestException as e:
-            # 若網路失敗且快取內有過期資料，可做降級容災 (Stale-While-Revalidate)
+            # 降級容災
             if base_currency in self._cache:
                 print(f"[警告] API 請求失敗 ({e})，使用過期快取降級容災。")
                 return float(self._cache[base_currency]["data"]["rates"][target_currency])
             raise RuntimeError(f"無法取得匯率資料: {e}")
 ```
+</details>
 
 ---
 
@@ -418,9 +437,20 @@ class ExchangeRateClient:
     ]
   }
   ```
-請撰寫函式 `fetch_all_in_transit_shipments(api_url, api_token)`，遞迴或迴圈拉取所有分頁，並將結果轉換為乾淨的 Pandas DataFrame 返回。
+請撰寫函式 `fetch_all_in_transit_shipments(api_url, api_token)`，迴圈拉取所有分頁，並將結果轉換為乾淨的 Pandas DataFrame 返回。
 
-#### 【題目二解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 使用 `while True:` 配合 `cursor` 迭代。
+- 每次將抓到的 `shipments` 清單 `extend` 到總結果中。
+- 檢查 `has_more` 是否為 False 或 `next_cursor` 為空，若是則中斷迴圈。
+- 最後使用 `pd.DataFrame()` 包裝，並將日期欄位轉為 `pd.to_datetime`。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目二參考擬答」</summary>
+
 ```python
 import requests
 import pandas as pd
@@ -455,7 +485,6 @@ def fetch_all_in_transit_shipments(api_url: str, api_token: str) -> pd.DataFrame
             has_more = data.get("has_more", False)
             cursor = data.get("next_cursor")
             
-            # 若無更多資料或無下個 cursor 則跳出
             if not has_more or not cursor:
                 break
                 
@@ -470,6 +499,7 @@ def fetch_all_in_transit_shipments(api_url: str, api_token: str) -> pd.DataFrame
     df["updated_at"] = pd.to_datetime(df["updated_at"])
     return df
 ```
+</details>
 
 ---
 
@@ -483,7 +513,17 @@ def fetch_all_in_transit_shipments(api_url: str, api_token: str) -> pd.DataFrame
 2. 計算 HMAC-SHA256 簽章。
 3. 發送 POST 請求並處理回應結果。
 
-#### 【題目三解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 確保 JSON 格式標準化：使用 `json.dumps(invoice_data, sort_keys=True, separators=(",", ":"))`。
+- 計算簽章：`hmac.new(key_bytes, payload_bytes, hashlib.sha256).hexdigest()`。
+- 發送請求時，將序列化好的 `payload_bytes` 直接傳給 `data=` 參數，避免 `requests` 重新格式化導致簽章不匹配。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目三參考擬答」</summary>
+
 ```python
 import hmac
 import hashlib
@@ -494,7 +534,7 @@ def issue_b2b_invoice(invoice_data: dict, secret_key: str, api_endpoint: str) ->
     """
     發送電子發票開立請求 (含 HMAC-SHA256 數位簽章)
     """
-    # 1. 確保 JSON 格式標準化 (按 Key 字母排序，禁止多餘空格)
+    # 1. 確保 JSON 格式標準化
     payload_str = json.dumps(invoice_data, sort_keys=True, separators=(",", ":"))
     payload_bytes = payload_str.encode("utf-8")
     key_bytes = secret_key.encode("utf-8")
@@ -512,7 +552,7 @@ def issue_b2b_invoice(invoice_data: dict, secret_key: str, api_endpoint: str) ->
     try:
         response = requests.post(
             api_endpoint,
-            data=payload_bytes,  # 傳遞嚴格序列化後的 bytes，避免 requests 二次序列化造成簽章失效
+            data=payload_bytes,
             headers=headers,
             timeout=10
         )
@@ -532,3 +572,11 @@ def issue_b2b_invoice(invoice_data: dict, secret_key: str, api_endpoint: str) ->
         print(f"發票 API 連線通訊失敗: {req_err}")
         raise req_err
 ```
+</details>
+
+---
+
+## 🎯 本章收斂總結
+> **💡 核心金句**：
+> 「網路請求必設逾時，連線複用靠 Session；退避重試防崩潰，數位簽章保乾坤。」
+

@@ -1,6 +1,8 @@
 # 01. Docker 與 Docker Compose 容器化實戰教學
 
-> **模組目標**：掌握現代軟體工程必備的交付標準——**Docker 容器化**。告別「在我電腦上明明可以跑（It works on my machine）」的環境災難；深入理解 Linux 底層隔離機制（Namespaces, Cgroups, UnionFS）；精通多階段建置（Multi-stage Builds）將 Python 映像檔從 1GB 驟降至 100MB；並熟練運用 Docker Compose 編排完整的 B2B 微服務應用棧（FastAPI + PostgreSQL + 自動健康檢查與資料持久化）。
+> 💡 **核心定位**：掌握現代軟體交付金牌標準——**Docker 容器化**。深入理解 Linux 底層隔離（Namespaces 視圖隔離、Cgroups 資源限額、UnionFS 寫時複製），精通多階段建置（Multi-stage Builds）與非 root 安全規範，實現跨環境 100% 一致性部署。  
+> ⚠️ **新手常見痛點**：Dockerfile 一把抓把 gcc 等編譯工具全留在生產映像檔造成 1.5GB 臃腫怪獸；直接用 root 帳號跑容器引爆資安逃逸風險；或在 `docker-compose.yml` 僅寫 `depends_on: [db]` 卻未配置 `service_healthy`，導致 API 服務因 DB 尚未完成初始化直接閃退崩潰！  
+> 📌 **收斂口訣**：「**多階段分離編譯與運行，非 root 帳號加固防逃逸；相依啟動必綁健康檢查，持久儲存鎖定 Named Volume！**」
 
 ---
 
@@ -266,7 +268,17 @@ docker compose down -v
 3. 安全規範：建立系統專用帳戶 `b2buser`（UID 10001），禁止使用 root 運行。
 4. 設定工作目錄為 `/app`，暴露 8000 埠，並以 Uvicorn 啟動。
 
-#### 【題目一解答 Dockerfile】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **分層快取心智**：先複製 `requirements.txt` 再執行 pip 安裝，最後才複製程式碼。
+2. **多階段隔離**：Builder 承擔 gcc/headers 等編譯重擔；Runner 僅複製產物 `/opt/venv`，產出乾淨極小的輕量映像檔。
+3. **安全降權**：透過 `groupadd` 與 `useradd` 建立非特權帳戶，並宣告 `USER b2buser`。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```dockerfile
 # ==========================================
 # 階段一：構建階段 (Builder Stage)
@@ -328,6 +340,7 @@ EXPOSE 8000
 # 啟動命令
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
 ```
+</details>
 
 ---
 
@@ -338,7 +351,17 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--worker
 2. `api_service`：使用當前目錄 Dockerfile 構建，映射埠號 `8000:8000`，環境變數動態注入資料庫連線字串，並設定 `depends_on` 嚴格等待 `postgres_db` 健康檢查通過後方可啟動。
 3. 自定義內部網路 `b2b_network`。
 
-#### 【題目二解答 docker-compose.yml】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **網路與磁碟宣告**：最頂層定義 `networks` 與 `volumes`。
+2. **健康檢查配合**：Postgres 服務使用 `pg_isready` 探測；API 服務的 `depends_on` 指定 `condition: service_healthy`。
+3. **初始化腳本唯讀掛載**：加入 `:ro` 權限防止容器意外修改本地 SQL 檔案。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```yaml
 version: '3.8'
 
@@ -396,6 +419,7 @@ services:
       timeout: 5s
       retries: 3
 ```
+</details>
 
 ---
 
@@ -405,7 +429,17 @@ services:
 `OperationalError: could not translate host name "postgres_db" to address: Name or service not known`。
 請寫出利用 Docker 指令快速定位並修復問題的完整 SOP。
 
-#### 【題目三解答與排查 SOP】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **狀態檢查**：先 `docker compose ps` 確認是否有容器重啟或退出。
+2. **日誌確認**：`docker compose logs` 看具體崩潰堆疊。
+3. **網路探測**：透過 `docker network inspect` 檢查容器是否在同一個 Bridge Network，並臨時執行 `ping` 或 `nc -zv`。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```bash
 # 步驟 1：檢查容器是否都處於 running 狀態
 docker compose ps
@@ -428,6 +462,7 @@ docker compose run --rm api_service nc -zv postgres_db 5432
 # 步驟 5：若確認是設定檔打錯名稱，修改 docker-compose.yml 後重新編排啟動
 docker compose up -d --force-recreate
 ```
+</details>
 
 ---
 

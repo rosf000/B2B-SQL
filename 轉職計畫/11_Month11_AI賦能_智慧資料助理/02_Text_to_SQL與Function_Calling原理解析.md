@@ -1,6 +1,8 @@
 # 02. Text-to-SQL 與 Function Calling 原理解析與企業實戰
 
-> **模組目標**：打造企業級 GenAI 最具商業價值的殺手級應用——**智慧自然語言資料庫助理（Text-to-SQL AI Assistant）**。深入理解大模型 Function Calling（工具調用 / Tool Use）的三階段閉環運作原理；掌握動態資料庫綱要（Schema Injection）壓縮與 Few-shot 引導；構築多層次安全防線（Read-Only 唯讀權限、SQL 語法審查、LIMIT 自動注入、防 DROP/DELETE 災難）；並實作具備「SQL 執行錯誤自動反饋自我修復（Self-Correction Loop）」的工業級資料助理。
+> 💡 **核心定位**：打造企業級 GenAI 最具商業價值的殺手級應用——**智慧自然語言資料庫助理（Text-to-SQL AI Assistant）**。深入理解大模型 Function Calling（工具調用）三階段閉環機制，結合動態 Schema 注入、三道資安防護盾（唯讀帳號、語法審查、LIMIT 保底）與自我修復迴圈（Self-Correction Loop），實現 3 秒數據洞察。  
+> ⚠️ **新手常見痛點**：以為「把 Prompt 寫成『請生成 SQL』然後直接用 Python 執行」就是 AI 助理，結果遇到惡意注入生成 `DROP TABLE` 摧毀資料庫；或產出未帶 LIMIT 的大表全查瞬間擠爆生產伺服器；一旦語法有微小錯字就直接報錯放棄，毫無自我糾錯韌性！  
+> 📌 **收斂口訣**：「**大腦只負責填寫工具參數，執行權限嚴鎖後端唯讀；語法審查強制限制上限（LIMIT 50），報錯反饋啟動自動修復！**」
 
 ---
 
@@ -356,7 +358,18 @@ def ask_b2b_assistant(user_question: str, max_retries: int = 3) -> str:
 3. 僅允許執行 `SELECT` 語句或 `WITH ... SELECT`（CTE 語法）。
 4. 自動檢查是否具備 `LIMIT`，若缺少則自動在結尾補上 `LIMIT 50`。
 
-#### 【題目一解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **正則表達式清除註解**：使用 `re.DOTALL` 與 `re.MULTILINE` 徹底清除單行與多行註解。
+2. **多重語句阻斷**：依 `;` 切割，檢查非空語句長度，大於 1 立即拋出 `ValueError`。
+3. **白名單與黑名單雙重防護**：開頭限定 `^(SELECT|WITH)\b`，同時正則比對黑名單關鍵字（INSERT、DROP、UPDATE 等）。
+4. **LIMIT 保底注入**：檢查若無 `LIMIT [0-9]+` 且無 `COUNT(`，強制追加 `LIMIT 50`。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 import re
 
@@ -393,6 +406,7 @@ class SQLGuard:
 
         return target_sql
 ```
+</details>
 
 ---
 
@@ -402,7 +416,16 @@ class SQLGuard:
 - 參數：`chart_type`（枚舉：`BAR_CHART`, `LINE_CHART`, `PIE_CHART`, `TABLE`）、`x_axis`、`y_axis`、`title`。
 請定義完整的 Tools 規格，並撰寫主排程判斷。
 
-#### 【題目二解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **多工具規格陣列**：在 `tools` 清單中註冊兩個具備嚴格 JSON Schema 的 function 定義。
+2. **枚舉約束**：在 `properties.chart_type` 中設定 `enum` 限制圖表種類。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 tools_spec = [
     {
@@ -442,6 +465,7 @@ tools_spec = [
     }
 ]
 ```
+</details>
 
 ---
 
@@ -453,7 +477,17 @@ tools_spec = [
 3. 同時執行 Golden SQL 與 Predicted SQL，比對兩者回傳的資料內容（DataFrame / 結果集）是否 100% 相同。
 4. 計算並輸出模型在此評測集上的「**執行準確率（Execution Accuracy, EX）**」。
 
-#### 【題目三解答程式碼】
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **Golden SQL 測試集**：建立涵蓋過濾、多表 JOIN 聚合、數值條件的標準測試用例。
+2. **DataFrame 語意比對**：利用 `pandas.testing.assert_frame_equal(check_like=True)` 比對實際查詢結果集，忽略欄位排列與索引差異。
+3. **客觀指標回報**：計算 `Execution Accuracy = (通過題數 / 總題數) * 100%`。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
+
 ```python
 import pandas as pd
 from typing import List, Dict
@@ -530,6 +564,7 @@ def evaluate_text_to_sql_benchmark(conn, assistant_func) -> float:
     print(f"==========================================")
     return accuracy
 ```
+</details>
 
 ---
 

@@ -82,12 +82,50 @@ echo "🎉 冒煙測試全數過關，生產就緒！"
 
 ---
 
-## 🗣️ 口試題 (Interview Ready)
+## 🗣️ 口試題 (Interview Ready - Flashcard 模式)
 
-1. **「為什麼在 Dockerfile 裡面寫 `COPY . .` 然後直接 run root 是嚴重的資安地雷？」**
-   - *答題要點*：若攻擊者利用應用漏洞（如 RCE 遠端程式碼執行）攻破容器，以 root 運行的駭客可能透過 Container Escape（逃逸）直接取得宿主機的最高控制權！採用非 root 帳號能有效限縮攻擊面。
-2. **「在雲端部署時，如果資料庫密碼不能放進 Git，你實務上怎麼讓 Docker 容器讀到？有哪幾種常見管理方案？」**
-   - *答題要點*：雲端平台的 Secret Management（如 Render Environment Variables、AWS Secrets Manager、Vault）或 Docker Swarm / K8s Secrets。在 CI/CD 中透過 GitHub Actions Encrypted Secrets 注入。
+### Q1：「為什麼在 Dockerfile 裡面寫 `COPY . .` 然後直接以預設 root 權限運行是嚴重的生產資安地雷？」
+
+<details>
+<summary>🧠 自我挑戰回想清單（先在腦中整理 15 秒）</summary>
+
+- [ ] 容器內的 root 與主機宿主作業系統的 root 有何關聯？
+- [ ] 什麼是容器逃逸（Container Escape）？
+- [ ] 為什麼 `COPY . .` 未配置 `.dockerignore` 會外洩敏感資料？
+- [ ] 工業級最佳實踐的兩個修復步驟是什麼？
+</details>
+
+<details>
+<summary>🎯 專家級標準答題話術（點擊展開）</summary>
+
+> **面試官答題話術**：  
+> 「這會引發兩大嚴重的生產資安隱患：  
+> 1. **容器逃逸（Container Escape）與主機控制權淪陷**：Docker 容器與宿主機共用 Linux 內核。如果容器以預設 root 權限運行，一旦應用程式爆發任意遠端代碼執行（RCE）或提權漏洞，攻擊者便擁有容器內的最高權限；搭配某些未嚴格限制的 Linux Capabilities 或掛載卷，攻擊者極容易穿透隔離屏障逃逸到宿主機，直接取得整台雲端伺服器的 root 控制權！因此生產環境必須遵循最小權限原則（PoLP），透過 `USER appuser` 進行降權運行。  
+> 2. **敏感金鑰無差別外洩**：如果直接 `COPY . .` 且未撰寫完整的 `.dockerignore`，本機的 `.env`、AWS 金鑰、`.git` 目錄（包含歷史 commit 紀錄）會被完整封裝進映像檔層級中。只要映像檔被 push 至 Registry 或洩漏，任何拉取該 Image 的人都能輕易讀取全套生產機密。」
+</details>
+
+---
+
+### Q2：「在雲端部署時，如果資料庫密碼不能放進 Git，你實務上怎麼讓 Docker 容器讀到？有哪幾種常見管理方案？」
+
+<details>
+<summary>🧠 自我挑戰回想清單（先在腦中整理 15 秒）</summary>
+
+- [ ] PaaS（如 Render / Railway）是如何注入環境變數的？
+- [ ] CI/CD 流水線（GitHub Actions）如何安全傳遞？
+- [ ] 企業級雲端（AWS / GCP / HashiCorp）有哪些專屬 Secret 工具？
+- [ ] 容器內部該如何讀取？（環境變數 vs 掛載檔案）
+</details>
+
+<details>
+<summary>🎯 專家級標準答題話術（點擊展開）</summary>
+
+> **面試官答題話術**：  
+> 「在現代雲端架構中，我們絕不將敏感金鑰硬編碼在代碼或提交至 Git，業界常見依架構規模分為三個層次：  
+> 1. **PaaS 輕量託管（Render / Railway / Fly.io）**：在平台控制台的 **Environment Variables / Secrets** 介面填入，平台在容器啟動時以安全環境變數自動注入容器內。  
+> 2. **CI/CD 自動化整合（GitHub Actions）**：將生產資料庫連線字串存於 Repository 的 **Actions Secrets**，在部署工作流執行時動態注入 SSH / Docker Compose 的啟動命令中。  
+> 3. **企業級金鑰保險庫（AWS Secrets Manager / HashiCorp Vault / K8s Secrets）**：應用程式啟動時透過 SDK 搭配 IAM Role 動態拉取短期憑證，或由外部 Orchestrator 將 Secret 掛載為記憶體暫存檔（Tmpfs RAM Disk），杜絕在硬碟或 Image 中留下任何明文痕跡。」
+</details>
 
 ---
 

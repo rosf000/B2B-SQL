@@ -1,11 +1,14 @@
 # 02 Index 索引原理與 ACID 交易安全機制
 
-> **寫在前面：效能與可靠性的兩大支柱**
-> 一個生產環境的資料庫必須同時具備兩個關鍵能力：
-> 1. **快**：面對百萬筆資料，查詢仍要在毫秒內回應 → 靠 **Index（索引）**
-> 2. **安全**：同時有 100 個人下訂單，帳不能算錯 → 靠 **Transaction + ACID**
+> **📌 本章定位**：Index（索引）與 ACID（交易安全）是資料庫從「玩具」晉升為「生產級（Production-Ready）」的兩大核心樑柱。
+> - **Index** 的本質是「**以空間與寫入成本換取極致的檢索時間**」（B-Tree O(log N)）。
+> - **ACID** 的本質是「**以日誌（WAL）與鎖機制換取多連線並發下的絕對正確**」。
 >
-> 本篇把這兩個主題從「知道有這個東西」提升到「能在面試中清楚說明、能在工作中正確使用」的程度。
+> **⚠️ 痛點場景（生產事故血淚史）**：
+> 1. **資料庫被打爆**：沒建複合索引或踩中索引失效地雷，上線後百萬筆資料的查詢觸發全表掃描（Seq Scan），CPU 直接衝到 100%，所有 API 集體逾時 504。
+> 2. **庫存超賣與爛帳**：雙 11 兩人同時搶購最後 1 台伺服器，因未加悲觀鎖（`FOR UPDATE`），兩人都讀到庫存=1，扣款後庫存變成 -1，財務對帳差額數十萬。
+>
+> **💡 學習策略**：先定位（B-Tree 檢索心智模型）➔ 再理解（ACID 與四種隔離層級）➔ 再操作（動手寫防超賣交易）➔ 再回收（面試 Flashcard 抽考）。
 
 ---
 
@@ -528,38 +531,102 @@ COMMIT;
 
 ---
 
-## 四、面試常見問題整理
+## 四、✋ 空白頁挑戰：高並發庫存防超賣交易設計
 
-### Q1：解釋 ACID 各代表什麼？
+> 🎯 **挑戰情境**：
+> 雙 11 大促銷，某產品 `product_id = 99` 的庫存僅剩最後 1 件。
+> 請在空白編輯器中寫出一組完整的 PostgreSQL Transaction SQL：
+> 1. 開啟交易。
+> 2. 使用正確的「行級排他鎖（Row-Level Exclusive Lock）」鎖定該商品，防止其他並發交易讀取或修改庫存。
+> 3. 檢查庫存是否充足；若充足扣減庫存 1 件，並插入一筆訂單明細。
+> 4. 提交交易。若庫存不足則進行回滾。
 
-> **A**tomicity（原子性）：交易是最小單位，全成功或全失敗。
-> **C**onsistency（一致性）：交易前後資料庫的完整性約束必須成立。
-> **I**solation（隔離性）：多個並發交易互不干擾，透過隔離等級控制。
-> **D**urability（持久性）：COMMIT 後的資料永久保存，靠 WAL 機制保證。
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
 
-### Q2：什麼情況下索引會失效？
+- 鎖定時機：不要等到 `UPDATE` 時才鎖，必須在第一步 `SELECT` 時就加上 `FOR UPDATE`。
+- 原子操作：扣庫存除了程式邏輯防護，SQL 也可以加上防呆條件 `WHERE stock_quantity >= 1`。
+</details>
 
-> 1. 對索引欄位使用函數（`YEAR(date)`）
-> 2. 隱式型別轉換（`INT = '42'`）
-> 3. LIKE 以通配符開頭（`LIKE '%keyword'`）
-> 4. 違反複合索引的最左前綴原則
-> 5. NOT IN / != 操作（通常仍需全表掃描）
+<details>
+<summary>🔑 點擊展開「參考解答（SQL 實作）」</summary>
 
-### Q3：TRUNCATE 和 DELETE 的差異？
+```sql
+BEGIN;
 
-> | | DELETE | TRUNCATE |
-> |---|---|---|
-> | 可加 WHERE | ✅ | ❌ |
-> | 觸發 Trigger | ✅ | ❌ |
-> | 可 ROLLBACK | ✅ | ✅（在交易中） |
-> | 速度 | 慢（逐列） | 快（直接清空） |
-> | 重置 SERIAL | ❌ | ✅ |
+-- 1. 鎖定目標列（排他鎖），若其他連線正在搶購，強制排隊等待
+SELECT product_id, stock_quantity, unit_price
+FROM products
+WHERE product_id = 99
+FOR UPDATE;
 
-### Q4：READ COMMITTED 和 REPEATABLE READ 的差異？
+-- 2. 應用程式在此判斷：stock_quantity 是否 >= 購買量（例如 1）
+-- 若充足，執行扣減並加保險條件（防禦性編程）
+UPDATE products
+SET stock_quantity = stock_quantity - 1
+WHERE product_id = 99 AND stock_quantity >= 1;
 
-> **READ COMMITTED**（PostgreSQL 預設）：每個 SQL 語句都讀取最新的 COMMIT 版本。同一交易中兩次查詢可能看到不同的結果。
->
-> **REPEATABLE READ**：整個交易期間看到的資料快照固定在 BEGIN 時的狀態。適合需要一致性讀取的報表生成場景。
+-- 3. 寫入訂單明細
+INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+VALUES (1001, 99, 1, 89000);
+
+-- 4. 提交交易（此時才會釋放行級鎖）
+COMMIT;
+
+-- 若庫存不足或出錯，由程式捕捉例外並執行：
+-- ROLLBACK;
+```
+</details>
+
+---
+
+## 五、面試核心 Flashcard（先在腦中自問自答，再點開對照）
+
+### 🃏 Card 1：解釋 ACID 各代表什麼？在系統中扮演什麼角色？
+
+<details>
+<summary>🔑 點擊展開「標準擬答」</summary>
+
+- **A**tomicity（原子性）：交易是不可分割的最小單位，所有變更「要麼全部生效，要麼全部回滾」，在 PG 中靠 WAL（預寫日誌）實現。
+- **C**onsistency（一致性）：交易前後資料庫的完整性約束（PK, FK, CHECK, Trigger）必須成立，保證資料狀態合法。
+- **I**solation（隔離性）：多個並發交易互不干擾，透過 MVCC（多版本並發控制）與隔離等級控制避免髒讀與幻讀。
+- **D**urability（持久性）：交易一旦 COMMIT，其變更永久保存於磁碟，即使突然斷電重啟也能透過 WAL 恢復。
+</details>
+
+### 🃏 Card 2：什麼情況下索引會失效？（至少列舉 4 種）
+
+<details>
+<summary>🔑 點擊展開「標準擬答」</summary>
+
+1. **對索引欄位施加運算或函數**：如 `WHERE YEAR(order_date) = 2024`，應改為範圍查詢 `WHERE order_date >= '2024-01-01' AND ...`。
+2. **隱式型別轉換**：索引欄位為字串，卻傳入數字 `WHERE phone = 0912345678`，導致欄位被迫轉型無法走索引樹。
+3. **模糊查詢左前綴通配符**：`LIKE '%keyword'` 無法利用 B-Tree 的有序特性，必須全表掃描（可用 GIN + pg_trgm 解決）。
+4. **違反複合索引最左前綴原則**：建立 `(A, B, C)` 索引，查詢條件只寫 `WHERE B = 1 AND C = 2`，因缺少開頭 A 而無法命中。
+5. **資料庫評估全表掃描更快**：當過濾條件命中的資料佔全表的比例過高（如超過 20%~30%），優化器會放棄索引改採 Seq Scan。
+</details>
+
+### 🃏 Card 3：TRUNCATE 和 DELETE 的底層差異是什麼？
+
+<details>
+<summary>🔑 點擊展開「標準擬答」</summary>
+
+| 特性 | DELETE | TRUNCATE |
+|---|---|---|
+| 條件過濾 | 支援 `WHERE` 條件篩選 | 不支援 `WHERE`，直接清空全表 |
+| 觸發器 | 觸發 Row-level Trigger | 不會觸發 Row-level Trigger（可觸發 Statement-level） |
+| 交易回滾 | 支援 `ROLLBACK` | 在 PostgreSQL 交易內**亦支援** `ROLLBACK` |
+| 運作底層 | 逐列標記為已刪除，產生大量 WAL，磁碟空間不立即釋放 | 直接重置資料頁指標（Data Page），速度極快 |
+| 自增序列 | 不會重置 `SERIAL` | 可透過 `RESTART IDENTITY` 歸零 |
+</details>
+
+### 🃏 Card 4：READ COMMITTED 和 REPEATABLE READ 的實務差異？
+
+<details>
+<summary>🔑 點擊展開「標準擬答」</summary>
+
+- **READ COMMITTED**（PostgreSQL 預設）：每個 SQL 語句執行時都會建立一次最新的快照，能看到其他交易「剛 COMMIT」的最新變更。缺點：同一交易內兩次相同查詢可能讀出不同數值（不可重複讀）。
+- **REPEATABLE READ**：在整個交易執行期間，快照固定在「第一條 SQL 語句發起時」的時間點。同一交易內多次查詢結果保證絕對一致，非常適合需要一致性對帳的長報表。
+</details>
 
 ---
 

@@ -1,6 +1,13 @@
-﻿# 01. Pandas 數據清理與轉換完全手冊
+# 01. Pandas 數據清理與轉換完全手冊
 
-> **模組目標**：掌握商業分析與資料工程中最核心的資料處理函式庫 **Pandas**。徹底搞懂底層向量化（Vectorization）運算原理，告別低效的 Python 迴圈；熟練運用缺失值與異常值清洗、高效記憶體優化技巧；精通多表 Merge / Join、GroupBy 多重聚合、透視表（Pivot Table）以及時間序列滾動分析。結合 B2B 企業資料庫情境，實作具備生產水準的分析管線。
+> **📌 本章定位**：Pandas 是資料分析與特徵工程的「**向量化運算心智模型**」。其核心在於底層連續記憶體（NumPy C-Array）與自動索引對齊（Index Alignment），徹底摒棄低效的 Python 原生物件指標與 `for` 迴圈。
+>
+> **⚠️ 痛點場景（資料分析三大效能地雷）**：
+> 1. **迴圈地獄慢 3,000 倍**：用 `df.iterrows()` 逐行計算百萬筆訂單小計，跑了 40 秒還沒算完；改用一行向量化乘法 `df['price'] * df['qty']` 僅需 0.01 秒。
+> 2. **幽靈賦值警告 SettingWithCopyWarning**：使用鏈式切片 `df[df['city'] == 'Taipei']['sales'] = 100`，修改可能根本沒生效或污染原始物件，產生難以排查的邏輯 Bug。
+> 3. **記憶體無度膨脹**：將大量重複字串（如城市、產業類別）保留為 `object` 型態，500MB 的 CSV 讀進來暴增為 3GB，伺服器瞬間卡頓（改用 `category` 可現省 80% 記憶體）。
+>
+> **💡 學習策略**：先定位（向量化心智）➔ 再理解（Index 對齊與 GroupBy 多重聚合）➔ 再操作（RFM 模型與滾動安全庫存計算）➔ 再回收（Pandas 效能防坑清單）。
 
 ---
 
@@ -339,7 +346,9 @@ df_sub["grade"] = "VIP"  # 安全！絕不會觸發 Warning
 
 ---
 
-## 7. 商業情境綜合練習題（含詳解）
+## 7. 商業情境綜合練習題（實戰動腦自測）
+
+> 💡 **自我檢驗規範**：請先不要展開解答，在 Jupyter Notebook 或 Python 檔案中動手寫出 Pandas 聚合與透視算式，再點開參考擬答對照！
 
 ### 題目一：B2B 客戶價值分析（RFM 模型運算）
 **業務情境**：
@@ -349,7 +358,17 @@ df_sub["grade"] = "VIP"  # 安全！絕不會觸發 Warning
 - **M（Monetary 消費金額）**：該客戶的累計訂單總金額。
 請撰寫一個函式 `calculate_rfm(df_orders, snapshot_date)`，產出每個客戶的 R、F、M 指標，並依 M（消費金額）由大至小排序。
 
-#### 【題目一解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 將 `order_date` 轉為 `pd.to_datetime`。
+- 使用 `groupby("customer_id").agg(...)`，對日期取 `max`，對次數取 `count`，對金額取 `sum`。
+- 計算天數差：`(ref_date - rfm["last_order_date"]).dt.days`。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目一參考擬答」</summary>
+
 ```python
 import pandas as pd
 from datetime import datetime
@@ -389,6 +408,7 @@ orders_test = pd.DataFrame({
 print("=== 客戶 RFM 指標分析結果 ===")
 print(calculate_rfm(orders_test, "2026-06-30"))
 ```
+</details>
 
 ---
 
@@ -398,12 +418,21 @@ print(calculate_rfm(orders_test, "2026-06-30"))
 - 欄位：`category`, `order_date`, `subtotal`
 - 月增率公式：`((當月營收 - 上月營收) / 上月營收) * 100`
 
-#### 【題目二解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 將日期轉為月週期 `dt.to_period("M")`。
+- 使用 `pivot_table(index="category", columns="year_month", values="subtotal", aggfunc="sum")`。
+- 使用 `.pct_change(axis=1) * 100` 沿著橫向欄位方向計算百分比變動。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目二參考擬答」</summary>
+
 ```python
 def calculate_category_mom(df_sales_items: pd.DataFrame) -> pd.DataFrame:
     df = df_sales_items.copy()
     df["order_date"] = pd.to_datetime(df["order_date"])
-    # 轉換為 YYYY-MM 格式字串或 Period
     df["year_month"] = df["order_date"].dt.to_period("M")
     
     # 1. 建立月營收透視表
@@ -419,7 +448,7 @@ def calculate_category_mom(df_sales_items: pd.DataFrame) -> pd.DataFrame:
     mom_table = pivot.pct_change(axis=1) * 100
     mom_table = mom_table.round(2)
     
-    # 合併兩者或展示最近一個月的 MoM
+    # 展示最近一個月的 MoM
     latest_month = pivot.columns[-1]
     prev_month = pivot.columns[-2] if len(pivot.columns) >= 2 else None
     
@@ -439,6 +468,7 @@ items_data = pd.DataFrame({
 print("=== 產品類別營收透視與 MoM 報表 ===")
 print(calculate_category_mom(items_data))
 ```
+</details>
 
 ---
 
@@ -451,23 +481,29 @@ print(calculate_category_mom(items_data))
    - `DIR = current_stock / 最近 7 天平均每日出庫量`
 3. 若 `DIR < 14 天`，標記警示為 `"CRITICAL: 請立即下採購單"`；若 `DIR < 30 天`，標記 `"WARNING: 庫存偏低"`；其餘為 `"NORMAL"`。
 
-#### 【題目三解答程式碼】
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 篩選最近 7 天的紀錄，`groupby("product_id")["qty_out"].sum() / 7.0`。
+- 與產品主表 `merge(..., how="left")`。
+- 防除零處理：若平均消耗為 0 則回傳安全天數 999.0。
+- 使用條件賦值或 `.apply()` 標記警示等級。
+</details>
+
+<details>
+<summary>🔑 點擊展開「題目三參考擬答」</summary>
+
 ```python
 def generate_inventory_alert_report(df_logs: pd.DataFrame, df_products: pd.DataFrame) -> pd.DataFrame:
-    """
-    庫存安全天數預警管線
-    """
     logs = df_logs.copy()
     logs["log_date"] = pd.to_datetime(logs["log_date"])
     
-    # 確保每個產品在最近 7 天內的出庫量被正確加總
     # 取最近 7 天
     max_date = logs["log_date"].max()
-    start_date = max_date - pd.Timedelta(days=6) # 包含最後一天共 7 天
-    
+    start_date = max_date - pd.Timedelta(days=6)
     recent_7d_logs = logs[logs["log_date"] >= start_date]
     
-    # 計算每項產品 7 天內出庫總量，除以 7 取得每日平均消耗量
+    # 計算每項產品 7 天內出庫總量除以 7
     burn_rate = recent_7d_logs.groupby("product_id")["qty_out"].sum().reset_index()
     burn_rate["daily_burn_rate"] = (burn_rate["qty_out"] / 7.0).round(2)
     
@@ -475,17 +511,16 @@ def generate_inventory_alert_report(df_logs: pd.DataFrame, df_products: pd.DataF
     merged = pd.merge(df_products, burn_rate, on="product_id", how="left")
     merged["daily_burn_rate"] = merged["daily_burn_rate"].fillna(0.0)
     
-    # 計算可支撐天數 DIR (防範除以 0)
+    # 計算可支撐天數 DIR (防除以 0)
     def calc_dir(row):
         burn = row["daily_burn_rate"]
         stock = row["current_stock"]
         if burn <= 0:
-            return 999.0 # 無消耗，視為安全
+            return 999.0
         return round(stock / burn, 1)
 
     merged["days_remaining"] = merged.apply(calc_dir, axis=1)
 
-    # 警示等級判斷
     def set_alert(days):
         if days < 14:
             return "CRITICAL: 請立即下採購單"
@@ -498,21 +533,12 @@ def generate_inventory_alert_report(df_logs: pd.DataFrame, df_products: pd.DataF
     
     output_cols = ["product_id", "product_name", "current_stock", "daily_burn_rate", "days_remaining", "alert_level"]
     return merged[output_cols].sort_values("days_remaining", ascending=True).reset_index(drop=True)
-
-# 測試資料
-df_prod_mock = pd.DataFrame({
-    "product_id": ["P101", "P102", "P103"],
-    "product_name": ["車用 MCU 晶片", "光電感測器", "工業伺服主板"],
-    "current_stock": [150, 800, 30]
-})
-df_logs_mock = pd.DataFrame({
-    "log_date": ["2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28", "2026-06-29", "2026-06-30"] * 3,
-    "product_id": ["P101"] * 7 + ["P102"] * 7 + ["P103"] * 7,
-    "qty_out": [20, 15, 25, 30, 10, 18, 22,   # P101 每日平均約 20，庫存 150 -> 約 7.5 天 (CRITICAL)
-                10, 12, 8, 15, 11, 9, 14,     # P102 每日平均約 11，庫存 800 -> 約 70 天 (NORMAL)
-                2, 3, 1, 4, 2, 3, 2]          # P103 每日平均約 2.4，庫存 30 -> 約 12.5 天 (CRITICAL)
-})
-
-print("=== 庫存水位預警系統報告 ===")
-print(generate_inventory_alert_report(df_logs_mock, df_prod_mock))
 ```
+</details>
+
+---
+
+## 🎯 本章收斂總結
+> **💡 核心金句**：
+> 「向量計算莫寫迴圈，連續記憶快如電；透視分組善用 agg，切片賦值 copy 先。」
+

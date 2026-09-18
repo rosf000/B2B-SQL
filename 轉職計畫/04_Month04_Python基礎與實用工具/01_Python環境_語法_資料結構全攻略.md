@@ -1,12 +1,13 @@
 # 01 Python 環境、語法與資料結構全攻略
 
-> **寫在前面：Python 是資料工程師的瑞士刀**
-> SQL 讓你能查詢資料，Python 讓你能**自動化**所有事情：
-> - 每天早上自動抓最新數據、清洗、存到資料庫
-> - 串接 API、處理 JSON、發送 Email 告警
-> - 寫出讓同事可以使用的小工具和報表腳本
+> **📌 本章定位**：SQL 是資料工程的「存取與查詢語言」，而 Python 則是「**自動化膠水與複雜轉換引擎**」。本篇的心智模型在於掌握 Python 原生資料結構（List, Dict, Set, Tuple）的記憶體特性與時間複雜度，寫出優雅（Pythonic）且穩健的自動化腳本。
 >
-> 本篇從零建立 Python 環境，完整覆蓋你在資料工程工作中每天會用到的語法與資料結構。
+> **⚠️ 痛點場景（新手常踩的工程災難）**：
+> 1. **環境污染地獄**：不開 `venv` 虛擬環境直接 `pip install`，把系統 Python 的套件版本搞爛，換一台機器部署直接 ModuleNotFoundError。
+> 2. **效能雪崩 O(N²) 迴圈**：不懂 `dict` / `set` 的 O(1) 查找特性，在大資料處理時在 `list` 裡面反覆巢狀 `for` 查找，1 萬筆資料跑了 10 分鐘還沒結束。
+> 3. **可變物件（Mutability）淺拷貝地雷**：用 `a = b` 複製客戶資料字典，修改了 `a` 卻意外污染了 `b`，導致帳務歷史全毀。
+>
+> **💡 學習策略**：先定位（虛擬環境與資料結構選擇）➔ 再理解（時間複雜度與推導式）➔ 再操作（資料清理流水線實作）➔ 再回收（壞寫法 vs 乾淨寫法對比清單）。
 
 ---
 
@@ -658,14 +659,20 @@ big    = list(filter(lambda x: x > 100000, revenues))  # 只保留 > 100000
 
 ---
 
-## 七、練習題
+## 七、練習題（強制動手，請勿先看解答）
+
+> 💡 **自我檢驗規範**：請先建立一個 `practice.py` 腳本，手動跑出結果後再展開參考解答對照！
 
 ### 題目 1：業績等級分類器
 
 給定一個業務員業績清單（list of dict），輸出每位業務的業績等級。月目標為 100 萬。
+規則：
+- 業績 >= 120% 目標：🏆 超標
+- 業績 >= 100% 目標：✅ 達標
+- 業績 >= 80% 目標：⚠️ 接近達標
+- 其他：❌ 未達標
 
 ```python
-# 輸入資料
 salespeople = [
     {"name": "王小明", "revenue": 1_500_000},
     {"name": "李大華", "revenue": 900_000},
@@ -673,8 +680,20 @@ salespeople = [
     {"name": "陳建國", "revenue": 600_000},
 ]
 monthly_target = 1_000_000
+```
 
-# 解答
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 寫一個分類函式接收業務字典，使用 `if/elif/else` 條件判斷回傳等級。
+- 使用 List Comprehension 搭配字典解包語法 `{**sp, "level": ...}` 產出新列表。
+- 最後使用 `sorted()` 搭配 `key=lambda x: x["revenue"]` 依業績降冪輸出。
+</details>
+
+<details>
+<summary>🔑 點擊展開「參考解答」</summary>
+
+```python
 def classify_performance(sp, target):
     r = sp["revenue"]
     if r >= target * 1.2:
@@ -682,7 +701,7 @@ def classify_performance(sp, target):
     elif r >= target:
         level = "✅ 達標"
     elif r >= target * 0.8:
-        level = "⚠️  接近達標"
+        level = "⚠️ 接近達標"
     else:
         level = "❌ 未達標"
     return {**sp, "level": level}
@@ -691,39 +710,55 @@ results = [classify_performance(sp, monthly_target) for sp in salespeople]
 for r in sorted(results, key=lambda x: x["revenue"], reverse=True):
     print(f"{r['name']:8} NT${r['revenue']:>12,} {r['level']}")
 ```
+</details>
 
 ---
 
-### 題目 2：字典合併與統計
+### 題目 2：字典合併與年度累計統計
 
-給定多個月份的業績字典（各月份的業務:金額），計算每位業務的年度累計業績。
+給定多個月份的業績字典（各月份的業務:金額），請用 Pythonic 方式計算每位業務的年度累計業績（單位：百萬），並由高到低排序。
 
 ```python
-# 輸入
 monthly_data = [
     {"王小明": 500_000, "李大華": 300_000},
     {"王小明": 600_000, "張美玲": 800_000},
     {"李大華": 450_000, "張美玲": 700_000, "王小明": 550_000},
 ]
+```
 
-# 解答
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 善用 `collections.defaultdict(int)`，避免每次累加都要判斷 key 是否存在的繁瑣代碼。
+- 排序後使用 Dict Comprehension 將金額除以 `1_000_000` 轉換為百萬單位。
+</details>
+
+<details>
+<summary>🔑 點擊展開「參考解答」</summary>
+
+```python
 from collections import defaultdict
+
 annual = defaultdict(int)
 for month in monthly_data:
     for sp, rev in month.items():
         annual[sp] += rev
 
 # 用 Dict Comprehension 轉為百萬單位並排序
-annual_millions = {k: v/1_000_000 for k, v in sorted(annual.items(), key=lambda x: x[1], reverse=True)}
+annual_millions = {k: v / 1_000_000 for k, v in sorted(annual.items(), key=lambda x: x[1], reverse=True)}
 print(annual_millions)
-# {'王小明': 1.65, '張美玲': 1.5, '李大華': 0.75}
+# 輸出：{'王小明': 1.65, '張美玲': 1.5, '李大華': 0.75}
 ```
+</details>
 
 ---
 
-### 題目 3：資料清理流水線
+### 題目 3：資料清理流水線（過濾與正規化）
 
-給定一個含有髒資料的客戶清單，用 List Comprehension 和 Dict Comprehension 進行清洗。
+給定一個含有髒資料的客戶清單，請完成資料清理：
+1. 去除名稱前後多餘空白；若名稱為空白則直接剔除該筆資料。
+2. 將營收轉為整數；若營收為負數則修正為 0。
+3. 將狀態字串全數轉為大寫。
 
 ```python
 raw_customers = [
@@ -732,13 +767,24 @@ raw_customers = [
     {"id": 3, "name": "  全球資安  ",  "revenue": "800000",  "status": "ACTIVE"},
     {"id": 4, "name": "",              "revenue": "300000",  "status": "active"},
 ]
+```
 
-# 解答
+<details>
+<summary>🔍 點擊展開「思維引導」</summary>
+
+- 封裝一個 `clean_customer` 轉換函式。
+- 使用 List Comprehension 結合 `if c["name"].strip()` 達成一行過濾無效資料。
+</details>
+
+<details>
+<summary>🔑 點擊展開「參考解答」</summary>
+
+```python
 def clean_customer(c):
     return {
         "id":      c["id"],
         "name":    c["name"].strip(),
-        "revenue": max(0, int(c["revenue"])),   # 負值改為 0
+        "revenue": max(0, int(c["revenue"])),   # 負值修正為 0
         "status":  c["status"].upper()
     }
 
@@ -749,6 +795,7 @@ cleaned = [
 ]
 print(cleaned)
 ```
+</details>
 
 ---
 

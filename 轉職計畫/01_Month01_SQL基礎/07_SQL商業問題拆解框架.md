@@ -1,7 +1,10 @@
 # 07 — SQL 商業問題拆解框架
 
-> **「不要看到題目就寫 SQL。先拆問題，再寫 SQL。」**
-> 這個習慣是「SQL 初學者」和「資料工程師」的分水嶺。
+> 🎯 **這一節最重要的一件事（心智定位）**：
+> 寫 SQL 是最後 10% 的打字翻譯；前 90% 的關鍵在於將模糊的商業白話精準拆解為「指標、維度、過濾器、表血緣與資料粒度」。
+>
+> 💼 **為什麼非學不可（避坑痛點）**：
+> 沒先拆解需求就直接盲敲 SELECT，往往寫到一半發現 JOIN 錯表、粒度失控，最後產出看似有數字卻回答不了主管問題的廢棄報表，返工浪費整週時間！
 
 ---
 
@@ -9,7 +12,7 @@
 
 初學者的流程：
 ```
-看到題目 → 馬上開始寫 SELECT → 卡住 → 問 AI → 複製答案
+看到題目 → 馬上開始寫 SELECT → 卡住 → 問 AI → 複製答案（腦袋一片空白）
 ```
 
 工程師的流程：
@@ -17,7 +20,7 @@
 看到題目 → 拆解需求 → 確認 Table 和 Grain → 設計 SQL 結構 → 寫 SQL → 驗證結果
 ```
 
-**第二個流程多了 2 分鐘，但正確率高 10 倍。**
+**第二個流程多了 2 分鐘，但正確率高 10 倍，且能真正建立獨立解決商業問題的工程直覺。**
 
 ---
 
@@ -224,11 +227,11 @@ GROUP BY s.name;
 
 ## 自我測驗
 
-拿這道題練習拆解框架（不要馬上寫 SQL）：
+拿這道進階商業題練習拆解框架（⚠️ **請打開記事本先自己填寫，切勿直接偷看下方折疊！**）：
 
 > **「哪些客戶在過去 12 個月內，每季都有下單，但平均訂單金額在下降？」**
 
-用模板填寫：
+請在你的筆記本中用模板填寫：
 - Business Question：
 - Metric：
 - Dimension：
@@ -239,7 +242,51 @@ GROUP BY s.name;
 - Aggregation：
 - Expected Result：
 
-寫完後再開始寫 SQL。
+<details>
+<summary>💡 需要拆解提示嗎？（點擊展開提示）</summary>
+
+1. 「過去 12 個月」是 Filter：`order_date >= NOW() - INTERVAL '1 year'`。
+2. 「每季都有下單」代表一共有 4 個季度，計算不重複季度數 `COUNT(DISTINCT EXTRACT(QUARTER FROM order_date)) = 4`。
+3. 「平均金額下降」在單純 SQL 基礎篇需要用到 CTE 或比較前後季度（在 Month 02 的 Window Functions `LAG()` 是最標準解法）。
+</details>
+
+<details>
+<summary>✅ 填完了？點擊對照標準拆解結果</summary>
+
+```
+Business Question：
+  找出持續黏著（近一年四季皆有單）但客單價呈現衰退的高風險萎縮客戶
+
+Metric：
+  1. 活躍季度數：COUNT(DISTINCT EXTRACT(QUARTER FROM order_date))
+  2. 季度平均訂單金額：AVG(total_amount)
+
+Dimension：
+  customer_id, 季度（QUARTER）
+
+Filter：
+  - order_date >= 當前日期 - 1 年
+  - status = 'COMPLETED'
+
+Required Tables：
+  - customers, orders
+
+Join Key：
+  customers.customer_id = orders.customer_id
+
+Data Grain：
+  最終結果應為「每家高風險客戶一列」
+
+Aggregation：
+  第一層按 customer + quarter 分組，第二層按 customer 評估趨勢
+
+Expected Result：
+  少數幾家老客戶（警示名單），欄位：customer_id, company_name, warning_flag
+```
+</details>
+
+> 💡 **商業問題拆解核心收斂**：
+> **先定指標再定維，篩選時間表相隨；粒度清楚方下筆，拆解先行百戰歸。**
 
 ---
 
