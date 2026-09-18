@@ -424,6 +424,10 @@ CROSS JOIN 產生兩張表的**所有組合**（m 列 × n 列 = m×n 列）。�
 
 **合理使用 1**：生成「所有月份 × 所有業務」的報表骨架（避免某月無業績就消失）
 
+> 💡 **小叮嚀（進階時序語法提前預覽）**：  
+> 下方範例中使用了 `generate_series()`（產生連續月份）與 `DATE_TRUNC()`（日期截斷到月初）。如果你還沒看過這兩個語法，完全不用擔心！我們在第 03 篇《日期字串處理與效能優化入門》會有專章深入講解。  
+> 這裡的核心學習目標是：**理解如何用 `CROSS JOIN` 笛卡兒積生成「月份 × 業務」的完整骨架矩陣，再用 `LEFT JOIN` 補齊零業績月份**！
+
 ```sql
 -- 第一步：產生 2024 年 1~12 月的月份序列
 WITH months AS (
@@ -628,41 +632,66 @@ ORDER BY 超出均值百分比 DESC;
 
 ---
 
-### 題目 2：連續成長月份識別
+### 題目 2：跨部門訂單貢獻度與高於平均績效分析（多層 CTE 拆解）
 
-**情境**：找出「連續 3 個月業績都在成長」的業務員（用來作為績效表彰的依據）。
+**情境**：財務部希望找出每位業務員「單筆訂單金額大於該部門平均訂單金額」的所有成交通知單，並計算高出部門平均多少百分比，以利評選季度卓越專案。
+
+<details>
+<summary>💡 思維導引與步驟提示（點擊展開）</summary>
+
+1. **第一層 CTE (`dept_avg_orders`)**：將 `orders` 與 `salespeople` 關聯，以 `department` 分組，計算各部門已完成訂單（`COMPLETED`）的平均訂單金額 `ROUND(AVG(total_amount), 2)`。
+2. **第二層 CTE (`above_avg_orders`)**：篩選出每筆訂單的 `total_amount` 大於該部門平均值的紀錄，並計算超出金額。
+3. **最終輸出**：關聯 `salespeople` 與 `customers`，列出業務姓名、部門、客戶名稱、訂單編號、訂單金額、部門平均金額、超出百分比。
+</details>
+
+<details>
+<summary>🎯 參考實作代碼（自我檢測完成後再看）</summary>
 
 ```sql
--- 解答
-WITH monthly_sales AS (
+-- 第一步：計算各部門的平均訂單金額
+WITH dept_avg AS (
     SELECT
-        salesperson_id,
-        DATE_TRUNC('month', order_date)::date AS month,
-        SUM(total_amount) AS monthly_revenue
-    FROM orders
-    WHERE status = 'COMPLETED'
-    GROUP BY salesperson_id, DATE_TRUNC('month', order_date)
+        s.department,
+        ROUND(AVG(o.total_amount), 2) AS avg_dept_order_amount
+    FROM orders o
+    JOIN salespeople s ON o.salesperson_id = s.salesperson_id
+    WHERE o.status = 'COMPLETED'
+    GROUP BY s.department
 ),
-with_growth AS (
+-- 第二步：篩選出大於所屬部門平均的成交通知單
+above_avg AS (
     SELECT
-        salesperson_id,
-        month,
-        monthly_revenue,
-        LAG(monthly_revenue, 1) OVER (PARTITION BY salesperson_id ORDER BY month) AS prev_1,
-        LAG(monthly_revenue, 2) OVER (PARTITION BY salesperson_id ORDER BY month) AS prev_2
-    FROM monthly_sales
+        o.order_id,
+        o.customer_id,
+        o.salesperson_id,
+        o.total_amount,
+        s.department,
+        da.avg_dept_order_amount,
+        ROUND(
+            (o.total_amount - da.avg_dept_order_amount) / da.avg_dept_order_amount * 100,
+            1
+        ) AS pct_above_dept_avg
+    FROM orders o
+    JOIN salespeople s ON o.salesperson_id = s.salesperson_id
+    JOIN dept_avg da ON s.department = da.department
+    WHERE o.status = 'COMPLETED'
+      AND o.total_amount > da.avg_dept_order_amount
 )
-SELECT DISTINCT
-    s.name AS 業務姓名,
-    wg.month AS 連續成長截止月份
-FROM with_growth wg
-JOIN salespeople s ON wg.salesperson_id = s.salesperson_id
-WHERE wg.monthly_revenue > wg.prev_1
-  AND wg.prev_1 > wg.prev_2
-  AND wg.prev_1 IS NOT NULL
-  AND wg.prev_2 IS NOT NULL
-ORDER BY 連續成長截止月份 DESC;
+-- 第三步：關聯業務與客戶名稱產出報表
+SELECT
+    s.name                  AS 業務姓名,
+    aa.department           AS 部門,
+    c.company_name          AS 客戶名稱,
+    aa.order_id             AS 訂單編號,
+    aa.total_amount         AS 訂單金額,
+    aa.avg_dept_order_amount AS 部門平均金額,
+    aa.pct_above_dept_avg   AS 超出部門平均百分比
+FROM above_avg aa
+JOIN salespeople s ON aa.salesperson_id = s.salesperson_id
+JOIN customers c ON aa.customer_id = c.customer_id
+ORDER BY aa.department, aa.pct_above_dept_avg DESC;
 ```
+</details>
 
 ---
 

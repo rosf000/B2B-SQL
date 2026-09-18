@@ -138,8 +138,8 @@ SELECT
 FROM salespeople s
 JOIN orders o ON s.salesperson_id = o.salesperson_id
 WHERE o.status = 'COMPLETED'
-  -- 以 2024 年 11 月為例驗證同分場景（實務生產環境中可改為 CURRENT_DATE）
-  AND DATE_TRUNC('month', o.order_date) = '2024-11-01'::date
+  -- 以 2024 年 11 月為例驗證同分場景（使用 Month 01 學過的標準日期範圍過濾）
+  AND o.order_date >= '2024-11-01' AND o.order_date < '2024-12-01'
 GROUP BY s.salesperson_id, s.name
 ORDER BY 月業績 DESC;
 ```
@@ -281,11 +281,18 @@ ORDER BY total_spent DESC;
 
 ### 3.1 LAG — 環比分析（與上一期比較）
 
-`LAG(column, n, default)` 取**前 n 列**的值，最常用於計算環比成長率。
+`LAG(column, n, default)` 取**前 n 列**的值，最常用於計算環比成長率（Month-over-Month, MoM）。
+
+> 💡 **語法先備小補帖：為什麼這裡出現了 `DATE_TRUNC`？**  
+> 在真實商業情境中，訂單是「每天」零散產生的。在計算「月度環比」前，我們必須先將每天的訂單「按月份歸納成一筆」：  
+> - **`DATE_TRUNC('month', order_date)`**：PostgreSQL 的日期截斷函數，它會把時間無條件「截斷到該月 1 號」（例如 `2024-11-25` 與 `2024-11-03` 都會被歸納為 `2024-11-01`），這樣就能用 `GROUP BY` 按月分組加總。  
+> - **`::date`**：PostgreSQL 的強制型別轉換符號，將截斷後的完整時間戳（Timestamp）轉為乾淨的純日期格式。  
+> 📌 *免驚！下週 [03_日期字串處理與效能優化入門.md](./03_日期字串處理與效能優化入門.md) 會對日期函數做地毯式深度解析；本章我們先把它當作「按月歸納」的現成工具，將學習焦點集中在視窗函數 `LAG()` 與 `LEAD()` 上！*
 
 ```sql
 WITH monthly_revenue AS (
     SELECT
+        -- DATE_TRUNC('month', ...) 將訂單日期統一歸入該月 1 號，以便按月聚合
         DATE_TRUNC('month', order_date)::date  AS month,
         SUM(total_amount)                       AS revenue
     FROM orders
@@ -457,7 +464,8 @@ WITH monthly_revenue AS (
         SUM(total_amount)                      AS revenue
     FROM orders
     WHERE status = 'COMPLETED'
-      AND EXTRACT(YEAR FROM order_date) = 2024
+      -- 篩選 2024 全年度訂單（標準日期範圍過濾）
+      AND order_date >= '2024-01-01' AND order_date < '2025-01-01'
     GROUP BY DATE_TRUNC('month', order_date)
 )
 SELECT
