@@ -596,27 +596,42 @@ ROWS BETWEEN   UNBOUNDED PRECEDING    AND    UNBOUNDED FOLLOWING
 
 ---
 
-#### ③ 實戰對比：寫與不寫的差別
+#### ③ 實戰對比：在 DBeaver 直接執行
+
+只要沿用 4.1 的 `WITH monthly_revenue` CTE，並在 `OVER()` 內一樣加上 `PARTITION BY year` 分年份，即可清楚看到錯誤與正確的差別（整段直接複製至 DBeaver 即可執行）：
 
 ```sql
--- ❌ 錯誤寫法：未指定框架，預設只看到當前列
+WITH monthly_revenue AS (
+    SELECT
+        EXTRACT(YEAR FROM order_date)::int   AS year,
+        EXTRACT(MONTH FROM order_date)::int  AS month,
+        SUM(total_amount)                    AS revenue
+    FROM orders
+    WHERE status = 'COMPLETED'
+    GROUP BY EXTRACT(YEAR FROM order_date), EXTRACT(MONTH FROM order_date)
+)
 SELECT
-    month,
-    revenue,
-    LAST_VALUE(revenue) OVER (
-        ORDER BY month
-    ) AS 錯誤的最後值  -- 結果永遠等於當月 revenue！
-FROM monthly_revenue;
+    year                                                AS 年份,
+    month                                               AS 月份,
+    revenue                                             AS 當月業績,
 
--- ✅ 正確寫法：手動將框架擴展至「全組最後一列」
-SELECT
-    month,
-    revenue,
+    -- ❌ 錯誤示範：未指定框架，預設只看到「當前列」
+    -- 結果永遠等於當月 revenue 自己！
     LAST_VALUE(revenue) OVER (
+        PARTITION BY year
+        ORDER BY month
+    )                                                   AS 錯誤的年底最後值,
+
+    -- ✅ 正確寫法：明確將視窗拉滿至「整組最後一列」
+    -- 每個月都能成功抓到該年 12 月的業績！
+    LAST_VALUE(revenue) OVER (
+        PARTITION BY year
         ORDER BY month
         ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
-    ) AS 正確的最後值  -- 每一列都能看到 12 月的業績！
-FROM monthly_revenue;
+    )                                                   AS 正確的年底最後值
+
+FROM monthly_revenue
+ORDER BY year, month;
 ```
 
 **📊 執行結果對比示意**：
