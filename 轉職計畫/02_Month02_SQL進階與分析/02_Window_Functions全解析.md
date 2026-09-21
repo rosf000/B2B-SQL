@@ -563,30 +563,75 @@ ORDER BY year, month;
 
 ---
 
-### 4.2 LAST_VALUE 的陷阱
+### 4.2 LAST_VALUE 的陷阱與視窗框架（Frame）
 
-`LAST_VALUE` 有個經常踩坑的預設行為：**視窗框架預設只延伸至「當前列」**，而非整個分組的末尾！若不明確指定框架範圍，`LAST_VALUE` 每一列都會回傳自己，而非真正的最後一筆。
+#### ① 為什麼會有這個陷阱？（預設行為的隱形坑）
+`FIRST_VALUE` 和 `LAST_VALUE` 看似是對稱的雙胞胎，但實際執行時大家會發現：**`FIRST_VALUE` 怎麼寫都對，`LAST_VALUE` 卻常常失靈**！
+
+這是因為當你在 `OVER ()` 裡面寫了 `ORDER BY` 時，SQL 標準底層會**偷偷幫你加上一段預設的視窗框架（Window Frame）**：
+> 預設框架：`RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`  
+> （白話文：**從分組的第一列，一直算到「當前這整列」為止**）
+
+* 對 `FIRST_VALUE` 來說：第一列永遠在視窗的第一個位置，所以不管算到哪一列，抓「第一個」都是正確的！
+* 對 `LAST_VALUE` 來說：因為視窗只看到**當前列**，它眼中的「最後一列」永遠就是**當前自己這一列**！這導致算出來的最後值跟當前值一模一樣，完全沒有意義。
+
+---
+
+#### ② 語法拆解：`ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`
+為了讓 `LAST_VALUE` 能夠看到「整組真正的最後一筆」，我們必須手動打破預設限制，把視窗框架直接拉滿到整組的最底端：
+
+```text
+ROWS BETWEEN   UNBOUNDED PRECEDING    AND    UNBOUNDED FOLLOWING
+────┬─────    ──────────┬────────           ──────────┬────────
+    │                   │                             │
+ 指定依實體列     起點：無上限往前（第一列）         終點：無上限往後（最後一列）
+```
+
+* **`ROWS`**：指定以「資料列（Row）」為計算單位。
+* **`BETWEEN <起點> AND <終點>`**：定義視窗的搜尋範圍區間。
+* **`UNBOUNDED PRECEDING`**：起點為「最頂端第一列」（無邊界無上限往前）。
+* **`UNBOUNDED FOLLOWING`**：終點為「最底端最後一列」（無邊界無上限往後）。
+
+> 💡 **白話翻譯**：「請幫我把視窗打開到最大——從最上面第一列，一直看到最下面最後一列！」
+
+---
+
+#### ③ 實戰對比：寫與不寫的差別
 
 ```sql
--- ❌ 錯誤寫法：LAST_VALUE 只到當前列為止，結果和當前值相同
+-- ❌ 錯誤寫法：未指定框架，預設只看到當前列
 SELECT
     month,
     revenue,
-    LAST_VALUE(revenue) OVER (ORDER BY month) AS 錯誤的最後值
+    LAST_VALUE(revenue) OVER (
+        ORDER BY month
+    ) AS 錯誤的最後值  -- 結果永遠等於當月 revenue！
 FROM monthly_revenue;
 
--- ✅ 正確寫法：明確指定視窗框架到分組結束
+-- ✅ 正確寫法：手動將框架擴展至「全組最後一列」
 SELECT
     month,
     revenue,
     LAST_VALUE(revenue) OVER (
         ORDER BY month
         ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
-    ) AS 正確的最後值
+    ) AS 正確的最後值  -- 每一列都能看到 12 月的業績！
 FROM monthly_revenue;
 ```
 
-> ⚠️ **視窗框架（Frame）** 是 Window Function 中最容易踩坑的部分，下一節詳細解說。
+**📊 執行結果對比示意**：
+
+| month | revenue | 錯誤的最後值 (預設到當前列) | 正確的最後值 (展開到整組末尾) |
+|:---:|---:|---:|---:|
+| 1 月 | 100 萬 | **100 萬** (只看到 1 月) | **300 萬** (整組最後是 12 月) |
+| 2 月 | 120 萬 | **120 萬** (只看到 2 月) | **300 萬** |
+| 3 月 | 150 萬 | **150 萬** (只看到 3 月) | **300 萬** |
+| … | … | … | **300 萬** |
+| 12 月 | 300 萬 | **300 萬** | **300 萬** |
+
+> 📌 **觀念總結**：
+> `FIRST_VALUE` 不需要特別指定框架，因為起點預設本來就是第一列；但只要用到 **`LAST_VALUE`**，就必須牢記加上 `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`，否則它永遠只會回傳自己！
+> （在接下來的 **第五節**，我們會更深入介紹視窗框架如何用來做「累積加總」與「滑動平均」。）
 
 ---
 
