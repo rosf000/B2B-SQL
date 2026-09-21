@@ -548,6 +548,19 @@ FROM monthly_revenue
 ORDER BY year, month;
 ```
 
+> [!IMPORTANT]
+> #### 為什麼視窗一定要寫 `PARTITION BY year ORDER BY month`？
+>
+> `monthly_revenue` 是一張**跨年度的平表**（2023 全年 + 2024 全年混在一起）。若省略 `PARTITION BY year`，視窗就會橫跨所有年份，`FIRST_VALUE` 只會抓到「全表 month 最小的那一筆」，導致 2024 年全年都拿 2023-01 做基準，完全失去「年初基準比較」的商業意義。
+>
+> | 視窗寫法 | `FIRST_VALUE` 抓到的 | 結果 |
+> |:---|:---|:---:|
+> | `PARTITION BY year ORDER BY month` | **各年自己的 1 月** | ✅ 正確 |
+> | `ORDER BY year, month`（無 PARTITION BY） | 永遠是 2023-01 | ❌ 2024 基準錯誤 |
+> | `ORDER BY month`（只按月排） | 2023 與 2024 同月混排，結果不穩定 | 💥 不可預期 |
+>
+> **`PARTITION BY year` 的作用是「每年重新歸零」**——讓視窗在跨過年份邊界時強制重置，`FIRST_VALUE` 才能各自抓到「那一年的 1 月」。這與 LAG 使用 `PARTITION BY salesperson_id` 防止跨人污染的道理完全相同：**不加 PARTITION BY，視窗就是整張大平表；加了，才能按商業邏輯分組隔離。**
+
 ---
 
 ### 4.2 LAST_VALUE 的陷阱
