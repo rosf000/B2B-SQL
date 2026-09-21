@@ -47,13 +47,17 @@
 
 ## 一、視窗函數基礎語法
 
-> 🎯 **這一節最重要的一件事（心智定位）**：
-> 視窗函數的本質，是在「不折疊原始資料列」的前提下，為每筆資料開一扇窗，讓它能「轉頭偷看」群體統計值。
->
-> 💼 **為什麼非學不可（避坑痛點）**：
-> 主管要看「每筆訂單佔該客戶總消費的比例」或「連續兩月業績下滑預警」，如果用傳統 GROUP BY，資料列數會被強制壓縮，你只能被迫做痛苦的多層自關聯（Self-Join），代碼冗長且執行極慢！
+### 1.1 基本概念：什麼是「視窗」？
 
-所有視窗函數都遵循相同的語法骨架：
+> 🎯 **心智定位（最重要的一件事）**：
+> 視窗函數的本質，是在「不折疊原始資料列」的前提下，為每筆資料開一扇窗，讓它得以「旁觀」整個群體的統計值，同時保留自身明細。
+>
+> 💼 **為什麼非學不可（痛點場景）**：
+> 主管要看「每筆訂單佔該客戶總消費的比例」或「連續兩月業績下滑預警」——若只用傳統 GROUP BY，資料列數會被強制壓縮，你只能硬啃多層自關聯（Self-Join），程式冗長且執行緩慢！
+
+### 1.2 語法骨架
+
+所有視窗函數都共享相同的語法結構：
 
 ```sql
 函數名稱() OVER (
@@ -73,9 +77,9 @@
 
 ---
 
-### 1.2 💡 深度解密：視窗函數在 SQL 執行順序中的真正位置
+### 1.3 💡 深度解密：視窗函數在 SQL 執行順序中的真正位置
 
-很多工程師會疑惑：「視窗函數算是一個獨立的執行階段嗎？為什麼它不能寫在 `WHERE` 裡？」
+許多學習者會疑惑：「視窗函數算是獨立的執行階段嗎？為什麼它不能直接寫在 `WHERE` 裡過濾？」
 
 > 📌 **核心本質**：
 > **視窗函數並不是獨立的頂層子句，它在語法上附屬於 `SELECT` 清單中；而在資料庫的底層邏輯執行順序中，它是 `SELECT` 階段內部「投影前先完成」的第一道計算。**
@@ -101,7 +105,7 @@
 7. LIMIT / OFFSET  — 截取特定筆數
 ```
 
-#### 🧠 這個「底層順序」為我們解答了 3 個實務大疑惑：
+#### 🧠 透過這個底層順序，可以解答 3 個實務大疑惑：
 
 1. **疑惑一：為什麼視窗函數絕對不能寫在 `WHERE` 裡面？**
    * 因為 `WHERE`（Step 2）在 `SELECT`（Step 5）之前就執行完了！資料庫在過濾每一列時，視窗函數根本**還沒開始計算**，所以引擎會直接報錯：`ERROR: window functions are not allowed in WHERE`。
@@ -237,10 +241,10 @@ ORDER BY 地區, 區內排名;
 
 ### 2.3 NTILE — 客戶消費分層
 
-`NTILE(n)` 將資料均分為 n 個桶（bucket），常用於：
-- 四分位分析（NTILE(4)）
-- 客戶分級（黃金/白銀/銅牌/一般）
-- RFM 評分前置計算
+`NTILE(n)` 將資料均分為 n 個區段（bucket），常見應用場景包括：
+- 四分位分析（`NTILE(4)`）
+- 客戶消費分級（黃金 / 白銀 / 銅牌 / 一般）
+- RFM 評分前置分層計算
 
 ```sql
 WITH customer_total AS (
@@ -273,7 +277,7 @@ ORDER BY total_spent DESC;
 ```
 
 > 💡 **排名函數核心收斂**：
-> **ROW_NUMBER 唯一不重複，RANK 同分跳號佔位，DENSE_RANK 緊密不跳號；Top N 篩選必包 CTE。**
+> `ROW_NUMBER` 唯一不重複；`RANK` 同分跳號佔位；`DENSE_RANK` 緊密不跳號；**Top N 篩選必須透過 CTE 封裝才能在外層 `WHERE` 過濾！**
 
 ---
 
@@ -480,9 +484,9 @@ ORDER BY salesperson_id, month;
 
 ### 3.3 LEAD — 往後預覽
 
-`LEAD(column, n)` 取**後 n 列**的值，常用於：
-- 計算「距離下次購買的天數」
-- 預覽下一個事件
+`LEAD(column, n)` 取**後 n 列**的值，常見應用場景：
+- 計算每次購買後「距下次購買」的間隔天數
+- 預覽下一個業務事件或價格變動
 
 ```sql
 -- 情境：計算每位客戶每次購買後，距離下次購買的間隔天數
@@ -507,7 +511,7 @@ ORDER BY c.company_name, o.order_date;
 ```
 
 > 💡 **位移函數核心收斂**：
-> **LAG 往前偷看環比差，LEAD 往後預覽下一期；首期缺失為 NULL，COALESCE 補零免報錯。**
+> `LAG` 往前偷看做環比，`LEAD` 往後預覽下一期；首期缺失自動為 `NULL`，必要時用 `COALESCE` 補預設值。
 
 ---
 
@@ -548,7 +552,7 @@ ORDER BY year, month;
 
 ### 4.2 LAST_VALUE 的陷阱
 
-`LAST_VALUE` 有個必須注意的預設行為：**預設視窗框架只到當前列**，不是整個分組的最後一列！
+`LAST_VALUE` 有個經常踩坑的預設行為：**視窗框架預設只延伸至「當前列」**，而非整個分組的末尾！若不明確指定框架範圍，`LAST_VALUE` 每一列都會回傳自己，而非真正的最後一筆。
 
 ```sql
 -- ❌ 錯誤寫法：LAST_VALUE 只到當前列為止，結果和當前值相同
@@ -697,7 +701,7 @@ ORDER BY 地區, 地區排名;
 ```
 
 > 💡 **視窗框架核心收斂**：
-> **ORDER BY 預設累積到當前，加 UNBOUNDED FOLLOWING 算全域；ROWS 限定實體列，滑動均值消波動。**
+> 省略框架時，`ORDER BY` 預設累積到當前列；加上 `UNBOUNDED FOLLOWING` 才能涵蓋整個分組；`ROWS` 限定實體列數，是做滑動均值、消除季節波動的關鍵利器。
 
 ---
 
@@ -1116,35 +1120,44 @@ ORDER BY month DESC, region;
 </details>
 
 > 💡 **視窗函數綜合實戰核心收斂**：
-> **明細保留不壓縮，開窗計算偷看周邊；排名位移加框架，複雜分析降維打擊。**
-
----
+> 明細保留不壓縮，開窗計算旁觀群體；排名、位移、框架三組工具各司其職，複雜分析一次到位。
 
 ---
 
 ## 八、本章重點彙整
 
-```
-排名函數
-  ROW_NUMBER() — 唯一序號，取 Top N 首選
-  RANK()       — 同分跳號，體育競賽風格
-  DENSE_RANK() — 同分不跳號，客戶分級首選
-  NTILE(n)     — 等分切割，四分位分析
+### 排名函數
 
-位移函數
-  LAG(col, n)  — 取前 n 列 → 環比分析
-  LEAD(col, n) — 取後 n 列 → 購買間隔分析
+| 函數 | 同分處理 | 典型用途 |
+|:---|:---|:---|
+| `ROW_NUMBER()` | 強制唯一，無並列 | 分頁、取 Top N（每人一名） |
+| `RANK()` | 並列後跳號 | 體育競賽、有缺號的公開排行 |
+| `DENSE_RANK()` | 並列後不跳號 | 客戶等級分層、RFM 評分 |
+| `NTILE(n)` | 均分為 n 個區段 | 四分位分析、百分位切割 |
 
-彙總型視窗函數
-  SUM() OVER (ORDER BY ... ROWS BETWEEN ...)  → 累積加總
-  AVG() OVER (ROWS BETWEEN n PRECEDING ...)   → 滑動平均
-  SUM() OVER (PARTITION BY ...)               → 分組佔比
+### 位移函數
 
-視窗框架
-  UNBOUNDED PRECEDING AND CURRENT ROW         → 累積（最常用）
-  n PRECEDING AND CURRENT ROW                 → 滑動視窗
-  UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING → 整個分組
-```
+| 函數 | 方向 | 典型用途 |
+|:---|:---|:---|
+| `LAG(col, n)` | 往前取第 n 列 | 環比（MoM）、同比前置計算 |
+| `LEAD(col, n)` | 往後取第 n 列 | 購買間隔天數、下一事件預覽 |
+
+### 彙總型視窗函數
+
+| 寫法 | 效果 |
+|:---|:---|
+| `SUM() OVER (ORDER BY … ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)` | 累積加總（Running Total） |
+| `AVG() OVER (ROWS BETWEEN n PRECEDING AND CURRENT ROW)` | 滑動平均（Moving Average） |
+| `SUM() OVER (PARTITION BY …)` | 分組佔比分母計算 |
+
+### 視窗框架速查
+
+| 框架語法 | 意涵 |
+|:---|:---|
+| `UNBOUNDED PRECEDING AND CURRENT ROW` | 從頭累積到當前列（最常用） |
+| `n PRECEDING AND CURRENT ROW` | 固定 n+1 列的滑動視窗 |
+| `UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING` | 涵蓋整個分組（配合 LAST_VALUE） |
+| `CURRENT ROW AND UNBOUNDED FOLLOWING` | 當前列至末尾（逆向累積） |
 
 ---
 
