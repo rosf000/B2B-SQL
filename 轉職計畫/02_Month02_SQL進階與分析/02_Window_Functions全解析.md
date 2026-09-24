@@ -1082,15 +1082,15 @@ ORDER BY annual_spending DESC;
 ```sql
 WITH monthly AS (
     SELECT
-        DATE_TRUNC('month', order_date)::date AS month,
+        EXTRACT(MONTH FROM order_date)::int   AS month,
         SUM(total_amount)                     AS revenue
     FROM orders
     WHERE status = 'COMPLETED'
-      AND EXTRACT(YEAR FROM order_date) = 2024
-    GROUP BY DATE_TRUNC('month', order_date)
+      AND order_date >= '2024-01-01' AND order_date < '2025-01-01'
+    GROUP BY EXTRACT(MONTH FROM order_date)
 )
 SELECT
-    TO_CHAR(month, 'YYYY-MM')                                AS 月份,
+    month                                                    AS 月份,
     revenue                                                  AS 當月業績,
     SUM(revenue) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
                                                              AS 累積業績,
