@@ -625,7 +625,7 @@ pytest --cov=app --cov-report=term-missing
 
 ## 🔗 章節導航
 
-- **前一篇**：[02_Pydantic資料驗證與CRUD實作.md](./02_Pydantic資料驗證與CRUD實作.md)（Pydantic V2 強型別契約與防禦性 CRUD）
+- **前一篇**：[0**2_Pydantic資料驗證與CRUD實作**.md](./02_Pydantic資料驗證與CRUD實作.md)（Pydantic V2 強型別契約與防禦性 CRUD）
 - **下一篇**：[04_Exit_Exam_API_Contract與型別防呆.md](./04_Exit_Exam_API_Contract與型別防呆.md)（M09 結業考核：API Contract 實戰防禦）
 - **回到目錄**：[Month 09 學習模組主導航](./README.md)
 

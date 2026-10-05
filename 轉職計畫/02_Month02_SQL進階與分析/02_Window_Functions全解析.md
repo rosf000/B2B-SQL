@@ -560,6 +560,7 @@ ORDER BY year, month;
 ```
 
 > [!IMPORTANT]
+>
 > #### 為什麼視窗一定要寫 `PARTITION BY year ORDER BY month`？
 >
 > `monthly_revenue` 是一張**跨年度的平表**（2023 全年 + 2024 全年混在一起）。若省略 `PARTITION BY year`，視窗就會橫跨所有年份，`FIRST_VALUE` 只會抓到「全表 month 最小的那一筆」，導致 2024 年全年都拿 2023-01 做基準，完全失去「年初基準比較」的商業意義。
@@ -650,13 +651,13 @@ ORDER BY year, month;
 
 **📊 執行結果對比示意**：
 
-| month | revenue |    錯誤的最後值 (預設到當前列) |       正確的最後值 (展開到整組末尾) |
+| month | revenue | 錯誤的最後值 (預設到當前列) | 正確的最後值 (展開到整組末尾) |
 | :---: | ------: | -----------------------------: | ----------------------------------: |
-| 1 月 |  100 萬 | **100 萬** (只看到 1 月) | **300 萬** (整組最後是 12 月) |
-| 2 月 |  120 萬 | **120 萬** (只看到 2 月) |                    **300 萬** |
-| 3 月 |  150 萬 | **150 萬** (只看到 3 月) |                    **300 萬** |
-|  …  |      … |                             … |                    **300 萬** |
-| 12 月 |  300 萬 |               **300 萬** |                    **300 萬** |
+| 1 月 | 100 萬 | **100 萬** (只看到 1 月) | **300 萬** (整組最後是 12 月) |
+| 2 月 | 120 萬 | **120 萬** (只看到 2 月) | **300 萬** |
+| 3 月 | 150 萬 | **150 萬** (只看到 3 月) | **300 萬** |
+| … | … | … | **300 萬** |
+| 12 月 | 300 萬 | **300 萬** | **300 萬** |
 
 > 📌 **觀念總結**：
 > `FIRST_VALUE` 不需要特別指定框架，因為起點預設本來就是第一列；但只要用到 **`LAST_VALUE`**，就必須牢記加上 `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`，否則它永遠只會回傳自己！
@@ -1262,6 +1263,7 @@ ORDER BY curr.mo;
 <summary>✅ 寫完了？點擊查看參考解答與詳解</summary>
 
 ```sql
+-- 1. 算大家每個月在各地區的名次
 WITH monthly_ranked AS (
     SELECT
         s.salesperson_id,
@@ -1278,6 +1280,8 @@ WITH monthly_ranked AS (
     WHERE o.status = 'COMPLETED'
     GROUP BY s.salesperson_id, s.name, s.region, DATE_TRUNC('month', o.order_date)
 ),
+  
+-- 2. 縱向追蹤每個人比上個月「進步了幾名」  
 with_rank_change AS (
     SELECT
         *,
@@ -1285,23 +1289,28 @@ with_rank_change AS (
         LAG(monthly_rank) OVER (PARTITION BY salesperson_id ORDER BY month) - monthly_rank
             AS rank_improvement   -- 正數 = 排名進步（數字變小）
     FROM monthly_ranked
+),
+-- 3. 找出各地區「進步幅度最大」的人  
+find_winner AS (
+    SELECT
+        *,
+        DENSE_RANK() OVER (
+            PARTITION BY region, month
+            ORDER BY rank_improvement DESC
+        ) AS improvement_rank
+    FROM with_rank_change
+    WHERE rank_improvement > 0
 )
+-- 4. 漂亮輸出結果
 SELECT
-    region                AS 地區,
-    name                  AS 業務黑馬,
-    month                 AS 月份,
-    monthly_rank          AS 本月排名,
-    last_rank             AS 上月排名,
-    rank_improvement      AS 進步幾名
-FROM with_rank_change
-WHERE rank_improvement = (
-    -- 找出各地區當月進步最多的
-    SELECT MAX(w2.rank_improvement)
-    FROM with_rank_change w2
-    WHERE w2.region = with_rank_change.region
-      AND w2.month = with_rank_change.month
-      AND w2.rank_improvement > 0
-)
+    region           AS 地區,
+    name             AS 業務黑馬,
+    month            AS 月份,
+    last_rank        AS 上月排名,
+    monthly_rank     AS 本月排名,
+    rank_improvement AS 進步幾名
+FROM find_winner
+WHERE improvement_rank = 1
 ORDER BY month DESC, region;
 ```
 
@@ -1316,18 +1325,18 @@ ORDER BY month DESC, region;
 
 ### 排名函數
 
-| 函數             | 同分處理         | 典型用途                   |
+| 函數 | 同分處理 | 典型用途 |
 | :--------------- | :--------------- | :------------------------- |
 | `ROW_NUMBER()` | 強制唯一，無並列 | 分頁、取 Top N（每人一名） |
-| `RANK()`       | 並列後跳號       | 體育競賽、有缺號的公開排行 |
-| `DENSE_RANK()` | 並列後不跳號     | 客戶等級分層、RFM 評分     |
-| `NTILE(n)`     | 均分為 n 個區段  | 四分位分析、百分位切割     |
+| `RANK()` | 並列後跳號 | 體育競賽、有缺號的公開排行 |
+| `DENSE_RANK()` | 並列後不跳號 | 客戶等級分層、RFM 評分 |
+| `NTILE(n)` | 均分為 n 個區段 | 四分位分析、百分位切割 |
 
 ### 位移函數
 
-| 函數             | 方向          | 典型用途                   |
+| 函數 | 方向 | 典型用途 |
 | :--------------- | :------------ | :------------------------- |
-| `LAG(col, n)`  | 往前取第 n 列 | 環比（MoM）、同比前置計算  |
+| `LAG(col, n)` | 往前取第 n 列 | 環比（MoM）、同比前置計算 |
 | `LEAD(col, n)` | 往後取第 n 列 | 購買間隔天數、下一事件預覽 |
 
 ### 彙總型視窗函數
