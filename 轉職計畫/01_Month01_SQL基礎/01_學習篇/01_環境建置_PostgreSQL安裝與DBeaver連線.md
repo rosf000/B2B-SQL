@@ -99,21 +99,23 @@ flowchart LR
 > 許多初學者會點擊最上方的通用按鈕開啟 SQL 編輯器，這會導致編輯器**沒有綁定資料庫**，執行時跳出 `No active connection` 錯誤。
 > 請務必依照下列步驟開啟「已綁定連線的編輯器」！
 
-### 步驟 1：開啟已綁定連線的 SQL 編輯器
+### 步驟 1：建立獨立學習資料庫與開啟編輯器
 
 在 DBeaver 視窗左側的 **「資料庫導覽 (Database Navigator)」** 列表中：
 
-1. 找到剛才建立的 **`postgres`** 連線圖示。
-2. 在該連線上按 **滑鼠右鍵** ➜ 選擇 **「SQL 編輯器 (SQL Editor)」➜「新增 SQL 腳本 (New SQL Script)」**（快捷鍵 `Ctrl + ]`）。
-3. 此時中央會開啟一個空白編輯器分頁，注意上方狀態列已自動顯示 `postgres - postgres`，代表已正確綁定！
+1. 展開 PostgreSQL 連線 ➜ 找到 **「資料庫 (Databases)」**。
+2. 對著「資料庫 (Databases)」按 **滑鼠右鍵** ➜ 點選 **「建立新資料庫 (Create New Database)」** ➜ 名稱輸入 **`b2b_learning`** ➜ 點擊確定。
+3. 在新建立的 **`b2b_learning`** 上按 **滑鼠右鍵** ➜ 選擇 **「SQL 編輯器 (SQL Editor)」➜「新增 SQL 腳本 (New SQL Script)」**（快捷鍵 `Ctrl + ]`）。
+4. 此時中央會開啟一個空白編輯器分頁，確認右上角已顯示 `... - b2b_learning`，代表已正確綁定！
 
 ---
 
 ### 步驟 2：貼上資料庫建立腳本
 
-1. 在 VS Code 中開啟專案內的腳本檔案：[`data/b2b_m1_sample.sql`](./data/b2b_m1_sample.sql)。
+1. 在專案中開啟學習庫腳本檔案：[`database/01_b2b_learning_init.sql`](./database/01_b2b_learning_init.sql)。
 2. 按鍵盤 **`Ctrl + A`**（全選）➜ **`Ctrl + C`**（複製）。
 3. 切換回 DBeaver 的 SQL 編輯器，按鍵盤 **`Ctrl + V`**（貼上整份腳本程式碼）。
+*(💡 提示：若您已依照 [DBeaver操作與連線指引](../DBeaver操作與連線指引.md) 連結專案資料夾，也可直接在 DBeaver 左側專案雙擊開啟該檔案！)*
 
 ---
 
@@ -127,7 +129,7 @@ flowchart LR
 | **執行整份腳本 (Execute Script)** | **`Alt + X`** | **雙箭頭 `▶▶`**（編輯器左側直列工具列） | **現在匯入資料庫時必須使用！** |
 
 👉 **請在此時直接按下鍵盤：`Alt + X`**（或點擊左側工具列的 **雙箭頭 ▶▶**）。
-稍等 1~2 秒，下方會顯示執行進度，完成後會出現執行成功的摘要訊息。
+稍等 1~2 秒，下方會顯示執行進度，完成後會出現 `🎉 b2b_learning 學習資料庫初始化成功！` 的摘要訊息。
 
 ---
 
@@ -242,5 +244,6 @@ flowchart LR
 - **下一篇（學習規劃）**：[02_本月學習計畫與目標.md](./02_本月學習計畫與目標.md)（4 週線性學習日程表）
 - **新手資料庫探索**：[03_讀懂陌生資料庫的五步驟.md](./03_讀懂陌生資料庫的五步驟.md)（Schema Thinking 與 DBeaver 探索起手式）
 - **語法講義**：[04_SQL核心語法_SELECT到JOIN全解析.md](./04_SQL核心語法_SELECT到JOIN全解析.md)（5 大階梯式實戰關卡與底層執行順序）
-- **資料庫腳本**：[data/b2b_m1_sample.sql](./data/b2b_m1_sample.sql)（Canonical 資料表定義與初始化腳本）
-- **回到目錄**：[Month 01 學習模組主導航](./README.md)
+- **學習資料庫腳本**：[database/01_b2b_learning_init.sql](./database/01_b2b_learning_init.sql)（Canonical 資料表定義與初始化腳本）
+- **DBeaver 深度操作**：[DBeaver操作與連線指引](../DBeaver操作與連線指引.md)（專案側邊欄連結與高效快捷鍵）
+- **回到目錄**：[Month 01 學習模組主導航](../README.md)

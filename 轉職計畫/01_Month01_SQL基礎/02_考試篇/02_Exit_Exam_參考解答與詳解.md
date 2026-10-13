@@ -290,7 +290,7 @@ GROUP BY c.customer_id, c.company_name;
 
 #### 🌟解法 ：改用 oi.subtotal 加總
 
-> 💡 **Month 01 核心思維**（對照 [06_JOIN陷阱與資料粒度問題.md](./06_JOIN陷阱與資料粒度問題.md) 陷阱 1 修正法）：
+> 💡 **Month 01 核心思維**（對照 [06_JOIN陷阱與資料粒度問題.md](../01_學習篇/06_JOIN陷阱與資料粒度問題.md) 陷阱 1 修正法）：
 > 既然已經 JOIN 到 `order_items`，就**絕對不要碰會重複展開的 `o.total_amount`**，而是直接對明細表的 `oi.subtotal` 進行加總！每個品項的 subtotal 天然只會出現一次，完全不需子查詢或 CTE，純靠基礎語法就能完美避坑！
 
 ```sql

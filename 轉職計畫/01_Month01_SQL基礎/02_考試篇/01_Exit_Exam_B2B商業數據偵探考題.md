@@ -22,7 +22,7 @@
 
 > [!IMPORTANT]
 > ### 🚨 為什麼需要建立獨立資料庫？
-> 本結業考備有專屬初始化腳本 [`data/b2b_m1_exit_exam.sql`](./data/b2b_m1_exit_exam.sql)。
+> 本結業考備有專屬初始化腳本 [`database/01_b2b_exam_init.sql`](./database/01_b2b_exam_init.sql)。
 > 由於考題資料包含重置指令（`DROP TABLE IF EXISTS ...`），**強烈建議按照下方「方案 A」在 DBeaver 中新增一個獨立的 `b2b_exit_exam` 資料庫**，這樣既不會洗掉你前面 01~09 關卡的練習成果，也能享有乾淨的獨立測驗環境！
 
 ---
@@ -34,7 +34,7 @@
 ```mermaid
 flowchart TD
     A["1. 右鍵建立新資料庫<br/>名稱: b2b_exit_exam"] --> B["2. 在新資料庫上按右鍵<br/>新增 SQL 腳本（確保綁定連線）"]
-    B --> C["3. 複製並貼上<br/>data/b2b_m1_exit_exam.sql 內容"]
+    B --> C["3. 複製並貼上<br/>database/01_b2b_exam_init.sql 內容"]
     C --> D["4. 按下鍵盤 Alt + X<br/>執行整份腳本（雙箭頭 ▶▶）"]
     D --> E["🎉 重新整理 F5<br/>5 張考題核心業務表就緒！"]
 ```
@@ -49,12 +49,13 @@ flowchart TD
    - 在剛建好的 **`b2b_exit_exam`** 上按 **滑鼠右鍵** ➜ 點選 **「SQL 編輯器 (SQL Editor)」➜「新增 SQL 腳本 (New SQL Script)」**。
    - 檢查編輯器分頁右上角的下拉選單，確認顯示為 `... - b2b_exit_exam`（這能 100% 杜絕「No active connection」未綁定連線的錯誤）。
 3. **貼上並執行腳本**：
-   - 開啟本專案的專屬初始化腳本 [`data/b2b_m1_exit_exam.sql`](./data/b2b_m1_exit_exam.sql)。
+   - 開啟本專案的專屬初始化腳本 [`database/01_b2b_exam_init.sql`](./database/01_b2b_exam_init.sql)。
    - 按 `Ctrl + A`（全選）➜ `Ctrl + C`（複製），貼回 DBeaver 的 SQL 編輯器。
    - 按下鍵盤 **`Alt + X`**（或點擊編輯器左側工具列的 **雙箭頭 ▶▶**「執行整份腳本」）。
-4. **驗證建表成果**：
+4. **驗證建表成果與開始作答**：
    - 展開 `b2b_exit_exam` ➜ `綱要群 (Schemas)` ➜ `public` ➜ `表 (Tables)`，按鍵盤 **`F5`** 重新整理。
    - 確認 5 張資料表與測試資料皆已正確建立！
+   - 接著開啟本章節的個人作答卷 [`exam_submission/my_exam_submission.sql`](./exam_submission/my_exam_submission.sql) 開始作答。
 
 ---
 
