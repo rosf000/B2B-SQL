@@ -240,6 +240,7 @@ WHERE o.order_date = (
 2. 過濾條件：`WHERE unit_price > (純量子查詢)`。
 3. 純量子查詢：`SELECT AVG(unit_price) FROM products`。
 4. 排序：`ORDER BY unit_price DESC`。
+
 </details>
 
 <details>
@@ -257,6 +258,7 @@ WHERE unit_price > (
 )
 ORDER BY unit_price DESC;
 ```
+
 </details>
 
 > 💡 **第一關核心收斂**：
@@ -477,6 +479,7 @@ SELECT * FROM customer_spending LIMIT 10;
 <summary>💡 需要思考提示嗎？（點擊展開解題思路）</summary>
 
 1. 第一段 CTE：
+
    ```sql
    WITH customer_revenue AS (
        SELECT c.company_name, SUM(o.total_amount) AS total_spent
@@ -486,7 +489,9 @@ SELECT * FROM customer_spending LIMIT 10;
        GROUP BY c.company_name
    )
    ```
+
 2. 主查詢直接從 `customer_revenue` 選取，並加上 `WHERE total_spent >= 500000`。
+
 </details>
 
 <details>
@@ -509,6 +514,7 @@ FROM customer_revenue
 WHERE total_spent >= 500000
 ORDER BY total_spent DESC;
 ```
+
 </details>
 
 > 💡 **第二關核心收斂**：

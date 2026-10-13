@@ -1,20 +1,20 @@
 # 02 Window Functions 視窗函數全解析
 
-> **寫在前面：視窗函數是資料分析師最強的武器**
-> 在日常業務分析中，有三類問題幾乎天天會遇到：
+> **寫在前面：視窗函數，是資料分析師最強大的武器**
+> 在日常的業務分析中，有三類問題幾乎天天都會碰到：
 >
-> 1. **排名**：「上個月誰是業績第一？各區業績前三名是誰？」
-> 2. **同比 / 環比**：「相比上個月，這個月業績成長了幾趴？」
+> 1. **排名**：「上個月誰的業績最高？各區前三名分別是誰？」
+> 2. **同比 / 環比**：「和上個月相比，這個月的業績成長了多少百分比？」
 > 3. **累積**：「截至今天，本季的累積業績達標了嗎？」
 >
-> 這三類問題都能用視窗函數優雅解決——不需要複雜的自關聯，不需要子查詢，一行函數搞定。
+> 這三類問題都能用視窗函數優雅地解決：不需要複雜的自我關聯（Self-Join），也不需要子查詢，一行函數就能搞定。
 >
-> 📌 **環境準備（必做！升級真實大數據）**：
-> 視窗函數的威力在於「**從數百數千筆高頻交易中，跨列與分組即時運算**」。先前的基礎資料庫僅 13 筆訂單，容易導致業務員每人每月只有 1 筆單，造成「CTE 聚合前是一筆、聚合後還是一筆，結果看起來都一樣」的無感狀況，且 2023 年無資料導致 YoY 出現 NULL。
+> 📌 **環境準備（必做！升級為接近真實的大量資料）**：
+> 視窗函數的威力在於「**從數百、數千筆高頻交易中，跨列與分組即時運算**」。先前的基礎資料庫僅有 13 筆訂單，容易出現業務員每人每月只有 1 筆單的情況，導致「CTE 聚合前是一筆、聚合後還是一筆，結果看起來都一樣」，完全看不出差異；此外，2023 年沒有資料，也會使同比（YoY）出現 NULL。
 >
-> 請先在 DBeaver 開啟並執行 Month 02 專用擴充資料庫腳本：
+> 請先在 DBeaver 開啟並執行 Month 02 專用的擴充資料庫腳本：
 > 📁 **腳本路徑**：[b2b_m2_window_seed.sql](./data/b2b_m2_window_seed.sql)
-> 內含 **2023～2024 年整整 24 個月、1,200+ 筆訂單、3,000+ 筆明細**，並特別埋設了「業務同分驗證」、「連續2月下滑預警」、「黑馬逆襲大躍進」等真實商業分析特徵點，邊讀邊跑保證刀刀見血！
+> 內含 **2023～2024 年共 24 個月、1,200 多筆訂單、3,000 多筆明細**，並刻意埋入「業務同分驗證」、「連續 2 個月下滑預警」、「黑馬逆襲」等貼近真實商業分析的特徵案例。邊讀邊跑，最能體會視窗函數的威力！
 
 ---
 
@@ -51,14 +51,14 @@
 ### 1.1 基本概念：什麼是「視窗」？
 
 > 🎯 **心智定位（最重要的一件事）**：
-> 視窗函數的本質，是在「不折疊原始資料列」的前提下，為每筆資料開一扇窗，讓它得以「旁觀」整個群體的統計值，同時保留自身明細。
+> 視窗函數的本質，是在「不折疊原始資料列」的前提下，為每筆資料開一扇窗，讓它能夠「旁觀」整個群體的統計值，同時保留自己的明細。
 >
 > 💼 **為什麼非學不可（痛點場景）**：
-> 主管要看「每筆訂單佔該客戶總消費的比例」或「連續兩月業績下滑預警」——若只用傳統 GROUP BY，資料列數會被強制壓縮，你只能硬啃多層自關聯（Self-Join），程式冗長且執行緩慢！
+> 當主管想看「每筆訂單佔該客戶總消費的比例」或「連續兩個月業績下滑預警」時，若只用傳統的 GROUP BY，資料列數會被強制壓縮，你只能硬寫多層自關聯（Self-Join），不僅程式冗長，執行效率也差。
 
 ### 1.2 語法骨架
 
-所有視窗函數都共享相同的語法結構：
+所有視窗函數都共用同一套語法結構：
 
 ```sql
 函數名稱() OVER (
@@ -68,7 +68,7 @@
 )
 ```
 
-**和 GROUP BY 的關鍵差異**：
+**與 GROUP BY 的關鍵差異**：
 
 | 特性                 | GROUP BY                     | OVER (視窗函數)               |
 | -------------------- | ---------------------------- | ----------------------------- |
@@ -80,10 +80,10 @@
 
 ### 1.3 💡 深度解密：視窗函數在 SQL 執行順序中的真正位置
 
-許多學習者會疑惑：「視窗函數算是獨立的執行階段嗎？為什麼它不能直接寫在 `WHERE` 裡過濾？」
+許多學習者都有這樣的疑問：「視窗函數算是獨立的執行階段嗎？為什麼不能直接寫在 `WHERE` 裡過濾？」
 
 > 📌 **核心本質**：
-> **視窗函數並不是獨立的頂層子句，它在語法上附屬於 `SELECT` 清單中；而在資料庫的底層邏輯執行順序中，它是 `SELECT` 階段內部「投影前先完成」的第一道計算。**
+> **視窗函數並不是獨立的頂層子句，語法上它屬於 `SELECT` 清單；在邏輯執行順序中，它是 `SELECT` 階段內部、「投影之前」最先完成的計算。**
 
 回顧 SQL 的經典邏輯執行順序（Logical Query Processing）：
 
@@ -106,14 +106,14 @@
 7. LIMIT / OFFSET  — 截取特定筆數
 ```
 
-#### 🧠 透過這個底層順序，可以解答 3 個實務大疑惑
+#### 🧠 搞懂這個執行順序，就能解開 3 個常見的實務疑惑
 
-1. **疑惑一：為什麼視窗函數絕對不能寫在 `WHERE` 裡面？**
-   * 因為 `WHERE`（Step 2）在 `SELECT`（Step 5）之前就執行完了！資料庫在過濾每一列時，視窗函數根本**還沒開始計算**，所以引擎會直接報錯：`ERROR: window functions are not allowed in WHERE`。
+1. **疑惑一：為什麼視窗函數不能寫在 `WHERE` 裡面？**
+   * 因為 `WHERE`（Step 2）早在 `SELECT`（Step 5）之前就執行完畢。資料庫在過濾每一列時，視窗函數**根本還沒開始計算**，所以引擎會直接報錯：`ERROR: window functions are not allowed in WHERE`。
 2. **疑惑二：為什麼視窗函數內部可以包含聚合函數？**
-   * 例如 `RANK() OVER (ORDER BY SUM(total_amount) DESC)`。因為 `GROUP BY` 與聚合計算（Step 3 & 4）早在進入 `SELECT` 之前就已經完成，所以視窗函數計算時，能順利取到聚合後的 `SUM()` 數值！
+   * 例如 `RANK() OVER (ORDER BY SUM(total_amount) DESC)`。這是因為 `GROUP BY` 與聚合計算（Step 3 與 4）早在進入 `SELECT` 之前就已完成，視窗函數計算時自然能取得聚合後的 `SUM()` 數值。
 3. **疑惑三：為什麼一定要用 CTE（或子查詢）才能做 Top N 篩選？**
-   * 因為同一層查詢的 `WHERE` 無法讀取同一層 `SELECT` 產出的視窗結果。**唯一的解法就是透過 CTE，把算好視窗值的 `SELECT` 封裝成一張「下游虛擬表」**，外層的 `WHERE` 才能順理成章地把它當成普通欄位進行過濾！
+   * 因為同一層查詢的 `WHERE` 讀不到同一層 `SELECT` 產出的視窗結果。**解法是透過 CTE，把算好視窗值的 `SELECT` 封裝成一張「虛擬表」**，外層的 `WHERE` 就能把它當成一般欄位來過濾。
 
 ---
 
@@ -121,7 +121,7 @@
 
 ### 2.1 ROW_NUMBER、RANK、DENSE_RANK 三者比較
 
-這三個函數最容易混淆，用一個例子徹底釐清：
+這三個函數最容易混淆，我們用同一個例子一次釐清：
 
 ```sql
 -- 情境：業務員本月業績排名（假設有同分情況）
@@ -129,21 +129,21 @@ SELECT
     s.name                       AS 業務姓名,
     SUM(o.total_amount)          AS 月業績,
 
-    -- 每人都有唯一序號，同分也不會有相同號碼（跳號）
+    -- 每人都有唯一序號，即使同分也不會出現相同號碼
     ROW_NUMBER() OVER (ORDER BY SUM(o.total_amount) DESC)  AS row_number,
 
-    -- 同分者得相同名次，但下一名「跳號」
+    -- 同分者名次相同，但下一名會「跳號」
     -- 例：第 1 名有兩人，下一個是第 3 名（不是第 2 名）
     RANK()       OVER (ORDER BY SUM(o.total_amount) DESC)  AS rank,
 
-    -- 同分者得相同名次，下一名「不跳號」
+    -- 同分者名次相同，下一名「不跳號」
     -- 例：第 1 名有兩人，下一個是第 2 名
     DENSE_RANK() OVER (ORDER BY SUM(o.total_amount) DESC)  AS dense_rank
 
 FROM salespeople s
 JOIN orders o ON s.salesperson_id = o.salesperson_id
 WHERE o.status = 'COMPLETED'
-  -- 以 2024 年 11 月為例驗證同分場景（使用 Month 01 學過的標準日期範圍過濾）
+  -- 以 2024 年 11 月為例，驗證同分情境（沿用 Month 01 學過的標準日期範圍過濾）
   AND o.order_date >= '2024-11-01' AND o.order_date < '2024-12-01'
 GROUP BY s.salesperson_id, s.name
 ORDER BY 月業績 DESC;
@@ -179,11 +179,11 @@ ORDER BY 月業績 DESC;
       核心應用場景：                UI 分頁、唯一得獎者   體育競技、榜單排名     客戶評級、RFM分層
 ```
 
-> 💡 **選哪個？**
+> 💡 **該選哪一個？**
 >
-> * **ROW_NUMBER**：用於分頁、取 Top N 不想要同分並列（如：每人只能得一個獎）
-> * **RANK**：體育競賽式排名，同分並列、有缺號
-> * **DENSE_RANK**：客戶分級、RFM 分層，同分並列、無缺號
+> * **ROW_NUMBER**：適用於分頁，或取 Top N 時不希望出現並列（例如每人只能得一個獎）
+> * **RANK**：體育競賽式排名，同分並列，名次會出現缺號
+> * **DENSE_RANK**：客戶分級、RFM 分層，同分並列，名次不缺號
 
 ---
 
@@ -191,20 +191,20 @@ ORDER BY 月業績 DESC;
 
 #### 🎯 核心痛點：為什麼一定要用 CTE？
 
-很多初學者學到這裡會想偷懶，直接這樣寫：
+很多初學者學到這裡，會想偷懶直接這樣寫：
 
 ```sql
--- ❌ 語法錯誤！PostgreSQL 會直接報錯：
+-- ❌ 錯誤寫法！PostgreSQL 會直接報錯：
 -- ERROR: window functions are not allowed in WHERE
 SELECT name, region, ROW_NUMBER() OVER (...) AS 排名
 FROM salespeople
-WHERE ROW_NUMBER() OVER (...) <= 3; -- 絕對不行！
+WHERE ROW_NUMBER() OVER (...) <= 3; -- 這樣寫不行！
 ```
 
 > ⚠️ **關鍵原理（SQL 執行順序）**：
-> 如 1.2 節所解密，SQL 執行順序是：`FROM` → `JOIN` → `WHERE` → `GROUP BY` → `HAVING` → **`SELECT（內含：視窗計算 ➜ 欄位投影）`** → `ORDER BY`。
-> 因為 `WHERE` 遠比 `SELECT` 內部的視窗函數更早執行，資料庫在過濾每一列時「視窗名次根本還沒算出來」！
-> **這正是為什麼一定要用 CTE（或子查詢）**：先在 CTE 內把排名算好（封裝成欄位），外層查詢才能在它自己的 `WHERE` 階段用 `WHERE 區內排名 <= 3` 來過濾！
+> 如 1.3 節所述，SQL 的執行順序為：`FROM` → `JOIN` → `WHERE` → `GROUP BY` → `HAVING` → **`SELECT（內含：視窗計算 ➜ 欄位投影）`** → `ORDER BY`。
+> `WHERE` 的執行時間遠早於 `SELECT` 內的視窗函數，資料庫過濾每一列時，「視窗名次根本還沒算出來」。
+> **這正是必須使用 CTE（或子查詢）的原因**：先在 CTE 內把排名算好並封裝成欄位，外層查詢才能在自己的 `WHERE` 階段，用 `WHERE 區內排名 <= 3` 進行過濾。
 
 ---
 
@@ -213,7 +213,7 @@ WHERE ROW_NUMBER() OVER (...) <= 3; -- 絕對不行！
 在擴充資料庫中，全公司共有 18 位業務員（北中南各 6 位）：
 
 * **CTE 內層**：計算 18 位業務員各自在該區的排名（1 ~ 6 名，共 18 列）。
-* **外層篩選**：`WHERE 區內排名 <= 3`，各區 4、5、6 名**確實被過濾淘汰（淘汰 9 人）**，最終只精準產出 9 列！
+* **外層篩選**：`WHERE 區內排名 <= 3`，會把各區第 4～6 名**過濾掉（共淘汰 9 人）**，最終只剩 9 列。
 
 ```sql
 WITH ranked_sales AS (
@@ -232,18 +232,18 @@ WITH ranked_sales AS (
         AND o.status = 'COMPLETED'
     GROUP BY s.salesperson_id, s.name, s.region
 )
--- 【CTE 外層】：過濾淘汰後半段（各區只留 Top 3，4~6名全數被篩除）
+-- 【外層查詢】：淘汰後半段（各區只留 Top 3，第 4～6 名全數篩除）
 SELECT
     地區,
     區內排名,
     業務姓名,
     總業績
 FROM ranked_sales
-WHERE 區內排名 <= 3    -- 核心過濾：精確篩掉 9 人，只留 9 人
+WHERE 區內排名 <= 3    -- 核心過濾：篩掉 9 人，保留 9 人
 ORDER BY 地區, 區內排名;
 ```
 
-**📊 預期輸出（CTE 前後對比立竿見影）：**
+**📊 預期輸出（對照 CTE 過濾前後的差異）：**
 
 | 地區              | 區內排名 | 業務姓名                     | 總業績 (約)   | 狀態說明                   |
 | :---------------- | :-------: | :--------------------------- | :------------ | :------------------------- |
@@ -261,14 +261,14 @@ ORDER BY 地區, 區內排名;
 | *(South)*       | *(4~6)* | *(Olivia, Peter, Queenie)* | *($2M以下)* | **❌ 被 WHERE 篩除** |
 
 > 💡 **自我檢驗**：
-> 試著把外層的 `WHERE 區內排名 <= 3` 註解掉，跑一次看看（會跑出 18 列）；再把條件加上（只剩 9 列）。
-> 這一拿一放之間，你就能深刻體會到 **CTE 封裝視窗欄位 + 外層條件過濾** 的標準架構！
+> 試著把外層的 `WHERE 區內排名 <= 3` 註解掉並執行一次（會得到 18 列），再把條件加回去（只剩 9 列）。
+> 這一拿一放之間，你就能親身體會「**CTE 封裝視窗欄位 + 外層條件過濾**」這套標準架構。
 
 ---
 
 ### 2.3 NTILE — 客戶消費分層
 
-`NTILE(n)` 將資料均分為 n 個區段（bucket），常見應用場景包括：
+`NTILE(n)` 會將資料均分為 n 個區段（bucket），常見應用包括：
 
 * 四分位分析（`NTILE(4)`）
 * 客戶消費分級（黃金 / 白銀 / 銅牌 / 一般）
@@ -326,7 +326,7 @@ SELECT
     company_name,
     industry,
     total_spent,
-    -- 切為 4 個分位（1=最低消費, 4=最高消費）
+    -- 切成 4 個分位（1 = 最低消費、4 = 最高消費）
     NTILE(4) OVER (ORDER BY total_spent ASC)    AS spending_quartile,
     CASE NTILE(4) OVER (ORDER BY total_spent ASC)
         WHEN 4 THEN '🏆 黃金客戶 (Top 25%)'
@@ -339,7 +339,7 @@ ORDER BY total_spent DESC;
 ```
 
 > 💡 **排名函數核心收斂**：
-> `ROW_NUMBER` 唯一不重複；`RANK` 同分跳號佔位；`DENSE_RANK` 緊密不跳號；**Top N 篩選必須透過 CTE 封裝才能在外層 `WHERE` 過濾！**
+> `ROW_NUMBER` 序號唯一不重複；`RANK` 同分並列、後續跳號；`DENSE_RANK` 同分並列、後續不跳號。**做 Top N 篩選時，必須先用 CTE 封裝排名，再於外層 `WHERE` 過濾。**
 
 ---
 
@@ -381,13 +381,15 @@ ORDER BY total_spent DESC;
 
 ### 3.1 LAG — 環比分析（與上一期比較）
 
-`LAG(column, n, default)` 取**前 n 列**的值，最常用於計算環比成長率（Month-over-Month, MoM）。
+`LAG(column, n, default)` 會取**往前第 n 列**的值，最常用於計算環比成長率（Month-over-Month, MoM）。
 
-> 💡 **語法先備小補帖：為什麼這裡出現了 `DATE_TRUNC`？**在真實商業情境中，訂單是「每天」零散產生的。在計算「月度環比」前，我們必須先將每天的訂單「按月份歸納成一筆」：
+> 💡 **先備知識：為什麼這裡出現了 `DATE_TRUNC`？**
 >
-> * **`DATE_TRUNC('month', order_date)`**：PostgreSQL 的日期截斷函數，它會把時間無條件「截斷到該月 1 號」（例如 `2024-11-25` 與 `2024-11-03` 都會被歸納為 `2024-11-01`），這樣就能用 `GROUP BY` 按月分組加總。
-> * **`::date`**：PostgreSQL 的強制型別轉換符號，將截斷後的完整時間戳（Timestamp）轉為乾淨的純日期格式。
->   📌 *免驚！下週 [03_日期字串處理與效能優化入門.md](./03_日期字串處理與效能優化入門.md) 會對日期函數做地毯式深度解析；本章我們先把它當作「按月歸納」的現成工具，將學習焦點集中在視窗函數 `LAG()` 與 `LEAD()` 上！*
+> 在真實商業情境中，訂單是每天零散產生的。計算「月度環比」之前，必須先把每天的訂單按月份歸納成一筆：
+>
+> * **`DATE_TRUNC('month', order_date)`**：PostgreSQL 的日期截斷函數，會把日期「截斷到該月 1 號」（例如 `2024-11-25` 與 `2024-11-03` 都會變成 `2024-11-01`），這樣就能用 `GROUP BY` 依月份分組加總。
+> * **`::date`**：PostgreSQL 的型別轉換符號，將截斷後的時間戳（Timestamp）轉為單純的日期格式。
+>   📌 *不用擔心！下一篇 [03_日期字串處理與效能優化入門.md](./03_日期字串處理與效能優化入門.md) 會完整講解日期函數；本章先把它當成「按月歸納」的現成工具，把焦點放在視窗函數 `LAG()` 與 `LEAD()` 上。*
 
 ```sql
 WITH monthly_revenue AS (
@@ -402,7 +404,7 @@ WITH monthly_revenue AS (
 SELECT
     month                                           AS 月份,
     revenue                                         AS 當月業績,
-    -- LAG 取上個月的業績（若無上一月，預設為 NULL）
+    -- LAG 取上個月的業績（若沒有上一個月，則為 NULL）
     LAG(revenue, 1) OVER (ORDER BY month)           AS 上月業績,
     -- 環比成長率
     CASE
@@ -425,7 +427,7 @@ ORDER BY month;
 
 > **一句話本質**：
 > 當計算對象包含「多位業務、多家分店或多種產品」時，視窗內必須加上 `PARTITION BY` 做**分區隔離**。
-> 若漏掉 `PARTITION BY`，視窗會橫跨全表——當指針換到下一位業務時，他的首月會直接抓取「上一位業務的最後一月」作為上期業績（**跨人污染**）！
+> 若漏掉 `PARTITION BY`，視窗會橫跨整張表：輪到下一位業務時，他的首月會直接抓到「上一位業務的最後一個月」當作上期業績（**跨人污染**）。
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -445,7 +447,7 @@ ORDER BY month;
 
 #### 💼 實戰範例：計算每位業務的月環比成長率
 
-採用兩層 CTE 架構，讓「聚合統計」、「視窗位移」與「成長率計算」職責分明：
+採用兩層 CTE 的架構，讓「聚合統計」、「視窗位移」與「成長率計算」各司其職：
 
 ```sql
 WITH monthly_sales AS (
@@ -468,12 +470,12 @@ sales_with_lag AS (
         month,
         revenue,
         LAG(revenue) OVER (
-            PARTITION BY salesperson_id    -- 核心關鍵：業務員各自獨立包廂！
+            PARTITION BY salesperson_id    -- 核心關鍵：每位業務各自獨立分區
             ORDER BY month
         ) AS prev_revenue
     FROM monthly_sales
 )
--- Step 3：引用 prev_revenue 專心計算環比成長率
+-- Step 3：引用 prev_revenue 計算環比成長率
 SELECT
     業務姓名,
     month                                                         AS 月份,
@@ -488,13 +490,13 @@ ORDER BY salesperson_id, month;
 ```
 
 > 💡 **核心收斂**：
-> **`GROUP BY` 負責把訂單壓平至月份，`PARTITION BY` 負責為每位業務建立獨立包廂；首月無歷史數據自然回傳 `NULL`，彼此互不污染！**
+> **`GROUP BY` 負責把訂單壓平到「月」的粒度，`PARTITION BY` 負責替每位業務建立獨立分區；首月沒有歷史數據，自然回傳 `NULL`，彼此互不污染。**
 
 ---
 
 ### 3.3 LEAD — 往後預覽
 
-`LEAD(column, n)` 取**後 n 列**的值，常見應用場景：
+`LEAD(column, n)` 會取**往後第 n 列**的值，常見應用：
 
 * 計算每次購買後「距下次購買」的間隔天數
 * 預覽下一個業務事件或價格變動
@@ -522,7 +524,7 @@ ORDER BY c.company_name, o.order_date;
 ```
 
 > 💡 **位移函數核心收斂**：
-> `LAG` 往前偷看做環比，`LEAD` 往後預覽下一期；首期缺失自動為 `NULL`，必要時用 `COALESCE` 補預設值。
+> `LAG` 往前回看，用來做環比；`LEAD` 往後預覽下一期。首期（或末期）沒有對應資料時會回傳 `NULL`，必要時可用 `COALESCE` 補上預設值。
 
 ---
 
@@ -563,7 +565,7 @@ ORDER BY year, month;
 >
 > #### 為什麼視窗一定要寫 `PARTITION BY year ORDER BY month`？
 >
-> `monthly_revenue` 是一張**跨年度的平表**（2023 全年 + 2024 全年混在一起）。若省略 `PARTITION BY year`，視窗就會橫跨所有年份，`FIRST_VALUE` 只會抓到「全表 month 最小的那一筆」，導致 2024 年全年都拿 2023-01 做基準，完全失去「年初基準比較」的商業意義。
+> `monthly_revenue` 是一張**跨年度的平面資料表**（2023 與 2024 全年混在一起）。若省略 `PARTITION BY year`，視窗會橫跨所有年份，`FIRST_VALUE` 只會取到整張表排序後的第一筆，導致 2024 年全年都拿 2023-01 當基準，完全失去「年初基準比較」的商業意義。
 >
 > | 視窗寫法                                    | `FIRST_VALUE` 抓到的            |       結果       |
 > | :------------------------------------------ | :-------------------------------- | :--------------: |
@@ -571,7 +573,7 @@ ORDER BY year, month;
 > | `ORDER BY year, month`（無 PARTITION BY） | 永遠是 2023-01                    | ❌ 2024 基準錯誤 |
 > | `ORDER BY month`（只按月排）              | 2023 與 2024 同月混排，結果不穩定 |   💥 不可預期   |
 >
-> **`PARTITION BY year` 的作用是「每年重新歸零」**——讓視窗在跨過年份邊界時強制重置，`FIRST_VALUE` 才能各自抓到「那一年的 1 月」。這與 LAG 使用 `PARTITION BY salesperson_id` 防止跨人污染的道理完全相同：**不加 PARTITION BY，視窗就是整張大平表；加了，才能按商業邏輯分組隔離。**
+> **`PARTITION BY year` 的作用是「每年重新歸零」**：視窗跨過年份邊界時會重置，`FIRST_VALUE` 才能各自取到「那一年的 1 月」。這與 `LAG` 搭配 `PARTITION BY salesperson_id` 來防止跨人污染，是同樣的道理：**不加 `PARTITION BY`，視窗就是整張表；加了，才能依商業邏輯分組隔離。**
 
 ---
 
@@ -579,21 +581,21 @@ ORDER BY year, month;
 
 #### ① 為什麼會有這個陷阱？（預設行為的隱形坑）
 
-`FIRST_VALUE` 和 `LAST_VALUE` 看似是對稱的雙胞胎，但實際執行時大家會發現：**`FIRST_VALUE` 怎麼寫都對，`LAST_VALUE` 卻常常失靈**！
+`FIRST_VALUE` 和 `LAST_VALUE` 看似是一對對稱的雙胞胎，但實際執行時你會發現：**`FIRST_VALUE` 怎麼寫都對，`LAST_VALUE` 卻常常失靈**。
 
-這是因為當你在 `OVER ()` 裡面寫了 `ORDER BY` 時，SQL 標準底層會**偷偷幫你加上一段預設的視窗框架（Window Frame）**：
+原因在於：只要 `OVER ()` 裡寫了 `ORDER BY`，SQL 標準就會**自動套用一段預設的視窗框架（Window Frame）**：
 
 > 預設框架：`RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`
-> （白話文：**從分組的第一列，一直算到「當前這整列」為止**）
+> （白話說：**從分組的第一列，一路算到「當前這一列」為止**）
 
-* 對 `FIRST_VALUE` 來說：第一列永遠在視窗的第一個位置，所以不管算到哪一列，抓「第一個」都是正確的！
-* 對 `LAST_VALUE` 來說：因為視窗只看到**當前列**，它眼中的「最後一列」永遠就是**當前自己這一列**！這導致算出來的最後值跟當前值一模一樣，完全沒有意義。
+* 對 `FIRST_VALUE` 來說：第一列永遠位於視窗的起點，所以不管算到哪一列，取「第一個」都不會錯。
+* 對 `LAST_VALUE` 來說：因為視窗只延伸到**當前列**，它眼中的「最後一列」永遠就是**當前這一列**。算出來的「最後值」因此與當前值一模一樣，失去意義。
 
 ---
 
 #### ② 語法拆解：`ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`
 
-為了讓 `LAST_VALUE` 能夠看到「整組真正的最後一筆」，我們必須手動打破預設限制，把視窗框架直接拉滿到整組的最底端：
+為了讓 `LAST_VALUE` 看得到「整組真正的最後一筆」，必須手動覆寫預設框架，把視窗拉滿到整組的最底端：
 
 ```text
 ROWS BETWEEN   UNBOUNDED PRECEDING    AND    UNBOUNDED FOLLOWING
@@ -604,16 +606,16 @@ ROWS BETWEEN   UNBOUNDED PRECEDING    AND    UNBOUNDED FOLLOWING
 
 * **`ROWS`**：指定以「資料列（Row）」為計算單位。
 * **`BETWEEN <起點> AND <終點>`**：定義視窗的搜尋範圍區間。
-* **`UNBOUNDED PRECEDING`**：起點為「最頂端第一列」（無邊界無上限往前）。
-* **`UNBOUNDED FOLLOWING`**：終點為「最底端最後一列」（無邊界無上限往後）。
+* **`UNBOUNDED PRECEDING`**：起點為「最頂端第一列」（不設上限，一路往前）。
+* **`UNBOUNDED FOLLOWING`**：終點為「最底端最後一列」（不設上限，一路往後）。
 
-> 💡 **白話翻譯**：「請幫我把視窗打開到最大——從最上面第一列，一直看到最下面最後一列！」
+> 💡 **白話翻譯**：「請把視窗開到最大，從最上面第一列，一路看到最下面最後一列。」
 
 ---
 
 #### ③ 實戰對比：在 DBeaver 直接執行
 
-只要沿用 4.1 的 `WITH monthly_revenue` CTE，並在 `OVER()` 內一樣加上 `PARTITION BY year` 分年份，即可清楚看到錯誤與正確的差別（整段直接複製至 DBeaver 即可執行）：
+沿用 4.1 的 `WITH monthly_revenue` CTE，並在 `OVER()` 內同樣加上 `PARTITION BY year` 依年份分組，就能清楚看出錯誤與正確寫法的差別（整段複製到 DBeaver 即可執行）：
 
 ```sql
 WITH monthly_revenue AS (
@@ -631,14 +633,14 @@ SELECT
     revenue                                             AS 當月業績,
 
     -- ❌ 錯誤示範：未指定框架，預設只看到「當前列」
-    -- 結果永遠等於當月 revenue 自己！
+    -- 結果永遠等於當月的 revenue 本身
     LAST_VALUE(revenue) OVER (
         PARTITION BY year
         ORDER BY month
     )                                                   AS 錯誤的年底最後值,
 
     -- ✅ 正確寫法：明確將視窗拉滿至「整組最後一列」
-    -- 每個月都能成功抓到該年 12 月的業績！
+    -- 每個月都能取得該年 12 月的業績
     LAST_VALUE(revenue) OVER (
         PARTITION BY year
         ORDER BY month
@@ -660,8 +662,8 @@ ORDER BY year, month;
 | 12 月 | 300 萬 | **300 萬** | **300 萬** |
 
 > 📌 **觀念總結**：
-> `FIRST_VALUE` 不需要特別指定框架，因為起點預設本來就是第一列；但只要用到 **`LAST_VALUE`**，就必須牢記加上 `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`，否則它永遠只會回傳自己！
-> （在接下來的 **第五節**，我們會更深入介紹視窗框架如何用來做「累積加總」與「滑動平均」。）
+> `FIRST_VALUE` 不需要特別指定框架，因為預設框架的起點本來就是第一列；但使用 **`LAST_VALUE`** 時，務必加上 `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`，否則它只會回傳當前列自己的值。
+> （**第五節**會進一步介紹如何運用視窗框架，做「累積加總」與「滑動平均」。）
 
 ---
 
@@ -725,7 +727,7 @@ SELECT
         ROWS BETWEEN UNBOUNDED PRECEDING   -- 從第一列
         AND CURRENT ROW                    -- 到當前列
     )                                     AS 累積業績,
-    -- 假設年度目標為 5,000萬
+    -- 假設年度目標為 5,000 萬
     ROUND(
         SUM(revenue) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
         / 50000000 * 100, 1
@@ -738,7 +740,7 @@ ORDER BY month;
 
 ### 5.2 滑動平均（Moving Average）
 
-消除月份的季節性波動，看出業績的長期趨勢：
+用滑動平均消除月份間的季節性波動，看出業績的長期趨勢：
 
 ```sql
 WITH monthly_revenue AS (
@@ -874,13 +876,13 @@ ORDER BY 地區, 地區排名;
 ```
 
 > 💡 **視窗框架核心收斂**：
-> 省略框架時，`ORDER BY` 預設累積到當前列；加上 `UNBOUNDED FOLLOWING` 才能涵蓋整個分組；`ROWS` 限定實體列數，是做滑動均值、消除季節波動的關鍵利器。
+> 省略框架時，只要有 `ORDER BY`，預設就會累積到當前列；加上 `UNBOUNDED FOLLOWING` 才能涵蓋整個分組；`ROWS` 以實體列數界定範圍，是做滑動平均、消除季節波動的關鍵工具。
 
 ---
 
 ## 六、同比分析（Year-over-Year）
 
-同比 = 跟去年同期比，是財務報表中最常見的分析維度。
+同比，就是與去年同期相比，是財務報表中最常見的分析維度。
 
 ```sql
 WITH monthly_by_year AS (
@@ -910,29 +912,29 @@ SELECT
 FROM monthly_by_year m1
 LEFT JOIN monthly_by_year m2
     ON m1.month = m2.month                     -- 同月份
-    AND m1.year = m2.year + 1                  -- 今年(2024) = 去年 + 1 (2023+1)
+    AND m1.year = m2.year + 1                  -- 今年 (2024) = 去年 (2023) + 1
 ORDER BY m1.year, m1.month;
 ```
 
 ---
 
-## 七、商業情境練習題（8 題・主動回想與防暴雷版）
+## 七、商業情境練習題（8 題・主動回想版，解答預設收合）
 
 > ⚠️ **刻意練習指引**：
-> 視窗函數是面試現場白板題的重災區。請務必在 DBeaver 空白頁先自己寫出查詢，跑出結果後再點開解答對照！
+> 視窗函數是面試白板題的常客。請務必先在 DBeaver 的空白頁自己寫出查詢、跑出結果，再展開解答對照。
 
 ---
 
 ### 題目 1：業務員月業績排名（含並列處理）
 
-**需求**：產出每個月的業務員業績排名，同分時並列，不跳號。顯示：月份、業務姓名、月業績、月排名。
+**需求**：產出每個月的業務員業績排名，同分並列且不跳號。顯示欄位：月份、業務姓名、月業績、月排名。
 
 <details>
 <summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
 
 1. 先用 CTE 按月份（`DATE_TRUNC('month', order_date)`）與業務員分組加總業績。
 2. 同分並列且「不跳號」應使用 `DENSE_RANK()`。
-3. 視窗分區依據為月份（`PARTITION BY month`），排序為業績降冪（`ORDER BY revenue DESC`）。
+3. 視窗以月份分區（`PARTITION BY month`），並依業績由高到低排序（`ORDER BY revenue DESC`）。
 
 </details>
 
@@ -965,14 +967,14 @@ ORDER BY month, 月排名;
 
 ### 題目 2：找出業績連續下滑 2 個月以上的業務員
 
-**需求**：找出「連續 2 個月業績下滑」的業務員，提供主管早期預警。
+**需求**：找出「連續 2 個月業績下滑」的業務員，讓主管能及早預警。
 
 <details>
 <summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
 
 1. 第一層 CTE 計算每人每月業績。
-2. 第二層 CTE 使用 `LAG(revenue, 1)` 取上月業績，`LAG(revenue, 2)` 取上上月業績（皆按 `salesperson_id` 分區）。
-3. 主查詢過濾：`當月 < 上月 AND 上月 < 上上月`，注意排除包含 NULL 的前兩月。
+2. 第二層 CTE 用 `LAG(revenue, 1)` 取上月業績、`LAG(revenue, 2)` 取上上月業績（皆以 `salesperson_id` 分區）。
+3. 主查詢過濾：`當月 < 上月 AND 上月 < 上上月`，並注意排除含有 NULL 的前兩個月。
 
 </details>
 
@@ -1016,12 +1018,12 @@ ORDER BY month DESC, name;
 
 ### 題目 3：客戶消費四分位分析
 
-**需求**：將所有 ACTIVE 客戶按照年度消費額切為四等份，輸出每個客戶的等級與評分。
+**需求**：將所有 ACTIVE 客戶依年度消費額切成四等份，輸出每位客戶的等級與評分。
 
 <details>
 <summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
 
-1. 第一段 CTE 聚合每家客戶 2024 年度的累計消費額。
+1. 第一個 CTE 先聚合每家客戶 2024 年度的累計消費額。
 2. 使用 `NTILE(4) OVER (ORDER BY annual_spending DESC)` 將客戶分成 4 等份。
 3. 搭配 `CASE WHEN` 賦予商業標籤（黃金、白銀、銅牌、一般）。
 
@@ -1109,12 +1111,12 @@ ORDER BY month;
 
 ### 題目 5：產品類別的 3 個月滑動平均銷售額
 
-**需求**：消除季節性波動，計算各產品類別的 3 個月滑動平均銷售額。
+**需求**：為消除季節性波動，計算各產品類別的 3 個月滑動平均銷售額。
 
 <details>
 <summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
 
-1. CTE 先計算各產品類別按月彙總的銷售額。
+1. 先用 CTE 計算各產品類別的月銷售額。
 2. 3 個月滑動平均使用：`AVG(revenue) OVER (PARTITION BY category ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)`。
 
 </details>
@@ -1155,12 +1157,12 @@ ORDER BY category, month;
 
 ### 題目 6：找出每個客戶最高單筆訂單及其佔該客戶總消費的比例
 
-**需求**：識別哪些客戶的消費高度集中在單筆大訂單（風險：大客戶可能因一筆訂單取消而損失慘重）。
+**需求**：找出消費高度集中在單筆大訂單的客戶（風險：一旦該筆訂單取消，營收將受到重大衝擊）。
 
 <details>
 <summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
 
-1. 不需要 GROUP BY 折疊列！直接在每筆訂單上開窗。
+1. 不需要用 GROUP BY 折疊資料列，直接在每筆訂單上開窗即可。
 2. `SUM(total_amount) OVER (PARTITION BY customer_id)` 取得該客戶總消費。
 3. `MAX(total_amount) OVER (PARTITION BY customer_id)` 取得該客戶最高單筆。
 4. 單筆金額除以總消費，搭配 `NULLIF(..., 0)` 計算佔比。
@@ -1203,8 +1205,8 @@ ORDER BY 佔總消費比例 DESC;
 <summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
 
 1. 先按年份（yr）與月份（mo）分組計算月度營收。
-2. 自關聯（LEFT JOIN）前一年的同月份：`curr.mo = prev.mo AND curr.yr = prev.yr + 1`。
-3. 計算成長率 `(本期 - 上期) / 上期 * 100`，配合 CASE WHEN 標註趨勢。
+2. 以 LEFT JOIN 自我關聯前一年的同月份：`curr.mo = prev.mo AND curr.yr = prev.yr + 1`。
+3. 計算成長率 `(本期 - 上期) / 上期 * 100`，再搭配 CASE WHEN 標註趨勢。
 
 </details>
 
@@ -1248,14 +1250,14 @@ ORDER BY curr.mo;
 
 ### 題目 8：用視窗函數找出每個地區的「業績黑馬」
 
-**需求**：在每個地區中，找出「本月業績排名比上月排名進步最多」的業務員。
+**需求**：在每個地區中，找出「本月排名比上月進步最多」的業務員。
 
 <details>
 <summary>💡 需要思考提示嗎？（點擊展開提示）</summary>
 
-1. 第一層 CTE 計算每人每月業績，並用 `DENSE_RANK() OVER (PARTITION BY region, month ...)` 算當月排名。
+1. 第一層 CTE 計算每人每月業績，並用 `DENSE_RANK() OVER (PARTITION BY region, month ...)` 計算當月排名。
 2. 第二層 CTE 用 `LAG(monthly_rank)` 取上月排名，並計算 `上月排名 - 本月排名`（正數代表名次進步）。
-3. 主查詢找出各地區當月進步幅度等於最大值（`MAX()`）的人選。
+3. 主查詢取出各地區當月進步幅度最大（等於 `MAX()`）的人選。
 
 </details>
 
@@ -1263,7 +1265,7 @@ ORDER BY curr.mo;
 <summary>✅ 寫完了？點擊查看參考解答與詳解</summary>
 
 ```sql
--- 1. 算大家每個月在各地區的名次
+-- 1. 計算每位業務每月在各地區內的名次
 WITH monthly_ranked AS (
     SELECT
         s.salesperson_id,
@@ -1281,7 +1283,7 @@ WITH monthly_ranked AS (
     GROUP BY s.salesperson_id, s.name, s.region, DATE_TRUNC('month', o.order_date)
 ),
   
--- 2. 縱向追蹤每個人比上個月「進步了幾名」  
+-- 2. 追蹤每位業務比上個月「進步了幾名」  
 with_rank_change AS (
     SELECT
         *,
@@ -1301,7 +1303,7 @@ find_winner AS (
     FROM with_rank_change
     WHERE rank_improvement > 0
 )
--- 4. 漂亮輸出結果
+-- 4. 輸出最終結果
 SELECT
     region           AS 地區,
     name             AS 業務黑馬,
@@ -1317,7 +1319,7 @@ ORDER BY month DESC, region;
 </details>
 
 > 💡 **視窗函數綜合實戰核心收斂**：
-> 明細保留不壓縮，開窗計算旁觀群體；排名、位移、框架三組工具各司其職，複雜分析一次到位。
+> 保留明細、不壓縮資料列，透過開窗「旁觀」整個群體；排名、位移、框架三組工具各司其職，再複雜的分析也能一次到位。
 
 ---
 
