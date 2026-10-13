@@ -182,3 +182,6 @@ BEGIN
     RAISE NOTICE '👉 請開始 01~09 關卡的日常學習與實戰練習！';
     RAISE NOTICE '=======================================================';
 END $$;
+
+-- 立即驗證：即時查出前 5 筆客戶資料（讓 DBeaver 執行完直接彈出結果表格）
+SELECT customer_id, company_name, city, credit_limit, status FROM customers LIMIT 5;

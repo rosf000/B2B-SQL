@@ -200,9 +200,6 @@ SELECT setval(pg_get_serial_sequence('products', 'product_id'), COALESCE((SELECT
 SELECT setval(pg_get_serial_sequence('orders', 'order_id'), COALESCE((SELECT MAX(order_id) FROM orders), 1));
 SELECT setval(pg_get_serial_sequence('order_items', 'item_id'), COALESCE((SELECT MAX(item_id) FROM order_items), 1));
 
--- 確保變更全部寫入磁碟 (手動交易模式防呆)
-COMMIT;
-
 -- 驗證成果輸出
 DO $$
 DECLARE
@@ -230,3 +227,6 @@ BEGIN
     RAISE NOTICE '👉 環境已就緒，請開啟 02_考試篇/exam_submission/my_exam_submission.sql 開始作答！';
     RAISE NOTICE '=======================================================';
 END $$;
+
+-- 立即驗證：即時查出前 5 筆客戶資料（讓 DBeaver 執行完直接彈出結果表格）
+SELECT customer_id, company_name, industry, city FROM customers LIMIT 5;
