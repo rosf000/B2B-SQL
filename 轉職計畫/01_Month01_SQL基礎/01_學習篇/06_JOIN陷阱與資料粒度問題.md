@@ -4,526 +4,367 @@
 > 跨表 JOIN 是一對多（1:N）的維度展開；一旦在明細粒度上對主表金額執行 SUM，就會產生致命的 Fan-out 乘數膨脹！
 >
 > 💼 **為什麼非學不可（避坑痛點）**：
-> 某家客戶實際只買了 25 萬，因為 JOIN 了訂單明細，金額瞬間虛胖變成 50 萬。如果你拿著膨脹兩倍的虛假業績報給總經理與財務長，就是嚴重的商業舞弊與誠信事故！
+> 某家客戶實際只買了 25 萬，因為 JOIN 了訂單明細，金額瞬間虛胖變成 40.5 萬。如果你拿著膨脹的虛假業績報給總經理與財務長，就是嚴重的商業舞弊與誠信事故！
 
 > [!IMPORTANT]
 > 本篇範例均基於 **B2B Canonical 資料庫**（`data/b2b_m1_sample_v2.sql`）。
-> 建議在 DBeaver 中執行每段 SQL，並對照預期查詢結果確認列數與金額變化。
+> **你不必先開 DBeaver 測試才能看懂**——本篇所有關鍵案例均提供**「直覺圖解」與「展開對照表」**，一眼就能看出數字為什麼爆炸；隨後附上可執行的 SQL 供你實機印證。
 
 ---
 
-## JOIN Explosion 是什麼？
+## 視覺第一步：30 秒秒懂什麼是「資料粒度（Grain）」？
 
-當你 JOIN 兩張表時，如果關聯是「一對多」，結果的列數會膨脹。
+在談 JOIN 之前，先建立一個最重要的直覺：**什麼是資料粒度（Grain）？**
 
-### 基本範例
+> 💡 **一句話白話定義**：
+> **「這張資料表裡，『每一列（Row）』到底代表什麼東西？」**
 
-確認 `orders` 與 `order_items` JOIN 前後的列數變化：
+以電商與 B2B 系統為例：
 
-```sql
--- 【Step 1】先確認 orders 有幾筆
-SELECT COUNT(*) AS orders_count FROM orders;
--- 預期結果：13
-
--- 【Step 2】JOIN order_items 後，看看列數怎麼了
-SELECT COUNT(*) AS after_join_count
-FROM orders o
-JOIN order_items oi ON o.order_id = oi.order_id;
--- 預期結果：18  ← 從 13 膨脹到 18！
+```text
+【客戶表 customers】    👉 粒度：1 列 = 1 位客戶
+   │
+   ▼ (1 位客戶可以下多筆訂單：1 對 N)
+【訂單主表 orders】       👉 粒度：1 列 = 1 張訂單
+   │
+   ▼ (1 張訂單可以買多個商品：1 對 N)
+【訂單明細 order_items】  👉 粒度：1 列 = 1 個商品明細
 ```
 
-#### 📊 為什麼從 13 變 18？
-
-```sql
--- 看看每筆訂單在 JOIN 後出現了幾次
-SELECT
-    o.order_id,
-    o.order_number,
-    o.total_amount,
-    COUNT(oi.item_id) AS times_repeated   -- 這筆訂單有幾個 order_items
-FROM orders o
-JOIN order_items oi ON o.order_id = oi.order_id
-GROUP BY o.order_id, o.order_number, o.total_amount
-ORDER BY o.order_id;
-```
-
-##### 📊 預期查詢結果
-
-| order_id | order_number | total_amount |       times_repeated       |
-| :------: | :----------- | :----------: | :------------------------: |
-|    1    | ORD-2024-001 |  360000.00  |        **1**        |
-|    2    | ORD-2024-002 |  155000.00  | **2** ← 出現 2 次！ |
-|    3    | ORD-2024-003 |  240000.00  |        **1**        |
-|    4    | ORD-2024-004 |   80000.00   | **2** ← 出現 2 次！ |
-|    5    | ORD-2024-005 |   60000.00   |        **1**        |
-|    6    | ORD-2024-006 |  190000.00  |        **1**        |
-|    7    | ORD-2024-007 |  450000.00  | **2** ← 出現 2 次！ |
-|    8    | ORD-2024-008 |   60000.00   |        **1**        |
-|    9    | ORD-2024-009 |  135000.00  |        **1**        |
-|    10    | ORD-2024-010 |   95000.00   |        **1**        |
-|    11    | ORD-2024-011 |  170000.00  | **2** ← 出現 2 次！ |
-|    12    | ORD-2024-012 |  290000.00  | **2** ← 出現 2 次！ |
-|    13    | ORD-2024-013 |  120000.00  |        **1**        |
-
-> ORD-2024-002 包含 2 個品項，關聯後展開為 2 列符合預期；但若在此粒度下對 `orders.total_amount` 做 SUM，該金額就會被重複計算。
+### 🚨 JOIN 的「影印機定律」
+當你把「大粒度（訂單主表）」去 JOIN「小粒度（訂單明細）」時：
+- **明細表有幾列，主表的那一列就會像被影印機影印一樣，被「複製貼上」幾次！**
+- 如果一張訂單買了 3 樣商品，這張訂單的資料就會在結果中**被複製出現 3 次**！
 
 ---
 
-## ⚠️ 危險案例：SUM 變成兩倍（真實可驗證）
+## 震撼現場：為什麼 25 萬會瞬間變成 40.5 萬？
 
-我們以 **BlueSky Cloud Ltd（customer_id = 2）** 為例，他們有 3 筆訂單：
+我們用資料庫裡的真實客戶 **BlueSky Cloud Ltd（customer_id = 2）** 做示範。
+不用去背 SQL，直接看以下這張**「不用跑查詢也一眼看懂的真相展開圖」**！
 
-```sql
--- 先確認 BlueSky Cloud 的訂單正確總額
-SELECT
-    c.company_name,
-    SUM(o.total_amount) AS correct_total
-FROM customers c
-JOIN orders o ON c.customer_id = o.customer_id
-WHERE c.company_name = 'BlueSky Cloud Ltd'
-  AND o.status = 'COMPLETED'
-GROUP BY c.company_name;
-```
+### 1. 原始事實（兩張表的真實模樣）
 
-##### 📊 預期查詢結果（正確答案）
+**【訂單主表 orders】（這家客戶實際上只有這 2 筆已完成訂單，總額確實是 25 萬）**
+| order_id | order_number | 訂單總額 (total_amount) | 買了幾樣東西？ |
+| :---: | :--- | :---: | :--- |
+| **2** | ORD-2024-002 | **155,000** | 買了 2 樣商品（品項 2、品項 3） |
+| **10** | ORD-2024-010 | **95,000** | 買了 1 樣商品（品項 13） |
+| **真實總額** | | **250,000** | （155,000 + 95,000 = 250,000） |
 
-| company_name      |    correct_total    |
-| :---------------- | :-----------------: |
-| BlueSky Cloud Ltd | **250000.00** |
-
-> 計算過程：ORD-2024-002（155,000）+ ORD-2024-010（95,000）+ 其餘已完成訂單
+**【訂單明細 order_items】（實際品項明細與金額）**
+| order_id | item_id | 購買品項 | 明細小計 (subtotal) |
+| :---: | :---: | :--- | :---: |
+| **2** | 2 | Enterprise Support Plan | 60,000 |
+| **2** | 3 | Cloud Security Pack | 95,000 |
+| **10** | 13 | Cloud Security Pack | 95,000 |
 
 ---
 
-若在 JOIN `order_items` 之後，直接對 `orders.total_amount` 進行加總：
+### 2. JOIN 之後發生了什麼？（影印機開始複製！）
 
-```sql
--- ⚠️ 這條 SQL 結果是錯的！（Fan-out 陷阱示範）
-SELECT
-    c.company_name,
-    SUM(o.total_amount) AS WRONG_total     -- 問題在這裡！
-FROM customers c
-JOIN orders o ON c.customer_id = o.customer_id
-JOIN order_items oi ON o.order_id = oi.order_id    -- 加了這行後就爆炸
-WHERE c.company_name = 'BlueSky Cloud Ltd'
-  AND o.status = 'COMPLETED'
-GROUP BY c.company_name;
-```
+當你寫下 `orders JOIN order_items ON o.order_id = oi.order_id` 時，
+因為訂單 2 買了 2 個品項，資料庫為了把明細接上來，**把訂單 2 影印複製成了 2 列**：
 
-##### 📊 預期查詢結果（⚠️ 這是錯誤的答案！）
-
-| company_name      |       wrong_total       |
-| :---------------- | :---------------------: |
-| BlueSky Cloud Ltd | **405000.00** ⚠️ 錯誤！ |
-
-> [!CAUTION]
-> **原因分析**：ORD-2024-002 有 2 個品項，JOIN 後其 `total_amount` (155,000) 被重複計算 2 次（計 310,000）。
-> ORD-2024-010 只有 1 個品項（計 95,000）。
-> 加總結果為 405,000，比正確總額 250,000 虛增了 155,000。
+| order_id | 訂單總額 `o.total_amount` | item_id | 明細小計 `oi.subtotal` | 發生了什麼事？ |
+| :---: | :---: | :---: | :---: | :--- |
+| **2** | **155,000** | 2 | 60,000 | 🖨️ 訂單 2 被影印第 1 次 |
+| **2** | **155,000** ⚠️ | 3 | 95,000 | 🖨️ 訂單 2 被影印第 2 次（重複了！） |
+| **10** | **95,000** | 13 | 95,000 | 只有 1 個品項，沒被多印 |
 
 ---
 
-## 四種常見 JOIN 陷阱
+### 3. 致命災難：這時候若對 `o.total_amount` 做 SUM() ...
 
-### 陷阱 1：一對多導致 SUM 膨脹
-
-**症狀：** SUM 的結果遠大於預期（以倍數放大）
-
-**診斷方法（先不 GROUP BY，看 JOIN 後的原始資料）：**
-
-```sql
--- 🔍 診斷步驟：先 SELECT 幾列原始 JOIN 結果，確認重複情況
-SELECT
-    o.order_id,
-    o.order_number,
-    o.total_amount,      -- orders 表的總額
-    oi.item_id,
-    oi.product_id,
-    oi.subtotal          -- order_items 表的小計
-FROM orders o
-JOIN order_items oi ON o.order_id = oi.order_id
-ORDER BY o.order_id
-LIMIT 10;
+```text
+電腦執行 SUM(o.total_amount) 時，它只會由上往下機械式加總：
+   155,000  (第 1 列的 total_amount)
++  155,000  (第 2 列的 total_amount，被重複加了！)
++   95,000  (第 3 列的 total_amount)
+---------------------------------------------
+=  405,000  ❌ 憑空虛胖了 155,000！（原本明明只有 250,000）
 ```
 
-##### 📊 預期查詢結果（前 10 列）
-
-| order_id | order_number | total_amount | item_id | product_id | subtotal |
-| :------: | :----------- | :----------: | :-----: | :--------: | :-------: |
-|    1    | ORD-2024-001 |  360000.00  |    1    |     1     | 360000.00 |
-|    2    | ORD-2024-002 |  155000.00  |    2    |     3     | 60000.00 |
-|    2    | ORD-2024-002 |  155000.00  |    3    |     4     | 95000.00 |
-|    3    | ORD-2024-003 |  240000.00  |    4    |     1     | 240000.00 |
-|    4    | ORD-2024-004 |   80000.00   |    5    |     2     | 45000.00 |
-|    4    | ORD-2024-004 |   80000.00   |    6    |     5     | 35000.00 |
-|    5    | ORD-2024-005 |   60000.00   |    7    |     3     | 60000.00 |
-|    6    | ORD-2024-006 |  190000.00  |    8    |     4     | 190000.00 |
-|    7    | ORD-2024-007 |  450000.00  |    9    |     1     | 360000.00 |
-|    7    | ORD-2024-007 |  450000.00  |   10   |     2     | 90000.00 |
-
-> `order_id = 2` 出現了 2 列，且每列的 `total_amount` 皆為 155,000。若對此欄位直接做 SUM，155,000 就會被計算兩次。
+> 🎯 **一眼看穿的結論**：
+> 電腦不知道 `total_amount` 是整張訂單的總額！
+> 它只看到結果表有 3 列，就把那 3 列的數字全部加在一起！
+> **這就是所謂的 Fan-out 乘數膨脹（JOIN Explosion）！**
 
 ---
 
-**正確修正方法（二選一）：**
+### 實機 SQL 驗證對照
+
+現在你看懂了原理，再看這兩段 SQL 就會清清楚楚：
 
 ```sql
--- ✅ 方法 1：不碰 orders.total_amount，直接從 order_items 的 subtotal 加總
--- （order_items.subtotal 是每個品項的小計，天然沒有重複問題）
+-- ❌ 錯誤寫法：JOIN 明細後，卻 SUM 主表的 total_amount
 SELECT
     c.company_name,
-    SUM(oi.subtotal) AS correct_total_from_items
+    SUM(o.total_amount) AS wrong_total     -- ⚠️ 155,000 被加了兩次！
 FROM customers c
 JOIN orders o ON c.customer_id = o.customer_id
 JOIN order_items oi ON o.order_id = oi.order_id
 WHERE c.company_name = 'BlueSky Cloud Ltd'
   AND o.status = 'COMPLETED'
 GROUP BY c.company_name;
--- 預期結果：250000.00 ← 與正確答案一致！
+-- 查詢結果：405000.00 ❌ 虛胖！
 ```
 
 ```sql
--- ✅ 方法 2：用 CTE 先把 order_items 聚合完，再 JOIN（Month 02 會深入解析 CTE）
-WITH order_line_totals AS (
-    SELECT order_id, SUM(subtotal) AS line_total
+-- ✅ 正確解法 1：不碰主表金額，直接加總明細小計 subtotal
+-- （因為每個 item_id 在結果中都只有 1 列，天然不重複！）
+SELECT
+    c.company_name,
+    SUM(oi.subtotal) AS correct_total      -- ✅ 60,000 + 95,000 + 95,000 = 250,000
+FROM customers c
+JOIN orders o ON c.customer_id = o.customer_id
+JOIN order_items oi ON o.order_id = oi.order_id
+WHERE c.company_name = 'BlueSky Cloud Ltd'
+  AND o.status = 'COMPLETED'
+GROUP BY c.company_name;
+-- 查詢結果：250000.00 ✅ 完全正確！
+```
+
+```sql
+-- ✅ 正確解法 2（企業標準做法）：先用 CTE 把明細收合回「每筆訂單一列」，再 JOIN
+WITH order_item_summary AS (
+    -- 先在明細層把每筆訂單的金額算好（粒度收斂回：1 列 = 1 筆訂單）
+    SELECT 
+        order_id, 
+        SUM(subtotal) AS line_total
     FROM order_items
     GROUP BY order_id
 )
 SELECT
     c.company_name,
-    SUM(olt.line_total) AS correct_total_from_cte
+    SUM(ois.line_total) AS correct_total
 FROM customers c
 JOIN orders o ON c.customer_id = o.customer_id
-JOIN order_line_totals olt ON o.order_id = olt.order_id
+JOIN order_item_summary ois ON o.order_id = ois.order_id
 WHERE c.company_name = 'BlueSky Cloud Ltd'
   AND o.status = 'COMPLETED'
 GROUP BY c.company_name;
--- 預期結果：250000.00 ← 同樣正確！
+-- 查詢結果：250000.00 ✅ 完全正確！
 ```
 
 ---
 
-### 陷阱 2：兩邊都是「多筆」，JOIN 後會互相配對
+## 四大常見 JOIN 陷阱全圖解
 
-> **先體驗現象，再認識術語。**
+---
 
-#### ① 先複習 1:N — 受控的展開
+### 陷阱 1：一對多（1:N）導致主表度量 SUM 膨脹
 
-陷阱 1 示範的 `orders → order_items` 屬於 **一對多（1:N）**：
+- **發生情境**：主單 JOIN 明細清單（例如：訂單 JOIN 訂單商品、部門 JOIN 員工）。
+- **現象**：主表的金額欄位（如訂單金額、預算金額）被放大了 `N` 倍。
+- **直覺心法**：
+  > 只要跨表 JOIN，先問自己：**「我現在 SUM 的這個欄位，是來自 1 的那一邊，還是 N 的那一邊？」**
+  > - 來自 **N（多）** 的那一邊（如 `oi.subtotal`）：可以安全加總。
+  > - 來自 **1（單）** 的那一邊（如 `o.total_amount`）：**絕對不能直接加總！**
+
+---
+
+### 陷阱 2：多對多（N:M）笛卡兒積互乘爆炸
+
+當一張主表**同時關聯兩張「多」的子表**時，會產生毀滅性的乘數爆炸。
+
+#### 想像這個場景：
+客戶 1 同時有 **3 個標籤（Tags）** 與 **2 筆訂單（Orders）**：
 
 ```text
-1 筆訂單
-   └── 2 個品項（item A、item B）
-
-JOIN 後：1 × 2 = 2 列
-→ 展開幅度 = 那筆訂單的品項數，這叫做 Fan-out（受控展開）
+客戶 1 的標籤 (3個)           客戶 1 的訂單 (2筆)
+- VIP                      - ORD-101
+- Cloud                    - ORD-102
+- Enterprise
 ```
 
-只要你清楚 Grain，1:N 的展開是**可預期的、受控的**。
-
----
-
-#### ② 再看 N:M — 兩個「多」互相放大
-
-現在換個場景：  
-**客戶 1 同時有 3 個標籤（tag）和 2 筆訂單**，  
-我們把兩張表都透過 `customer_id` JOIN 回客戶：
-
-**客戶 1 的標籤表（customer_tags）**
-
-| customer_id | tag        |
-| :---------: | :--------- |
-|      1      | VIP        |
-|      1      | Cloud      |
-|      1      | Enterprise |
-
-**客戶 1 的訂單表（orders）**
-
-| customer_id | order_id |
-| :---------: | :------- |
-|      1      | ORD-101  |
-|      1      | ORD-102  |
-
-問題來了：
-
-> 如果把 `customer_tags` 和 `orders` 都 JOIN 到 `customer_id = 1`，  
-> **一個 tag 會配到幾筆 order？**
-
-答案：**2 筆。** 每一個 tag 都會和每一筆 order 配一次：
+如果直接將兩張表透過 `customer_id` 一起 JOIN：
 
 ```text
-VIP          × ORD-101
-VIP          × ORD-102
+VIP          × ORD-101  ──┐
+VIP          × ORD-102  ──┼─ 標籤 VIP 配對 2 筆訂單
+Cloud        × ORD-101  ──┤
+Cloud        × ORD-102  ──┼─ 標籤 Cloud 配對 2 筆訂單
+Enterprise   × ORD-101  ──┤
+Enterprise   × ORD-102  ──┘─ 標籤 Enterprise 配對 2 筆訂單
 
-Cloud        × ORD-101
-Cloud        × ORD-102
-
-Enterprise   × ORD-101
-Enterprise   × ORD-102
-
-→ 3 個 tag × 2 筆 order = 6 列
+👉 結果直接暴增成：3 × 2 = 6 列！
 ```
 
-這就是「兩個多互相放大」的核心現象。
+#### 視覺對比表：
+
+| customer_id | tag | order_id | 此時 COUNT(order_id) 會算成？ |
+| :---: | :--- | :--- | :---: |
+| 1 | VIP | ORD-101 | 1 |
+| 1 | VIP | ORD-102 | 2 |
+| 1 | Cloud | ORD-101 | 3 |
+| 1 | Cloud | ORD-102 | 4 |
+| 1 | Enterprise | ORD-101 | 5 |
+| 1 | Enterprise | ORD-102 | **6 ⚠️ 明明只有 2 筆訂單，卻被算成 6 筆！** |
+
+#### 防坑解法：
+1. **聚合計數時加上 `DISTINCT`**：`COUNT(DISTINCT o.order_id)`，重複的 ORD-101 只計 1 次。
+2. **絕不同時 JOIN 兩張獨立的明細表**：改用兩個獨立的 CTE 或子查詢各自算完，再分別與客戶表關聯。
 
 ---
 
-#### ③ 最後才是術語
+### 陷阱 3：JOIN Key 不具唯一性（未預期的 N:M）
 
-| 情況         | 左邊 | 右邊 | JOIN 後 | 是否危險           |
-| :----------- | ---: | ---: | ------: | :----------------- |
-| 1:1          |    1 |    1 |       1 | 通常不會           |
-| 1:N          |    1 |    3 |       3 | ⚠️ Fan-out（受控） |
-| N:1          |    3 |    1 |       3 | 通常可預期         |
-| **N:M**  | **3** | **2** | **6** | 🚨 N×M 資料膨脹    |
-| CROSS JOIN   |    3 |    2 |       6 | 🚨 笛卡兒積        |
-
-> **JOIN 不只是「把兩張表接起來」，而是在決定「一列資料會變成幾列」。**
-
-三個關鍵名詞：
-
-- **1:N Fan-out**：有正確 ON 條件，展開幅度 = 每筆主表資料對應的從表列數加總。13 筆訂單展開成 18 筆，**不是 13×18**，是受控的。
-- **N:M 資料膨脹**：兩張表透過同一個 Key 各自對應「多筆」，**兩個「多」互乘**，結果列數 = 左邊 × 右邊，且很難從 SUM 結果察覺。
-- **CROSS JOIN（笛卡兒積）**：SQL 中**沒有 ON 條件**的明確語法；左表每一列都和右表每一列配對，結果必然是 N×M。N:M 資料膨脹和 CROSS JOIN 的**症狀相同，但成因不同**，要分開理解。
-
----
-
-**場景：** 客戶同時有多個標籤（tags）和多筆訂單，兩者都 JOIN 到客戶表（B2B 資料庫無 tags 表，以下為概念示意）
+- **發生情境**：以為關聯鍵是一對一，但實際上鍵值存在重複資料（例如用 `company_name` 或未去重的非主鍵關聯）。
+- **診斷習慣（寫 JOIN 前必先執行）**：
 
 ```sql
--- ⚠️ 危險示意：customer_tags（N 列）+ orders（M 列）同時 JOIN 到 customers
--- customer 1 有 3 個 tag、2 筆 orders → 結果：3 × 2 = 6 列
--- 此時 COUNT(order_id) 會回傳 6，而非正確的 2！
--- （customer_tags 表在 B2B 資料庫中不存在，此為示意）
-SELECT
-    c.customer_id,
-    COUNT(o.order_id) AS WRONG_order_count   -- ⚠️ 被 tag 數量放大了！
-FROM customers c
-JOIN customer_tags ct ON c.customer_id = ct.customer_id    -- 3 倍放大
-JOIN orders o        ON c.customer_id = o.customer_id      -- 再 × 2 倍
-GROUP BY c.customer_id;
--- 回傳 6，實際上只有 2 筆訂單
-```
-
-**修正：加 DISTINCT 去重**
-
-```sql
--- ✅ 用 COUNT(DISTINCT ...) 去除因 tag 展開造成的重複
-SELECT
-    c.customer_id,
-    COUNT(DISTINCT o.order_id) AS correct_order_count   -- DISTINCT 只計唯一值
-FROM customers c
-JOIN customer_tags ct ON c.customer_id = ct.customer_id
-JOIN orders o        ON c.customer_id = o.customer_id
-GROUP BY c.customer_id;
--- 回傳 2，正確！
-```
-
-> [!TIP]
-> 預防 N:M 膨脹的根本方法是**在 JOIN 之前確認每張表的粒度（Grain）**：
-> - `orders` 的粒度是「每筆訂單」
-> - `customer_tags` 的粒度是「每個標籤」
-> - 兩者同時 JOIN 到 `customers` 後，粒度變成「每筆訂單 × 每個標籤」的組合，而非「每筆訂單」。
->
-> **只要發現兩張「多」的表都以同一個 Key JOIN 到主表，就必須警戒 N×M 膨脹。**
-
----
-
-### 陷阱 3：JOIN Key 不唯一
-
-**診斷（可直接在 B2B 資料庫執行）：**
-
-```sql
--- 先確認 JOIN Key 是否唯一（customer_id 在 orders 中是否重複）
+-- 檢查 orders 表中的 customer_id 到底是不是唯一的？
 SELECT
     customer_id,
-    COUNT(*) AS order_count
+    COUNT(*) AS records_per_key
 FROM orders
 GROUP BY customer_id
 HAVING COUNT(*) > 1
-ORDER BY order_count DESC;
+ORDER BY records_per_key DESC;
 ```
 
-##### 📊 預期查詢結果
-
-| customer_id | order_count |
-| :---------: | :---------: |
-|      1      |      3      |
-|      4      |      2      |
-|      2      |      2      |
-|      8      |      2      |
-
-> `customer_id = 1`（Apex Semi Tech）在 orders 表中有 3 筆資料。以 `customer_id` 關聯時展開為 3 列屬於 1:N 關係的正常結果；此時若要進行聚合，不可直接對屬於 1 的端欄位進行金額加總。
+##### 📊 查詢結果（證明 customer_id 在 orders 中有重複，屬於 1:N 關係）
+| customer_id | records_per_key |
+| :---: | :---: |
+| 1 | 3（代表關聯時會展開成 3 列） |
+| 4 | 2 |
+| 2 | 2 |
+| 8 | 2 |
 
 ---
 
-### 陷阱 4：LEFT JOIN 後 NULL 被 COUNT 計入
+### 陷阱 4：LEFT JOIN 後，`COUNT(*)` 與 `COUNT(欄位)` 的生死之差
 
-```sql
--- ✅ 正確：COUNT(o.order_id) 只計算有訂單的客戶
-SELECT
-    c.customer_id,
-    c.company_name,
-    COUNT(o.order_id) AS order_count   -- ← 正確：NULL 不會被計入
-FROM customers c
-LEFT JOIN orders o ON c.customer_id = o.customer_id
-GROUP BY c.customer_id, c.company_name
-ORDER BY c.customer_id;
-```
+這是面試與實務最常踩到的經典陷阱！
 
-```sql
--- ⚠️ 陷阱：COUNT(*) 把沒有訂單的客戶也算成 1
-SELECT
-    c.customer_id,
-    c.company_name,
-    COUNT(*) AS WRONG_order_count      -- ← 錯誤：沒有訂單的客戶也被計為 1
-FROM customers c
-LEFT JOIN orders o ON c.customer_id = o.customer_id
-GROUP BY c.customer_id, c.company_name
-ORDER BY c.customer_id;
-```
+#### 真實場景：
+資料庫中有兩家潛在客戶：
+- **`InnoVibe Studio`（customer_id = 9）**：從未下過訂單。
+- **`Jovial Media Group`（customer_id = 10）**：從未下過訂單。
 
-##### 📊 兩種寫法的結果對比（重點看最後兩列）
+我們用 `LEFT JOIN orders` 查詢所有客戶的訂單數量：
 
-| customer_id | company_name                 | COUNT(o.order_id) ✅ |      COUNT(*) ⚠️      |
-| :----------: | :--------------------------- | :------------------: | :---------------------: |
-|      1      | Apex Semi Tech               |          3          |            3            |
-|      2      | BlueSky Cloud Ltd            |          3          |            3            |
-|     ...     | ...                          |         ...         |           ...           |
-| **9** | **InnoVibe Studio**    |    **0** ✅    | **1** ⚠️ 錯誤！ |
-| **10** | **Jovial Media Group** |    **0** ✅    | **1** ⚠️ 錯誤！ |
+#### 展開後的原始資料（一眼看出 NULL 的差別）：
+
+| customer_id | company_name | o.order_id | `COUNT(*)` 的視角（看「整列」） | `COUNT(o.order_id)` 的視角（看「格子」） |
+| :---: | :--- | :---: | :--- | :--- |
+| 1 | Apex Semi Tech | 1 | 有這一列 👉 計為 1 | 格子有值（1） 👉 計為 1 |
+| 1 | Apex Semi Tech | 3 | 有這一列 👉 計為 1 | 格子有值（3） 👉 計為 1 |
+| ... | ... | ... | ... | ... |
+| **9** | **InnoVibe Studio** | **`NULL`** | **有這一列！👉 計為 1 ❌ 錯誤！** | **格子是 NULL！👉 跳過，計為 0 ✅ 正確！** |
+| **10** | **Jovial Media Group** | **`NULL`** | **有這一列！👉 計為 1 ❌ 錯誤！** | **格子是 NULL！👉 跳過，計為 0 ✅ 正確！** |
 
 > [!CAUTION]
-> **規則：LEFT JOIN 後，COUNT 要用 `COUNT(column_name)`，不要用 `COUNT(*)`。**
-> InnoVibe Studio 和 Jovial Media Group 都沒有下過訂單，
-> `COUNT(o.order_id)` 正確顯示為 0；
-> `COUNT(*)` 卻因為 LEFT JOIN 補了一列 NULL 而算成 1，造成統計失真！
+> 🚨 **鐵律記憶卡**：
+> - `COUNT(*)`：**數列數（Row Count）**。只要這列存在（即使右邊全是 NULL），它就算 1！
+> - `COUNT(欄位)`：**數該欄位「非 NULL（Not Null）」的值有幾個**。遇到 NULL 自動跳過算 0！
+> - **結論：只要用了 LEFT JOIN，統計右表次數一律用 `COUNT(右表.鍵值)`，千萬不要寫 `COUNT(*)`！**
+
+#### 實機 SQL 驗證：
+
+```sql
+SELECT
+    c.customer_id,
+    c.company_name,
+    COUNT(o.order_id) AS correct_order_count,  -- ✅ 遇到沒訂單的客戶顯示 0
+    COUNT(*)          AS wrong_order_count     -- ⚠️ 遇到沒訂單的客戶誤標為 1
+FROM customers c
+LEFT JOIN orders o ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.company_name
+ORDER BY c.customer_id;
+```
+
+##### 📊 執行結果對照：
+| customer_id | company_name | correct_order_count ✅ | wrong_order_count ⚠️ |
+| :---: | :--- | :---: | :---: |
+| 1 | Apex Semi Tech | 3 | 3 |
+| 2 | BlueSky Cloud Ltd | 3 | 3 |
+| ... | ... | ... | ... |
+| **9** | **InnoVibe Studio** | **0** ✅ | **1** ❌ 錯誤膨脹 |
+| **10** | **Jovial Media Group** | **0** ✅ | **1** ❌ 錯誤膨脹 |
 
 ---
 
-## 🔬 實戰練習：驗證 JOIN 粒度與膨脹
+## 實務 SOP：3 秒防坑對帳檢查法
 
+在交付任何涉及 JOIN 的財務或業務報表前，請務必按照以下步驟對帳：
+
+### 第一步：比對 JOIN 前後的列數
 ```sql
--- 練習 1：驗證你的 JOIN 沒有膨脹
--- 比較 JOIN 前後的列數
+-- 1. JOIN 前主表的筆數
+SELECT COUNT(*) FROM orders;          -- 例如：13 筆
 
--- JOIN 前
-SELECT COUNT(*) AS orders_before_join FROM orders;
--- 預期結果：13
-
--- JOIN 後（應 >= 13，因為有的訂單有多個品項）
-SELECT COUNT(*) AS orders_after_join
-FROM orders o
-JOIN order_items oi ON o.order_id = oi.order_id;
--- 預期結果：18 ← 膨脹了 5 列（對應 5 個「有多個品項」的訂單）
+-- 2. JOIN 明細後的筆數
+SELECT COUNT(*) FROM orders o 
+JOIN order_items oi ON o.order_id = oi.order_id;  -- 變成了 18 筆！
+-- 只要兩者數字不同，就代表發生了 1:N 展開，絕不能對主表金額做 SUM！
 ```
 
+### 第二步：diff 逐筆對帳法（驗證資料一致性）
+驗證主表記錄的 `total_amount` 與明細表加總出來的金額是否完全相符：
+
 ```sql
--- 練習 2：找出 JOIN 後重複次數最多的訂單（排行榜）
 SELECT
     o.order_id,
     o.order_number,
-    o.total_amount,
-    COUNT(*) AS times_repeated
-FROM orders o
-JOIN order_items oi ON o.order_id = oi.order_id
-GROUP BY o.order_id, o.order_number, o.total_amount
-ORDER BY times_repeated DESC
-LIMIT 5;
-```
-
-##### 📊 預期查詢結果
-
-| order_id | order_number | total_amount | times_repeated |
-| :------: | :----------- | :----------: | :------------: |
-|    2    | ORD-2024-002 |  155000.00  |       2       |
-|    4    | ORD-2024-004 |   80000.00   |       2       |
-|    7    | ORD-2024-007 |  450000.00  |       2       |
-|    11    | ORD-2024-011 |  170000.00  |       2       |
-|    12    | ORD-2024-012 |  290000.00  |       2       |
-
----
-
-## 🔎 快速診斷 SQL：對帳驗證
-
-比對 `orders.total_amount` 與 `order_items.subtotal` 加總是否一致：
-
-```sql
--- 一次性對帳：orders.total_amount 與由 order_items 加總出的值是否一致？
-SELECT
-    o.order_id,
-    o.order_number,
-    o.total_amount    AS orders_recorded,       -- orders 表記錄的金額
-    SUM(oi.subtotal)  AS items_calculated,      -- 由明細彙總出的金額
-    o.total_amount - SUM(oi.subtotal) AS diff   -- 差異（應為 0）
+    o.total_amount   AS 主表記錄金額,
+    SUM(oi.subtotal) AS 明細加總金額,
+    o.total_amount - SUM(oi.subtotal) AS diff -- 差額（正常情況必須全為 0）
 FROM orders o
 JOIN order_items oi ON o.order_id = oi.order_id
 GROUP BY o.order_id, o.order_number, o.total_amount
 ORDER BY o.order_id;
 ```
 
-##### 📊 預期查詢結果
-
-| order_id | order_number | orders_recorded | items_calculated |      diff      |
-| :------: | :----------- | :-------------: | :--------------: | :------------: |
-|    1    | ORD-2024-001 |    360000.00    |    360000.00    | **0.00** |
-|    2    | ORD-2024-002 |    155000.00    |    155000.00    | **0.00** |
-|    3    | ORD-2024-003 |    240000.00    |    240000.00    | **0.00** |
-|    4    | ORD-2024-004 |    80000.00    |     80000.00     | **0.00** |
-|   ...   | ...          |       ...       |       ...       | **0.00** |
-
-> [!TIP]
-> 若 `diff` 均為 0.00，代表明細小計彙總值與主表訂單金額一致。此類對帳語法常用於檢查資料一致性與業務 Trigger 是否正常運作。
+##### 📊 預期對帳結果：
+| order_id | order_number | 主表記錄金額 | 明細加總金額 | diff |
+| :---: | :--- | :---: | :---: | :---: |
+| 1 | ORD-2024-001 | 360000.00 | 360000.00 | **0.00** ✅ |
+| 2 | ORD-2024-002 | 155000.00 | 155000.00 | **0.00** ✅ |
+| 3 | ORD-2024-003 | 240000.00 | 240000.00 | **0.00** ✅ |
+| ... | ... | ... | ... | **0.00** ✅ |
 
 ---
 
-## 📋 診斷 JOIN 結果的 SOP
+## 粒度防坑心法總結卡
 
-遇到異常聚合結果時的檢查清單：
+| 關聯類型 | 範例場景 | 展開結果 | 聚合時的致命地雷 | 安全解法 |
+| :--- | :--- | :---: | :--- | :--- |
+| **1 : 1** | 客戶 : 客戶詳細資料 | 1 列 → 1 列 | 通常安全 | 正常計算 |
+| **1 : N** | 訂單 : 訂單明細 | 1 列 → N 列 | **對主表度量做 SUM 會虛胖 N 倍** | 1. 改 SUM 明細小計<br>2. 用 CTE 先收合再 JOIN |
+| **N : M** | 標籤 : 訂單（雙多） | 1 列 → N×M 列 | **列數與計數指數級失真** | 1. `COUNT(DISTINCT ...)`<br>2. 分開兩個 CTE 各自聚合 |
+| **LEFT JOIN** | 客戶 : 訂單（含無訂單客戶） | 無訂單補 NULL 列 | **用 `COUNT(*)` 把 0 筆算成 1 筆** | 一律改用 `COUNT(右表欄位)` |
 
-```
-看到 SUM / COUNT 結果時，必問三個問題：
-
-1. JOIN 後，這張查詢的 Grain（粒度）是什麼？
-   → 現在每一列代表什麼？（是「每筆訂單」還是「每個訂單品項」？）
-
-2. 我 SUM 的欄位來自哪張表？
-   → 那張表在 JOIN 後有沒有被複製出多列？
-   → 做個簡單驗證：比對 JOIN 前後的 COUNT(*) 是否相同！
-
-3. 結果比預期大很多嗎？
-   → 先 SELECT 幾列原始資料，肉眼確認有無重複列
-   → 再用「快速診斷 SQL」做 diff 對帳，數字差異一目了然
-```
-
-> 💡 **資料粒度與 JOIN 防坑核心收斂**：
-> **多表關聯看基數，1:N 展開必控度；明細表裡算細項，主表總額絕不重 SUM。**
+> 💡 **防坑口訣**：
+> **主單串明細，粒度往下沉；主表金額重複印，加總明細才成真；**
+> **遇上 LEFT JOIN 算次數，COUNT 帶欄位莫寫星。**
 
 ---
 
-### ✋ 粒度防坑空白頁挑戰（不看範例自主對帳）
+## ✋ 粒度防坑空白頁挑戰
 
-> **稽核主管抽查**：
-> 「請寫一段安全的 SQL，統計 **Apex Semi Tech（`customer_id = 1`）** 的已完成（`COMPLETED`）訂單總額。請分別輸出：
-> 1. 直接從 `orders` 表加總的正確總金額 `orders_total`
-> 2. JOIN 到 `order_items` 後，加總 `oi.subtotal` 的金額 `items_total`
-> 3. 計算兩者的差額 `diff`，以證明你的查詢沒有發生 Fan-out 膨脹。」
->
-> ⚠️ **請在 DBeaver 打開空白頁手寫完成，再展開對照！**
+> **業務主管提問**：
+> 「請統計 **Apex Semi Tech（`customer_id = 1`）** 的已完成（`COMPLETED`）訂單總額。
+> 請寫一段 SQL 同時輸出：
+> 1. `orders_recorded`：由訂單主表呈現的訂單金額
+> 2. `items_calculated`：由訂單明細 `order_items` 加總出的實際金額
+> 3. `diff`：兩者的差額，確保沒有任何 Fan-out 重複計算或漏算。」
 
 <details>
-<summary>💡 需要思考提示嗎？（點擊展開解題思路）</summary>
+<summary>💡 需要思考提示嗎？（點擊展開）</summary>
 
-1. 你可以直接在一個查詢中計算，或者使用子查詢 / CTE 分別計算兩表總額再相減。
-2. 最簡單的方式：直接對 `orders` 串 `order_items`，但千萬不要對 `o.total_amount` 做 SUM，而是對 `oi.subtotal` 做 SUM！
-3. 也可以透過對帳模式，按訂單驗證每筆訂單的 `diff = o.total_amount - SUM(oi.subtotal)` 是否為 0。
+直接對 `orders` JOIN `order_items`，並依據 `order_id` 進行 GROUP BY：
+- `o.total_amount` 直接取主表數字
+- `SUM(oi.subtotal)` 加總明細金額
+- `o.total_amount - SUM(oi.subtotal)` 計算差值
+
 </details>
 
 <details>
-<summary>✅ 寫完了？點擊查看標準對帳代碼與解析</summary>
+<summary>✅ 寫完了？點擊查看標準對帳代碼</summary>
 
 ```sql
--- 方式 A：訂單層級逐筆對帳（最推薦）
 SELECT 
     o.order_id,
     o.order_number,
@@ -532,24 +373,25 @@ SELECT
     o.total_amount - SUM(oi.subtotal) AS diff
 FROM orders o
 JOIN order_items oi ON o.order_id = oi.order_id
-WHERE o.customer_id = 1 AND o.status = 'COMPLETED'
+WHERE o.customer_id = 1 
+  AND o.status = 'COMPLETED'
 GROUP BY o.order_id, o.order_number, o.total_amount;
 ```
 
-**解析**：
-- 如果 `diff` 全為 0，代表明細的小計總和與主表記錄的訂單金額完全一致，沒有發生漏算或重複計算。
+**解讀**：
+只要每筆訂單的 `diff` 都是 0.00，就證明明細項與主表金額完全契合，數據無懈可擊！
+
 </details>
 
 ---
 
 ## 自我測驗
 
-不看答案，試著回答：
-
-- [ ] 為什麼 `JOIN order_items` 後 `SUM(orders.total_amount)` 會變成兩倍？（用 ORD-2024-002 舉例說明）
-- [ ] `COUNT(*)` 和 `COUNT(o.order_id)` 在 LEFT JOIN 後有什麼差別？（用 InnoVibe Studio 舉例）
-- [ ] 如果懷疑 JOIN 有 Explosion，你會怎麼診斷？（說出 3 個步驟）
-- [ ] 1:N JOIN 的 Fan-out（受控展開）與 Many-to-Many 真正笛卡兒積（N×M 爆炸）有什麼差異？
+試著用自己的話回答以下問題（不看內文）：
+- [ ] 為什麼 `orders` JOIN `order_items` 後，對 `orders.total_amount` 做 SUM 會算出錯誤的虛胖數字？
+- [ ] 為什麼 LEFT JOIN 後，沒下過單的客戶用 `COUNT(*)` 會顯示 1，而用 `COUNT(order_id)` 會顯示 0？
+- [ ] 什麼是「影印機現象」？當 1 筆訂單對應 3 個明細時，主表的資料發生了什麼事？
+- [ ] 如果同時要把客戶的「標籤」和「訂單」關聯起來統計，會發生什麼危險？最好的解決策略是什麼？
 
 ---
 
