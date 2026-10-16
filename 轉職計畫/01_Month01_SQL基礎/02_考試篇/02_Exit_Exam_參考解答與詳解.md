@@ -127,15 +127,15 @@ ORDER BY sales_volume DESC;
 
 | rep_name              | region  |    sales_volume    | deals_closed | avg_deal_size |
 | :-------------------- | :------ | :-----------------: | :----------: | :------------: |
-| **Bob Chen**    | Central | **945000.00** |      4      |   236250.00   |
-| **Alice Wang**  | North   | **890000.00** |      4      |   222500.00   |
+| **Alice Wang**  | North   | **900000.00** |      4      | **225000.00** |
+| **Bob Chen**    | Central | **845000.00** |      4      |   211250.00   |
 | **Charlie Lee** | South   | **440000.00** |      3      |   146666.67   |
 | **Diana Chang** | North   | **155000.00** |      2      |    77500.00    |
 | **Evan Lin**    | Central |   **0.00**   |      0      | **0.00** |
 
 #### 💼 商業結論與行動建議（範例）
 
-> 「Bob Chen 以 94.5 萬元奪得全公司銷售冠軍且客單價最高（23.6 萬）；Diana Chang 雖然成交 2 筆，但客單價僅 7.7 萬，偏向小單銷售；新進業務 Evan Lin 尚未開單，建議主管安排 Top 業務 Bob 進行雙人拜訪搭檔（Shadowing），加速新人開單成熟期。」
+> 「Alice Wang 以 90 萬元奪得全公司銷售冠軍且客單價最高（22.5 萬）；Diana Chang 雖然成交 2 筆，但客單價僅 7.7 萬，偏向小單銷售；新進業務 Evan Lin 尚未開單，建議主管安排 Top 業務 Alice 進行雙人拜訪搭檔（Shadowing），加速新人開單成熟期。」
 
 ---
 
