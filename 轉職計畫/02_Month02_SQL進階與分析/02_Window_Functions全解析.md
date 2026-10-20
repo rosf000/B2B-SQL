@@ -321,20 +321,27 @@ WITH customer_total AS (
         AND o.status = 'COMPLETED'
     WHERE c.status = 'ACTIVE'
     GROUP BY c.customer_id, c.company_name, c.industry
+),
+ranked AS (
+    SELECT
+        company_name,
+        industry,
+        total_spent,
+        NTILE(4) OVER (ORDER BY total_spent ASC) AS spending_quartile
+    FROM customer_total
 )
 SELECT
     company_name,
     industry,
     total_spent,
-    -- 切成 4 個分位（1 = 最低消費、4 = 最高消費）
-    NTILE(4) OVER (ORDER BY total_spent ASC)    AS spending_quartile,
-    CASE NTILE(4) OVER (ORDER BY total_spent ASC)
+    spending_quartile,
+    CASE spending_quartile
         WHEN 4 THEN '🏆 黃金客戶 (Top 25%)'
         WHEN 3 THEN '💎 白銀客戶 (25-50%)'
         WHEN 2 THEN '🥉 銅牌客戶 (50-75%)'
         WHEN 1 THEN '📋 一般客戶 (Bottom 25%)'
-    END                                         AS 客戶等級
-FROM customer_total
+    END AS 客戶等級
+FROM ranked
 ORDER BY total_spent DESC;
 ```
 
