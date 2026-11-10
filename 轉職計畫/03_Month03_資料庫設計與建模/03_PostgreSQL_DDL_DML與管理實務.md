@@ -2,6 +2,8 @@
 
 > **📌 本章定位**：前兩個月你學的 `SELECT` 是「讀取與消費資料」（DML）。本篇帶你跨入工程師必備的「**資料結構定義與維運守門員**」（DDL + 約束 + 物化視圖）。
 >
+> **🔗 承接 M01/M02**：在 M01 你執行了 `01_b2b_learning_init.sql` 建立整個學習資料庫 — 那個腳本裡有什麼？就是本章要教的 `CREATE TABLE`、`FOREIGN KEY`、`CHECK` 和 `INDEX`。M02 你做了 `v_sales_performance` 這種複雜的業績查詢 — 本章的 View 與 Materialized View 就是讓這種查詢「固化」成可重複使用的物件，讓同事或 BI 工具直接調用。
+>
 > **⚠️ 痛點場景（沒有約束的災難）**：
 > - 沒設 `CHECK (amount >= 0)`：前端出 Bug 傳了 `-500`，資料庫照單全收，財務結帳憑空蒸發 500 元。
 > - 沒設 `FOREIGN KEY ON DELETE`：刪除客戶時留下 300 筆沒有歸屬的「孤兒訂單」，報表系統 JOIN 不到業務直接崩潰拋 Exception。
@@ -806,6 +808,51 @@ DML 進階
   UPSERT：INSERT ... ON CONFLICT DO UPDATE
   UPDATE ... FROM：用另一張表更新
   DELETE + RETURNING：刪除並回傳被刪的資料
+```
+
+---
+
+## 十三、🔗 與 M01/M02 技術的銜接回顧
+
+以下整理本月所學與前兩個月的直接對應關係，幫助你把知識連貫起來：
+
+| M01/M02 你學的技術 | M03 對應的 DDL/設計概念 | 為什麼有關聯 |
+|-------------------|------------------------|------------|
+| M01：`b2b_learning_init.sql` 裡的建表腳本 | 本章 `CREATE TABLE` 完整語法 | 那個 init.sql 就是用本章的技術寫的 |
+| M01：`INNER JOIN customers` → `orders` | 第 01 章的外鍵（FK）與 ER Diagram | FK 是 JOIN 能正確關聯的基礎 |
+| M02：`EXPLAIN ANALYZE` 看到 Seq Scan | 第 02 章的索引原理與索引失效陷阱 | 沒建對索引就會觸發 Seq Scan |
+| M02：複雜的業績分析 `JOIN + GROUP BY + Window` | 本章的 View 與 Materialized View | 把那個複雜查詢固化成 View，同事直查 |
+| M02：`LAG()` 計算 MoM 增長率 | Materialized View 定期 REFRESH | 把月度彙總 Materialize，`LAG()` 就跑在快照資料上，毫秒回應 |
+| M01：直接 `DELETE FROM orders` | 本章的 `ON DELETE CASCADE/RESTRICT` | FK 的 ON DELETE 決定了刪除的連鎖效應 |
+
+```sql
+-- 🌉 橋樑實作範例：把 M02 的業績查詢固化為 Materialized View
+-- M02 你可能這樣寫過：
+WITH monthly_sales AS (
+    SELECT
+        salesperson_id,
+        DATE_TRUNC('month', order_date) AS month,
+        SUM(total_amount) AS revenue
+    FROM orders
+    WHERE status = 'COMPLETED'
+    GROUP BY salesperson_id, DATE_TRUNC('month', order_date)
+),
+sales_with_mom AS (
+    SELECT *,
+        LAG(revenue) OVER (PARTITION BY salesperson_id ORDER BY month) AS prev_revenue
+    FROM monthly_sales
+)
+SELECT *, ROUND((revenue - prev_revenue) / NULLIF(prev_revenue, 0) * 100, 1) AS mom_pct
+FROM sales_with_mom;
+
+-- 現在 M03 的做法：把它 Materialize（固化成快照），查詢瞬間完成
+CREATE MATERIALIZED VIEW mv_monthly_sales_mom AS
+WITH monthly_sales AS ( ... )  -- 同上
+SELECT ...
+FROM sales_with_mom;
+
+-- 每月 1 號凌晨 2 點自動刷新（Month 05 學排程自動化後會串起來）
+REFRESH MATERIALIZED VIEW mv_monthly_sales_mom;
 ```
 
 ---

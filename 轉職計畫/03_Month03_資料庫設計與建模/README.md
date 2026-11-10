@@ -1,6 +1,8 @@
-# Month 03｜資料庫設計與建模：不只會查資料，更懂如何設計架構
+# Month 03｜資料庫設計與建模：從「查詢資料」升級為「設計架構」
 
-> **本月核心目標**：從單純寫 SQL 查詢進階為「架構設計師思維」，掌握實體關聯圖 (ER Diagram)、資料庫三大正規化 (1NF/2NF/3NF)、ACID 交易安全機制，並親手設計一套生產級 B2B 資料庫架構。
+> **🔗 承接 M01/M02**：你在 M01 一直查詢的 `customers`、`orders`、`order_items`，以及 M02 用 Window Functions 跑業績分析的那個 B2B 資料庫 — 是**有人刻意設計過**的。那個設計背後有正規化原則、索引策略和 ACID 保護。
+>
+> **M03 核心目標**：從「用別人設計好的 schema 查資料」，升級為「自己設計生產級 schema」。本月結束後，你會懂得為什麼 M02 的某些查詢走 Seq Scan 而不是 Index Scan、以及如何讓你的 M02 分析 SQL 固化成 Materialized View 讓同事直接用。
 
 ---
 
@@ -22,11 +24,12 @@ flowchart TD
 
 | 序號 | 篇章名稱 | 核心目標與學習內容 | 推薦時機 |
 | :---: | :--- | :--- | :---: |
-| **00** | [00_本月學習計畫與目標.md](./00_本月學習計畫與目標.md) | 📅 **4 週 28 天每日學習排程**、Git Commit 規範與驗收標準 | 開學第一天必讀 |
-| **01** | [01_關聯式資料庫設計規範與正規化.md](./01_關聯式資料庫設計規範與正規化.md) | 實體辨識、正規化三步驟實例、多對多中介表、反正規化 (Denormalization) 的時機與權衡 | 第 1 週 |
-| **02** | [02_Index索引原理與ACID交易機制.md](./02_Index索引原理與ACID交易機制.md) | B-Tree 索引結構、死鎖 (Deadlock)、隔離級別 (Isolation Levels)、金流/庫存扣減交易範例 | 第 2 週 |
-| **03** | [03_PostgreSQL_DDL_DML與管理實務.md](./03_PostgreSQL_DDL_DML與管理實務.md) | `ALTER TABLE`, `CHECK Constraint`, `CASCADE` 串聯刪除/更新、備份還原實務 | 第 3 週 |
+| **00** | [00_學習計畫與總覽.md](./00_學習計畫與總覽.md) | 📅 **4 週 28 天每日學習排程**、從 M01/M02 銜接橋樑、Git Commit 規範與晉級標準 | 開學第一天必讀 |
+| **01** | [01_關聯式資料庫設計規範與正規化.md](./01_關聯式資料庫設計規範與正規化.md) | 資料異常三種類型、1NF/2NF/3NF 函數相依實例、多對多中介表、反正規化 (Denormalization) 的時機與權衡 | 第 1 週 |
+| **02** | [02_Index索引原理與ACID交易機制.md](./02_Index索引原理與ACID交易機制.md) | B-Tree 索引結構、最左前綴原則、索引失效陷阱、ACID 四大特性、隔離等級與 MVCC、FOR UPDATE 防超賣 | 第 2 週 |
+| **03** | [03_PostgreSQL_DDL_DML與管理實務.md](./03_PostgreSQL_DDL_DML與管理實務.md) | `CREATE TABLE` 完整語法、`ALTER TABLE` 安全遷移、`CHECK`/`FK ON DELETE` 約束、View vs Materialized View、Trigger 自動化、UPSERT | 第 3 週 |
 | **04** | [04_Exit_Exam_Schema_Review_Challenge.md](./04_Exit_Exam_Schema_Review_Challenge.md) | 🎓 **本月結業測驗**：審查 AI 設計的「毒瘤」Schema，抓出 6 大地雷、重構 3NF DDL 並執行 Constraint 破壞性測試 | 第 4 週 |
+| **DB** | [database/](./database/) | 🛠️ **練習資料庫**：`01_b2b_m3_bad_schema.sql`（刻意設計錯誤的 schema，練習識別問題）、`02_b2b_m3_refactored_schema.sql`（標準重構版，作為參考解答） | 第 1 週起動手用 |
 | **專案** | [Milestone_B2B關聯式資料庫設計/](./Milestone_B2B關聯式資料庫設計/README.md) | 🏆 **生產級架構里程碑**：包含 Customers, Products, Orders, Order_Items, Salespeople, Invoices 的完整 Mermaid ER 圖與生產級 DDL 腳本 | 第 4 週 |
 
 ---
